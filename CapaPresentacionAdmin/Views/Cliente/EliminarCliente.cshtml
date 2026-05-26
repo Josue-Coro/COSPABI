@@ -1,0 +1,131 @@
+﻿@{
+    ViewBag.Title = "EliminarCliente";
+    Layout = null;
+    int id = 0;
+    int.TryParse(Request.QueryString["id"], out id);
+    string nombre = Request.QueryString["nombre"] ?? "este cliente";
+    bool estadoActual = Request.QueryString["estado"] == "true";
+}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: { extend: { fontFamily: { sans: ['Plus Jakarta Sans','sans-serif'] } } }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: transparent;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg,#ef4444 0%,#dc2626 100%);
+            transition: opacity 0.2s, transform 0.15s;
+        }
+
+            .btn-danger:hover:not(:disabled) {
+                opacity: 0.92;
+                transform: translateY(-1px);
+            }
+
+            .btn-danger:disabled {
+                opacity: 0.65;
+                cursor: not-allowed;
+            }
+    </style>
+</head>
+<body class="p-1">
+
+    <input type="hidden" id="idCliente" value="@id">
+
+    <div class="flex flex-col items-center text-center mb-5">
+        <div class="w-14 h-14 rounded-full @(estadoActual ? "bg-red-100" : "bg-green-100") flex items-center justify-center mb-3">
+            @if (estadoActual)
+            {
+                <svg style="width:28px;height:28px;" class="text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                </svg>
+            }
+            else
+            {
+                <svg style="width:28px;height:28px;" class="text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            }
+        </div>
+        <p class="text-sm text-gray-600">
+            ¿Deseas <span class="font-semibold @(estadoActual ? "text-red-600" : "text-green-600")">
+                @(estadoActual ? "desactivar" : "activar")
+            </span> al cliente
+            <span class="font-semibold text-gray-800">"@nombre"</span>?
+        </p>
+        <p class="text-xs text-gray-400 mt-1">
+            @(estadoActual
+                ? "El cliente quedará inactivo en el sistema."
+                : "El cliente volverá a estar activo en el sistema.")
+        </p>
+    </div>
+
+    <div id="errorMsg" class="hidden mb-4 flex items-start gap-2 text-red-700 text-sm bg-red-50 border border-red-200 px-3 py-2.5 rounded-xl">
+        <svg class="w-4 h-4 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+        </svg>
+        <span id="errorText"></span>
+    </div>
+
+    <div class="flex gap-3">
+        <button onclick="window.parent.cerrarEliminar()"
+                class="flex-1 py-2.5 rounded-xl text-sm font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 transition">
+            Cancelar
+        </button>
+        <button id="btnAccion" onclick="cambiarEstado()"
+                class="btn-danger flex-1 py-2.5 rounded-xl text-sm font-semibold text-white flex items-center justify-center gap-2">
+            <span id="btnText">Sí, @(estadoActual ? "desactivar" : "activar")</span>
+            <svg id="btnSpinner" class="hidden animate-spin" style="width:16px;height:16px;" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+            </svg>
+        </button>
+    </div>
+
+    <script>
+        function cambiarEstado() {
+            var id = $('#idCliente').val();
+            setLoading(true);
+
+            $.ajax({
+                url:  '@Url.Action("CambiarEstado", "Cliente")',
+                type: 'POST',
+                data: { id: id },
+                success: function (res) {
+                    if (res.exito) {
+                        window.parent.onAccionCompletada();
+                    } else {
+                        mostrarError(res.mensaje || 'No se pudo cambiar el estado.');
+                        setLoading(false);
+                    }
+                },
+                error: function () {
+                    mostrarError('Error de conexión. Intenta nuevamente.');
+                    setLoading(false);
+                }
+            });
+        }
+
+        function mostrarError(msg) { $('#errorText').text(msg); $('#errorMsg').removeClass('hidden'); }
+        function setLoading(v)     {
+            $('#btnAccion').prop('disabled', v);
+            $('#btnText').text(v ? 'Procesando...' : 'Sí, @(estadoActual ? "desactivar" : "activar")');
+            $('#btnSpinner').toggleClass('hidden', !v);
+        }
+    </script>
+</body>
+</html>

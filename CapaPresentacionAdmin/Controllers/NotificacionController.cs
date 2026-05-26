@@ -7,9 +7,9 @@ using System.Web.Mvc;
 
 namespace CapaPresentacionAdmin.Controllers
 {
+    [Authorize]
     public class NotificacionController : Controller
     {
-        [Authorize]
         // GET: Notificacion
         [ValidarPermisos(NombrePermiso = "Gestionar Notificaciones")]
         public ActionResult Notificacion()

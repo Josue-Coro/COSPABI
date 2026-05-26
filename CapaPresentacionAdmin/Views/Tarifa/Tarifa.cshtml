@@ -4,5 +4,168 @@
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<h2>Tarifa</h2>
 
+<div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div>
+        <h1 class="text-xl font-semibold text-gray-800">Gestión de Tarifas</h1>
+        <p class="text-sm text-gray-400 mt-0.5">Administra las tarifas del sistema</p>
+    </div>
+</div>
+
+
+<!-- CREATE PROCEDURE [dbo].[sp_listar_tarifa]
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SELECT
+        u.id_tarifa,
+        u.consumo_minimo_m3,
+        u.monto_minimo,
+        u.precio_m3,
+        u.rol_socio_id_rol_socio,
+        r.rol_socio AS nombre_rol
+    FROM [dbo].[tarifa] u
+    INNER JOIN [dbo].[rol_socio] r ON r.id_rol_socio = u.id_tarifa
+END
+GO
+ -->
+<!-- Tabla -->
+<div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+    <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+        <span class="text-sm font-semibold text-gray-700">Lista de Tarifas</span>
+        <div class="flex items-center gap-2 bg-gray-100 rounded-lg px-3 py-1.5 w-52">
+            <svg style="width:15px;height:15px;" class="text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input type="text" id="buscador" placeholder="Buscar tarifa..."
+                   class="bg-transparent text-sm text-gray-600 outline-none w-full placeholder-gray-400">
+        </div>
+    </div>
+
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="bg-gray-50 text-left">
+                    <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">#</th>
+                    <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Consumo mínimo (m³)</th>
+                    <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Monto mínimo</th>
+                    <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Precio por m³</th>
+                    <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Rol</th>
+                    <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide text-center">Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="bodyTarifas" class="divide-y divide-gray-100">
+                <tr>
+                    <td colspan="7" class="px-6 py-10 text-center text-sm text-gray-400">
+                        <svg class="animate-spin mx-auto mb-2" style="width:22px;height:22px;" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                        </svg>
+                        Cargando tarifas...
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="px-6 py-3 border-t border-gray-100">
+        <span class="text-xs text-gray-400" id="contadorUsuarios"></span>
+    </div>
+</div>
+
+
+
+<!-- Modal Editar -->
+<div id="modalEditar" class="fixed inset-0 z-50 hidden items-center justify-center p-4">
+    <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" onclick="cerrarEditar()"></div>
+    <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
+        <div class="h-1.5 bg-gradient-to-r from-primary-500 to-primary-700"></div>
+        <div class="p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-base font-semibold text-gray-800">Editar Usuario</h3>
+                <button onclick="cerrarEditar()" class="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 transition">
+                    <svg style="width:18px;height:18px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <iframe id="iframeEditar" src="" style="width:100%;height:510px;border:none;display:block;"></iframe>
+        </div>
+    </div>
+</div>
+
+
+<style>
+    .btn-primary {
+        background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+        transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
+    }
+
+        .btn-primary:hover {
+            opacity: 0.92;
+            transform: translateY(-1px);
+            box-shadow: 0 8px 20px rgba(34,197,94,0.30);
+        }
+</style>
+
+@section scripts {
+    <script>
+function cargarTarifas() {
+    $.ajax({
+        url: '@Url.Action("ListarTarifa", "Tarifa")',
+        type: 'GET',
+        success: function (res) {
+            var filas = '';
+            if (!res.data || res.data.length === 0) {
+                filas = '<tr><td colspan="6" class="px-6 py-10 text-center text-sm text-gray-400">No hay tarifas registradas.</td></tr>';
+                $('#contadorUsuarios').text('');
+            } else {
+                $.each(res.data, function (i, u) {
+                    filas += '<tr class="hover:bg-gray-50 transition fila-usuario">' +
+                        '<td class="px-6 py-3.5 text-gray-400 text-xs">' + (i + 1) + '</td>' +
+                        '<td class="px-6 py-3.5 text-gray-700">' + (u.consumo_minimo_m3 ?? '—') + '</td>' +
+                        '<td class="px-6 py-3.5 text-gray-700">Bs. ' + parseFloat(u.monto_minimo).toFixed(2) + '</td>' +
+                        '<td class="px-6 py-3.5 text-gray-700">Bs. ' + u.precio_m3 + '</td>' +
+                        '<td class="px-6 py-3.5">' +
+                        '  <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-600">' + (u.rol_socio ? u.rol_socio.rol_socio : '—') + '</span>' +
+                        '</td>' +
+                        '<td class="px-6 py-3.5 text-center">' +
+                        '  <div class="inline-flex items-center gap-1">' +
+                        '    <button onclick="abrirEditar(' + u.id_tarifa + ')" title="Editar"' +
+                        '            class="p-1.5 rounded-lg text-gray-400 hover:bg-green-50 hover:text-green-600 transition">' +
+                        '      <svg style="width:15px;height:15px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>' +
+                        '    </button>' +
+                        '  </div>' +
+                        '</td>' +
+                        '</tr>';
+                });
+                $('#contadorUsuarios').text(res.data.length + ' tarifa(s) registrada(s)');
+            }
+            $('#bodyTarifas').html(filas);
+        },
+        error: function () {
+            $('#bodyTarifas').html('<tr><td colspan="6" class="px-6 py-10 text-center text-sm text-red-500">Error al cargar los datos.</td></tr>');
+        }
+    });
+}
+
+$('#buscador').on('input', function () {
+    var t = $(this).val().toLowerCase();
+    $('.fila-usuario').each(function () {
+        $(this).toggle($(this).text().toLowerCase().indexOf(t) !== -1);
+    });
+});
+
+function abrirEditar(id) {
+    $('#iframeEditar').attr('src', '@Url.Action("EditarTarifa","Tarifa")?id=' + id);
+    $('#modalEditar').removeClass('hidden').addClass('flex');
+}
+function cerrarEditar() {
+    $('#modalEditar').removeClass('flex').addClass('hidden');
+    $('#iframeEditar').attr('src', '');
+}
+
+function onAccionCompletada() { cerrarEditar(); cargarTarifas(); }
+
+$(function () { cargarTarifas(); });
+    </script>
+}

@@ -1,6 +1,7 @@
 <Solution>
   <Project Path="CapaDato/CapaDato.csproj" Id="2451d462-ab5f-43a9-953e-cc825b1a08e0" />
   <Project Path="CapaModelo/CapaModelo.csproj" Id="65a51b7b-9c38-49d0-8f7f-e4a01e6dbbf3" />
+  <Project Path="CapaNegocio/CapaNegocio.csproj" Id="e2d39b2f-de3d-4ef3-9ca9-86d86815054e" />
   <Project Path="CapaPresentacionAdmin/CapaPresentacionAdmin.csproj" Id="69d71048-ff0b-409b-8e09-d9ca56765c88" />
   <Project Path="CapaPresentacionCliente/CapaPresentacionCliente.csproj" Id="53cde9a7-fad4-4314-b255-111ebc47fcb3" />
 </Solution>

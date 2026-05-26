@@ -18,5 +18,13 @@ namespace CapaModelo
         public int id_permiso { get; set; }
         public string accion { get; set; }
         public string descripcion { get; set; }
+        public bool asignado { get; set; }
+        public class CM_PermisosRol
+        {
+            public int id_rol { get; set; }
+            public string nombre_rol { get; set; } = string.Empty;
+            public List<CM_Permiso> permisos { get; set; } = new List<CM_Permiso>();
+        }
+
     }
 }

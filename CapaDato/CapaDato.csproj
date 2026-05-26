@@ -43,10 +43,18 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CD_Bitacora.cs" />
+    <Compile Include="CD_Cliente.cs" />
     <Compile Include="CD_Conexion.cs" />
     <Compile Include="CD_Login.cs" />
+    <Compile Include="CD_Medidor.cs" />
+    <Compile Include="CD_Permiso.cs" />
     <Compile Include="CD_Recursos.cs" />
     <Compile Include="CD_Rol.cs" />
+    <Compile Include="CD_RolSocio.cs" />
+    <Compile Include="CD_Ruta.cs" />
+    <Compile Include="CD_Socio.cs" />
+    <Compile Include="CD_Tarifa.cs" />
+    <Compile Include="CD_TipoCargo.cs" />
     <Compile Include="CD_Usuario.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

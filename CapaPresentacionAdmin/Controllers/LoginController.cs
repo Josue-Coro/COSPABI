@@ -6,6 +6,7 @@ using System.Web.Mvc;
 using System.Web.Security;
 using CapaModelo;
 using CapaDato;
+using CapaNegocio;
 
 namespace CapaPresentacionAdmin.Controllers
 {
@@ -21,11 +22,9 @@ namespace CapaPresentacionAdmin.Controllers
         {
             CM_Usuario_Activo oUsuario = new CM_Usuario_Activo();
             
-            contrasena = CD_Recursos.ConvertirSha256(contrasena);
-
             string mensaje = string.Empty;
 
-            oUsuario = new CD_Login().Login(usuario, contrasena);
+            oUsuario = new CN_Login().Login(usuario, contrasena);
 
             if (oUsuario != null)
             {

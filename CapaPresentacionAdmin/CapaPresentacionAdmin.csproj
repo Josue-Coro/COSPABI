@@ -121,14 +121,22 @@
     <Compile Include="App_Start\FilterConfig.cs" />
     <Compile Include="App_Start\RouteConfig.cs" />
     <Compile Include="Controllers\AvisoController.cs" />
+    <Compile Include="Controllers\BitacoraController.cs" />
     <Compile Include="Controllers\CajaController.cs" />
     <Compile Include="Controllers\ClienteController.cs" />
+    <Compile Include="Controllers\CreditoController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="Controllers\LecturaController.cs" />
     <Compile Include="Controllers\LoginController.cs" />
+    <Compile Include="Controllers\MedidorController.cs" />
     <Compile Include="Controllers\NotificacionController.cs" />
+    <Compile Include="Controllers\PagoController.cs" />
+    <Compile Include="Controllers\PermisoController.cs" />
     <Compile Include="Controllers\RolController.cs" />
+    <Compile Include="Controllers\RutaController.cs" />
+    <Compile Include="Controllers\SocioController.cs" />
     <Compile Include="Controllers\TarifaController.cs" />
+    <Compile Include="Controllers\TipoCargoController.cs" />
     <Compile Include="Controllers\UsuarioController.cs" />
     <Compile Include="Filtros\ValidarPermisosAttribute.cs" />
     <Compile Include="Global.asax.cs">
@@ -198,6 +206,27 @@
     <Content Include="Views\Tarifa\Tarifa.cshtml" />
     <Content Include="Views\Notificacion\Notificacion.cshtml" />
     <Content Include="Views\Login\AccesoDenegado.cshtml" />
+    <Content Include="Views\Rol\CrearRol.cshtml" />
+    <Content Include="Views\Rol\EditarRol.cshtml" />
+    <Content Include="Views\Rol\EliminarRol.cshtml" />
+    <Content Include="Views\Usuario\CrearUsuario.cshtml" />
+    <Content Include="Views\Usuario\EditarUsuario.cshtml" />
+    <Content Include="Views\Usuario\EliminarUsuario.cshtml" />
+    <Content Include="Views\Permiso\Permiso.cshtml" />
+    <Content Include="Views\Bitacora\Bitacora.cshtml" />
+    <Content Include="Views\TipoCargo\TipoCargo.cshtml" />
+    <Content Include="Views\Pago\Pago.cshtml" />
+    <Content Include="Views\Credito\Credito.cshtml" />
+    <Content Include="Views\Socio\Socio.cshtml" />
+    <Content Include="Views\Cliente\RegistrarCliente.cshtml" />
+    <Content Include="Views\Cliente\EditarCliente.cshtml" />
+    <Content Include="Views\Cliente\EliminarCliente.cshtml" />
+    <Content Include="Views\Ruta\Ruta.cshtml" />
+    <Content Include="Views\Medidor\Medidor.cshtml" />
+    <Content Include="Views\Socio\CrearSocio.cshtml" />
+    <Content Include="Views\Socio\EditarSocio.cshtml" />
+    <Content Include="Views\Socio\EliminarSocio.cshtml" />
+    <Content Include="Views\Tarifa\EditarTarifa.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\SQLServer\" />
@@ -241,6 +270,10 @@
     <ProjectReference Include="..\CapaModelo\CapaModelo.csproj">
       <Project>{65a51b7b-9c38-49d0-8f7f-e4a01e6dbbf3}</Project>
       <Name>CapaModelo</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\CapaNegocio\CapaNegocio.csproj">
+      <Project>{e2d39b2f-de3d-4ef3-9ca9-86d86815054e}</Project>
+      <Name>CapaNegocio</Name>
     </ProjectReference>
   </ItemGroup>
   <PropertyGroup>

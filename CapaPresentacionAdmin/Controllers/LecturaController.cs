@@ -7,9 +7,9 @@ using System.Web.Mvc;
 
 namespace CapaPresentacionAdmin.Controllers
 {
+    [Authorize]
     public class LecturaController : Controller
     {
-        [Authorize]
         // GET: Lectura
         [ValidarPermisos(NombrePermiso = "Gestionar Lecturas")]
         public ActionResult Lectura()

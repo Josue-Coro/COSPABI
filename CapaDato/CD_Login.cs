@@ -61,14 +61,6 @@ namespace CapaDato
                     }
 
                     dr.Close();
-                    // Registrar en bitácora solo si el login fue exitoso
-                    if (Usuario != null)
-                    {
-                        new CD_Bitacora().Registrar(
-                            "Inicio de sesión exitoso",
-                            Usuario.id_usuario_admin
-                        );
-                    }
 
                 }
                 catch

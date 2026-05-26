@@ -10,6 +10,7 @@ namespace CapaPresentacionAdmin.Controllers
     [Authorize]
     public class AvisoController : Controller
     {
+        [Authorize]
         // GET: Aviso
         [ValidarPermisos(NombrePermiso = "Gestionar Avisos")]
         public ActionResult Aviso()

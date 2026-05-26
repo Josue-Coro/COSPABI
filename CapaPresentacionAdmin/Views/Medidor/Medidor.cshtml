@@ -1,0 +1,426 @@
+﻿@{
+    ViewBag.Title = "Medidor";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div>
+        <h1 class="text-xl font-semibold text-gray-800">Gestión de Medidores</h1>
+        <p class="text-sm text-gray-400 mt-0.5">Administra los medidores del sistema</p>
+    </div>
+    <button onclick="abrirCrear()"
+            class="btn-primary inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white">
+        <svg style="width:16px;height:16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+        </svg>
+        Nuevo Medidor
+    </button>
+</div>
+
+<div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+    <!-- Barra superior -->
+    <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between gap-3">
+        <span class="text-sm font-semibold text-gray-700">Lista de Medidores</span>
+        <div class="flex items-center gap-2 bg-gray-100 rounded-lg px-3 py-1.5 w-64">
+            <svg style="width:15px;height:15px;" class="text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input type="text" id="buscador" placeholder="Serie, número, socio, código..."
+                   class="bg-transparent text-sm text-gray-600 outline-none w-full placeholder-gray-400">
+        </div>
+    </div>
+
+    <!-- Tabla -->
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="bg-gray-50 text-left">
+                    <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">#</th>
+                    <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Serie</th>
+                    <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Número</th>
+                    <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Fecha Instalación</th>
+                    <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Socio</th>
+                    <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Código Fijo</th>
+                    <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide text-center">Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="bodyMedidores" class="divide-y divide-gray-100">
+                <tr>
+                    <td colspan="7" class="px-6 py-10 text-center text-sm text-gray-400">
+                        <svg class="animate-spin mx-auto mb-2" style="width:22px;height:22px;" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                        </svg>
+                        Cargando medidores...
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Paginación -->
+    <div class="px-6 py-3 border-t border-gray-100 flex items-center justify-between gap-4">
+        <span class="text-xs text-gray-400" id="infoPagina"></span>
+        <div class="flex items-center gap-1" id="controlesPagina"></div>
+    </div>
+</div>
+
+<!-- Modal Crear -->
+<div id="modalCrear" class="fixed inset-0 z-50 hidden items-center justify-center p-4">
+    <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" onclick="cerrarCrear()"></div>
+    <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+        <div class="h-1.5 bg-gradient-to-r from-primary-500 to-primary-700"></div>
+        <div class="p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-base font-semibold text-gray-800">Nuevo Medidor</h3>
+                <button onclick="cerrarCrear()" class="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 transition">
+                    <svg style="width:18px;height:18px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-1.5">Serie</label>
+                <input type="text" id="c_serie" placeholder="Ej: AB123456"
+                       class="input-field w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm bg-gray-50 text-gray-800 placeholder-gray-400">
+            </div>
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-1.5">Número</label>
+                <input type="number" id="c_numero" placeholder="Ej: 1001"
+                       class="input-field w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm bg-gray-50 text-gray-800 placeholder-gray-400">
+            </div>
+            <div class="mb-5">
+                <label class="block text-sm font-medium text-gray-700 mb-1.5">Fecha de Instalación</label>
+                <input type="date" id="c_fecha"
+                       class="input-field w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm bg-gray-50 text-gray-800">
+            </div>
+            <div id="c_errorMsg" class="hidden mb-4 flex items-start gap-2 text-red-700 text-sm bg-red-50 border border-red-200 px-3 py-2.5 rounded-xl">
+                <svg class="w-4 h-4 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                </svg>
+                <span id="c_errorText"></span>
+            </div>
+            <button id="c_btnGuardar" onclick="registrar()"
+                    class="btn-primary w-full py-2.5 rounded-xl text-sm font-semibold text-white flex items-center justify-center gap-2">
+                <span id="c_btnText">Guardar Medidor</span>
+                <svg id="c_btnSpinner" class="hidden animate-spin" style="width:16px;height:16px;" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                </svg>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Editar -->
+<div id="modalEditar" class="fixed inset-0 z-50 hidden items-center justify-center p-4">
+    <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" onclick="cerrarEditar()"></div>
+    <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+        <div class="h-1.5 bg-gradient-to-r from-primary-500 to-primary-700"></div>
+        <div class="p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-base font-semibold text-gray-800">Editar Medidor</h3>
+                <button onclick="cerrarEditar()" class="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 transition">
+                    <svg style="width:18px;height:18px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <input type="hidden" id="e_idMedidor">
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-1.5">Serie</label>
+                <input type="text" id="e_serie" placeholder="Ej: AB123456"
+                       class="input-field w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm bg-gray-50 text-gray-800 placeholder-gray-400">
+            </div>
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-1.5">Número</label>
+                <input type="number" id="e_numero" placeholder="Ej: 1001"
+                       class="input-field w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm bg-gray-50 text-gray-800 placeholder-gray-400">
+            </div>
+            <div class="mb-5">
+                <label class="block text-sm font-medium text-gray-700 mb-1.5">Fecha de Instalación</label>
+                <input type="date" id="e_fecha"
+                       class="input-field w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm bg-gray-50 text-gray-800">
+            </div>
+            <div id="e_errorMsg" class="hidden mb-4 flex items-start gap-2 text-red-700 text-sm bg-red-50 border border-red-200 px-3 py-2.5 rounded-xl">
+                <svg class="w-4 h-4 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                </svg>
+                <span id="e_errorText"></span>
+            </div>
+            <button id="e_btnGuardar" onclick="editar()"
+                    class="btn-primary w-full py-2.5 rounded-xl text-sm font-semibold text-white flex items-center justify-center gap-2">
+                <span id="e_btnText">Guardar Cambios</span>
+                <svg id="e_btnSpinner" class="hidden animate-spin" style="width:16px;height:16px;" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                </svg>
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+    .btn-primary {
+        background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+        transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
+    }
+
+        .btn-primary:hover:not(:disabled) {
+            opacity: 0.92;
+            transform: translateY(-1px);
+            box-shadow: 0 8px 20px rgba(34,197,94,0.30);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.65;
+            cursor: not-allowed;
+        }
+
+    .input-field {
+        transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+        .input-field:focus {
+            border-color: #22c55e;
+            box-shadow: 0 0 0 3px rgba(34,197,94,0.15);
+            outline: none;
+        }
+
+    .btn-pag {
+        min-width: 32px;
+        height: 32px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 500;
+        border: 1px solid #e5e7eb;
+        background: #fff;
+        color: #374151;
+        cursor: pointer;
+        transition: all 0.15s;
+    }
+
+        .btn-pag:hover:not(:disabled) {
+            background: #f0fdf4;
+            border-color: #22c55e;
+            color: #16a34a;
+        }
+
+        .btn-pag.activo {
+            background: #22c55e;
+            border-color: #22c55e;
+            color: #fff;
+        }
+
+        .btn-pag:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+</style>
+
+@section scripts {
+    <script>
+    var paginaActual  = 1;
+    var tamanoPagina  = 10;
+    var totalPaginas  = 1;
+    var busquedaActual = '';
+    var timerBusqueda;
+
+    // ── Cargar tabla ──
+    function cargarMedidores(pagina) {
+        pagina = pagina || 1;
+        paginaActual = pagina;
+
+        $('#bodyMedidores').html(
+            '<tr><td colspan="7" class="px-6 py-10 text-center text-sm text-gray-400">' +
+            '<svg class="animate-spin mx-auto mb-2" style="width:20px;height:20px;" fill="none" viewBox="0 0 24 24">' +
+            '<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>' +
+            '<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/></svg>Cargando...</td></tr>'
+        );
+
+        $.ajax({
+            url: '@Url.Action("ListarMedidores", "Medidor")',
+            type: 'GET',
+            data: { busqueda: busquedaActual, pagina: pagina, tamanoPagina: tamanoPagina },
+            success: function (res) {
+                totalPaginas = res.totalPaginas || 1;
+                var filas = '';
+
+                if (!res.data || res.data.length === 0) {
+                    filas = '<tr><td colspan="7" class="px-6 py-10 text-center text-sm text-gray-400">No se encontraron medidores.</td></tr>';
+                    $('#infoPagina').text('');
+                } else {
+                    var inicio = (paginaActual - 1) * tamanoPagina + 1;
+                    $.each(res.data, function (i, m) {
+                        var fecha  = m.fecha_instalacion
+                            ? new Date(parseInt(m.fecha_instalacion.replace('/Date(', '').replace(')/', '')))
+                                .toLocaleDateString('es-BO', { day:'2-digit', month:'2-digit', year:'numeric' })
+                            : '—';
+                        var socio  = m.nombre_socio  || '<span class="text-gray-300">Sin asignar</span>';
+                        var codigo = m.codigo_fijo != null ? m.codigo_fijo : '<span class="text-gray-300">—</span>';
+                        filas += '<tr class="hover:bg-gray-50 transition">' +
+                            '<td class="px-6 py-3.5 text-gray-400 text-xs">'        + (inicio + i) + '</td>' +
+                            '<td class="px-6 py-3.5 font-medium text-gray-800">'    + m.serie      + '</td>' +
+                            '<td class="px-6 py-3.5 text-gray-600">'                + m.numero     + '</td>' +
+                            '<td class="px-6 py-3.5 text-gray-500">'                + fecha        + '</td>' +
+                            '<td class="px-6 py-3.5 text-gray-600">'                + socio        + '</td>' +
+                            '<td class="px-6 py-3.5 text-gray-600">'                + codigo       + '</td>' +
+                            '<td class="px-6 py-3.5 text-center">' +
+                            '  <button onclick="abrirEditar(' + m.id_medidor + ')" title="Editar"' +
+                            '          class="p-1.5 rounded-lg text-gray-400 hover:bg-green-50 hover:text-green-600 transition">' +
+                            '    <svg style="width:15px;height:15px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">' +
+                            '      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>' +
+                            '    </svg>' +
+                            '  </button>' +
+                            '</td></tr>';
+                    });
+                    $('#infoPagina').text('Mostrando ' + inicio + '–' + (inicio + res.data.length - 1) + ' de ' + res.totalRegistros + ' medidores');
+                }
+
+                $('#bodyMedidores').html(filas);
+                renderPaginacion();
+            },
+            error: function () {
+                $('#bodyMedidores').html('<tr><td colspan="7" class="px-6 py-10 text-center text-sm text-red-500">Error al cargar los datos.</td></tr>');
+            }
+        });
+    }
+
+    // ── Paginación ──
+    function renderPaginacion() {
+        var html = '';
+        html += '<button class="btn-pag" onclick="cargarMedidores(' + (paginaActual - 1) + ')" ' +
+                (paginaActual <= 1 ? 'disabled' : '') + '>‹</button>';
+
+        var desde = Math.max(1, paginaActual - 2);
+        var hasta = Math.min(totalPaginas, paginaActual + 2);
+
+        if (desde > 1) html += '<button class="btn-pag" onclick="cargarMedidores(1)">1</button>' +
+                               (desde > 2 ? '<span class="px-1 text-gray-400 text-xs">…</span>' : '');
+
+        for (var p = desde; p <= hasta; p++) {
+            html += '<button class="btn-pag ' + (p === paginaActual ? 'activo' : '') +
+                    '" onclick="cargarMedidores(' + p + ')">' + p + '</button>';
+        }
+
+        if (hasta < totalPaginas)
+            html += (hasta < totalPaginas - 1 ? '<span class="px-1 text-gray-400 text-xs">…</span>' : '') +
+                    '<button class="btn-pag" onclick="cargarMedidores(' + totalPaginas + ')">' + totalPaginas + '</button>';
+
+        html += '<button class="btn-pag" onclick="cargarMedidores(' + (paginaActual + 1) + ')" ' +
+                (paginaActual >= totalPaginas ? 'disabled' : '') + '>›</button>';
+
+        $('#controlesPagina').html(html);
+    }
+
+    // ── Buscador con debounce ──
+    $('#buscador').on('input', function () {
+        clearTimeout(timerBusqueda);
+        var val = $(this).val();
+        timerBusqueda = setTimeout(function () {
+            busquedaActual = val;
+            cargarMedidores(1);
+        }, 350);
+    });
+
+    // ── Crear ──
+    function abrirCrear() {
+        $('#c_serie').val(''); $('#c_numero').val(''); $('#c_fecha').val('');
+        ocultarError('c'); setLoading('c', false);
+        $('#modalCrear').removeClass('hidden').addClass('flex');
+    }
+    function cerrarCrear() {
+        $('#modalCrear').removeClass('flex').addClass('hidden');
+        setLoading('c', false);
+    }
+
+    function registrar() {
+        var serie  = $.trim($('#c_serie').val());
+        var numero = $('#c_numero').val();
+        var fecha  = $('#c_fecha').val();
+
+        if (!serie)                          { mostrarError('c', 'La serie es obligatoria.'); return; }
+        if (!numero || parseInt(numero) <= 0) { mostrarError('c', 'El número debe ser mayor a cero.'); return; }
+
+        ocultarError('c'); setLoading('c', true);
+
+        $.ajax({
+            url: '@Url.Action("RegistrarMedidor", "Medidor")',
+            type: 'POST',
+            data: { serie: serie, numero: numero, fecha_instalacion: fecha || null },
+            success: function (res) {
+                if (res.resultado > 0) { cerrarCrear(); cargarMedidores(paginaActual); }
+                else { mostrarError('c', res.mensaje || 'No se pudo registrar.'); setLoading('c', false); }
+            },
+            error: function () { mostrarError('c', 'Error de conexión.'); setLoading('c', false); }
+        });
+    }
+
+    // ── Editar ──
+    function abrirEditar(id) {
+        ocultarError('e'); setLoading('e', false);
+        $.ajax({
+            url: '@Url.Action("ListarMedidores", "Medidor")',
+            type: 'GET',
+            data: { busqueda: '', pagina: 1, tamanoPagina: 999999 },
+            success: function (res) {
+                var m = $.grep(res.data, function (x) { return x.id_medidor === id; })[0];
+                if (m) {
+                    $('#e_idMedidor').val(m.id_medidor);
+                    $('#e_serie').val(m.serie);
+                    $('#e_numero').val(m.numero);
+                    if (m.fecha_instalacion) {
+                        var d = new Date(parseInt(m.fecha_instalacion.replace('/Date(', '').replace(')/', '')));
+                        $('#e_fecha').val(d.toISOString().substring(0, 10));
+                    } else {
+                        $('#e_fecha').val('');
+                    }
+                }
+                $('#modalEditar').removeClass('hidden').addClass('flex');
+            }
+        });
+    }
+    function cerrarEditar() {
+        $('#modalEditar').removeClass('flex').addClass('hidden');
+        setLoading('e', false);
+    }
+
+    function editar() {
+        var id     = $('#e_idMedidor').val();
+        var serie  = $.trim($('#e_serie').val());
+        var numero = $('#e_numero').val();
+        var fecha  = $('#e_fecha').val();
+
+        if (!serie)                          { mostrarError('e', 'La serie es obligatoria.'); return; }
+        if (!numero || parseInt(numero) <= 0) { mostrarError('e', 'El número debe ser mayor a cero.'); return; }
+
+        ocultarError('e'); setLoading('e', true);
+
+        $.ajax({
+            url: '@Url.Action("EditarMedidor", "Medidor")',
+            type: 'POST',
+            data: { id_medidor: id, serie: serie, numero: numero, fecha_instalacion: fecha || null },
+            success: function (res) {
+                if (res.resultado === true) { cerrarEditar(); cargarMedidores(paginaActual); }
+                else { mostrarError('e', res.mensaje || 'No se pudo actualizar.'); setLoading('e', false); }
+            },
+            error: function () { mostrarError('e', 'Error de conexión.'); setLoading('e', false); }
+        });
+    }
+
+    // ── Helpers ──
+    function mostrarError(p, msg) { $('#' + p + '_errorText').text(msg); $('#' + p + '_errorMsg').removeClass('hidden'); }
+    function ocultarError(p)      { $('#' + p + '_errorMsg').addClass('hidden'); }
+    function setLoading(p, v) {
+        var textos = { c: ['Guardar Medidor', 'Guardando...'], e: ['Guardar Cambios', 'Guardando...'] };
+        $('#' + p + '_btnGuardar').prop('disabled', v);
+        $('#' + p + '_btnText').text(v ? textos[p][1] : textos[p][0]);
+        $('#' + p + '_btnSpinner').toggleClass('hidden', !v);
+    }
+
+    $(function () { cargarMedidores(1); });
+    </script>
+}

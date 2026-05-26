@@ -42,8 +42,15 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CM_Bitacora.cs" />
+    <Compile Include="CM_Cliente.cs" />
+    <Compile Include="CM_Medidor.cs" />
     <Compile Include="CM_Permiso.cs" />
     <Compile Include="CM_Rol.cs" />
+    <Compile Include="CM_RolSocio.cs" />
+    <Compile Include="CM_Ruta.cs" />
+    <Compile Include="CM_Socio.cs" />
+    <Compile Include="CM_Tarifa.cs" />
+    <Compile Include="CM_TipoCargo.cs" />
     <Compile Include="CM_Usuario.cs" />
     <Compile Include="CM_Usuario_Activo.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

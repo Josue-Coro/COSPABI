@@ -1,0 +1,209 @@
+﻿@{
+    ViewBag.Title = "CrearUsuario";
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = { theme: { extend: { colors: { primary: { 50:'#f0fdf4', 100:'#dcfce7', 500:'#22c55e', 600:'#16a34a', 700:'#15803d' } }, fontFamily: { sans: ['Plus Jakarta Sans','sans-serif'] } } } }
+    </script>
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans',sans-serif;
+            background: transparent;
+        }
+
+        .input-field {
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+            .input-field:focus {
+                border-color: #22c55e;
+                box-shadow: 0 0 0 3px rgba(34,197,94,0.15);
+                outline: none;
+            }
+
+        .btn-primary {
+            background: linear-gradient(135deg,#22c55e 0%,#16a34a 100%);
+            transition: opacity 0.2s,transform 0.15s;
+        }
+
+            .btn-primary:hover:not(:disabled) {
+                opacity: 0.92;
+                transform: translateY(-1px);
+            }
+
+            .btn-primary:disabled {
+                opacity: 0.65;
+                cursor: not-allowed;
+            }
+    </style>
+</head>
+<body class="p-1">
+
+    <!-- Nombre y Apellido en dos columnas -->
+    <div class="grid grid-cols-2 gap-3 mb-3">
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1.5">Nombre</label>
+            <input type="text" id="nombre" placeholder="Ej: Juan"
+                   class="input-field w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm bg-gray-50 text-gray-800 placeholder-gray-400">
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1.5">Apellido</label>
+            <input type="text" id="apellido" placeholder="Ej: Pérez"
+                   class="input-field w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm bg-gray-50 text-gray-800 placeholder-gray-400">
+        </div>
+    </div>
+
+    <div class="mb-3">
+        <label class="block text-sm font-medium text-gray-700 mb-1.5">Nombre de usuario</label>
+        <div class="relative">
+            <span class="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                <svg style="width:15px;height:15px;" class="text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+            </span>
+            <input type="text" id="usuario" placeholder="Ej: jperez"
+                   class="input-field w-full pl-9 pr-4 py-2.5 border border-gray-300 rounded-xl text-sm bg-gray-50 text-gray-800 placeholder-gray-400">
+        </div>
+    </div>
+
+    <div class="mb-3">
+        <label class="block text-sm font-medium text-gray-700 mb-1.5">Contraseña</label>
+        <div class="relative">
+            <span class="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                <svg style="width:15px;height:15px;" class="text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+            </span>
+            <input type="password" id="contrasena" placeholder="Mínimo 6 caracteres"
+                   class="input-field w-full pl-9 pr-10 py-2.5 border border-gray-300 rounded-xl text-sm bg-gray-50 text-gray-800 placeholder-gray-400">
+            <button type="button" id="togglePass"
+                    class="absolute inset-y-0 right-3 flex items-center text-gray-400 hover:text-gray-600 transition"
+                    aria-label="Mostrar u ocultar contraseña">
+                <svg id="iconVer" style="width:16px;height:16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+                <svg id="iconOcultar" style="width:16px;height:16px;display:none;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- Rol y Estado en dos columnas -->
+    <div class="grid grid-cols-2 gap-3 mb-4">
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1.5">Rol</label>
+            <select id="rol" class="input-field w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm bg-gray-50 text-gray-800">
+                <option value="">— Cargando roles... —</option>
+            </select>
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1.5">Estado</label>
+            <select id="estado" class="input-field w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm bg-gray-50 text-gray-800">
+                <option value="">— Seleccionar —</option>
+                <option value="true">Activo</option>
+                <option value="false">Inactivo</option>
+            </select>
+        </div>
+    </div>
+
+    <div id="errorMsg" class="hidden mb-4 flex items-start gap-2 text-red-700 text-sm bg-red-50 border border-red-200 px-3 py-2.5 rounded-xl">
+        <svg class="w-4 h-4 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+        </svg>
+        <span id="errorText"></span>
+    </div>
+
+    <button id="btnGuardar" onclick="registrar()"
+            class="btn-primary w-full py-2.5 rounded-xl text-sm font-semibold text-white flex items-center justify-center gap-2">
+        <span id="btnText">Guardar Usuario</span>
+        <svg id="btnSpinner" class="hidden animate-spin" style="width:16px;height:16px;" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+        </svg>
+    </button>
+
+    <script>
+        // Cargar roles activos
+        $(function () {
+            $.ajax({
+                url: '@Url.Action("ListarRoles", "Usuario")',
+                type: 'GET',
+                success: function (res) {
+                    var opts = '<option value="">— Seleccionar rol —</option>';
+                    $.each(res.data, function (i, r) {
+                        opts += '<option value="' + r.id_rol + '">' + r.nombre + '</option>';
+                    });
+                    $('#rol').html(opts);
+                }
+            });
+
+            // Toggle contraseña
+            $('#togglePass').on('click', function () {
+                var $input = $('#contrasena');
+                var tipo = $input.attr('type') === 'password' ? 'text' : 'password';
+                $input.attr('type', tipo);
+                $('#iconVer').toggle(tipo === 'password');
+                $('#iconOcultar').toggle(tipo === 'text');
+            });
+        });
+
+        function registrar() {
+            var nombre     = $.trim($('#nombre').val());
+            var apellido   = $.trim($('#apellido').val());
+            var usuario    = $.trim($('#usuario').val());
+            var contrasena = $('#contrasena').val();
+            var rol        = $('#rol').val();
+            var estado     = $('#estado').val();
+
+            if (!nombre)           { mostrarError('El nombre es obligatorio.'); return; }
+            if (!apellido)         { mostrarError('El apellido es obligatorio.'); return; }
+            if (!usuario)          { mostrarError('El nombre de usuario es obligatorio.'); return; }
+            if (!contrasena)       { mostrarError('La contraseña es obligatoria.'); return; }
+            if (contrasena.length < 6) { mostrarError('La contraseña debe tener al menos 6 caracteres.'); return; }
+            if (!rol)              { mostrarError('Debes seleccionar un rol.'); return; }
+            if (estado === '')     { mostrarError('Debes seleccionar el estado.'); return; }
+
+            ocultarError();
+            setLoading(true);
+
+            $.ajax({
+                url: '@Url.Action("RegistrarUsuario", "Usuario")',
+                type: 'POST',
+                data: {
+                    nombre:     nombre,
+                    apellido:   apellido,
+                    usuario:    usuario,
+                    contraseña: contrasena,
+                    estado:     estado,
+                    rol_id_dol: rol
+                },
+                success: function (res) {
+                    if (res.resultado > 0) {
+                        window.parent.onAccionCompletada();
+                    } else {
+                        mostrarError(res.mensaje || 'No se pudo registrar el usuario.');
+                        setLoading(false);
+                    }
+                },
+                error: function () {
+                    mostrarError('Error de conexión. Intenta nuevamente.');
+                    setLoading(false);
+                }
+            });
+        }
+
+        function mostrarError(msg) { $('#errorText').text(msg); $('#errorMsg').removeClass('hidden'); }
+        function ocultarError()    { $('#errorMsg').addClass('hidden'); }
+        function setLoading(v)     { $('#btnGuardar').prop('disabled', v); $('#btnText').text(v ? 'Guardando...' : 'Guardar Usuario'); $('#btnSpinner').toggleClass('hidden', !v); }
+    </script>
+</body>
+</html>
