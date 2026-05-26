@@ -1,4 +1,4 @@
-﻿@{
+@{
     Layout = null;
 }
 
@@ -7,7 +7,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Iniciar Sesión — COSPABI</title>
+    <title>Iniciar Sesi�n � COSPABI</title>
     <link href="~/Content/app.css" rel="stylesheet" />
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -17,7 +17,7 @@
             font-family: 'Plus Jakarta Sans', sans-serif;
         }
 
-        /* Animación de entrada para la tarjeta */
+        /* Animaci�n de entrada para la tarjeta */
         .card-enter {
             animation: cardEnter 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
         }
@@ -45,7 +45,7 @@
                 outline: none;
             }
 
-        /* Botón con estado de carga */
+        /* Bot�n con estado de carga */
         .btn-primary {
             background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
             transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
@@ -66,7 +66,7 @@
                 cursor: not-allowed;
             }
 
-        /* Patrón decorativo del fondo */
+        /* Patr�n decorativo del fondo */
         .bg-pattern {
             background-color: #1c2434;
             background-image: radial-gradient(circle at 20% 20%, rgba(34,197,94,0.08) 0%, transparent 50%), radial-gradient(circle at 80% 80%, rgba(34,197,94,0.05) 0%, transparent 50%);
@@ -80,13 +80,13 @@
         <!-- Logo / Encabezado -->
         <div class="text-center mb-8">
             <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-primary-500 mb-4 shadow-lg">
-                <!-- Ícono de gota de agua (agua potable) -->
+                <!-- �cono de gota de agua (agua potable) -->
                 <svg class="w-7 h-7 text-white" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M12 2C8.5 7 5 10.5 5 14a7 7 0 0014 0c0-3.5-3.5-7-7-12z" />
                 </svg>
             </div>
             <h1 class="text-2xl font-bold text-white tracking-tight">COSPABI</h1>
-            <p class="text-sm text-gray-400 mt-1">Sistema de Gestión Administrativa</p>
+            <p class="text-sm text-gray-400 mt-1">Sistema de Gesti�n Administrativa</p>
         </div>
 
         <!-- Tarjeta principal -->
@@ -124,10 +124,10 @@
                         </div>
                     </div>
 
-                    <!-- Campo: Contraseña -->
+                    <!-- Campo: Contrase�a -->
                     <div class="mb-6">
                         <label for="contrasena" class="block text-sm font-medium text-gray-700 mb-1.5">
-                            Contraseña
+                            Contrase�a
                         </label>
                         <div class="relative">
                             <span class="absolute inset-y-0 left-3 flex items-center pointer-events-none">
@@ -140,14 +140,14 @@
                                    id="contrasena"
                                    name="contrasena"
                                    autocomplete="current-password"
-                                   placeholder="••••••••"
+                                   placeholder="��������"
                                    required
                                    class="input-field w-full pl-10 pr-10 py-2.5 border border-gray-300 rounded-xl text-sm text-gray-800 placeholder-gray-400 bg-gray-50">
-                            <!-- Botón mostrar/ocultar contraseña -->
+                            <!-- Bot�n mostrar/ocultar contrase�a -->
                             <button type="button"
                                     id="togglePassword"
                                     class="absolute inset-y-0 right-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
-                                    aria-label="Mostrar u ocultar contraseña">
+                                    aria-label="Mostrar u ocultar contrase�a">
                                 <svg id="iconMostrar" style="width:18px;height:18px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                           d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -175,11 +175,11 @@
                         <span id="errorText"></span>
                     </div>
 
-                    <!-- Botón submit -->
+                    <!-- Bot�n submit -->
                     <button type="submit"
                             id="btnSubmit"
                             class="btn-primary w-full py-2.5 rounded-xl text-sm font-semibold text-white flex items-center justify-center gap-2">
-                        <span id="btnText">Iniciar Sesión</span>
+                        <span id="btnText">Iniciar Sesi�n</span>
                         <!-- Spinner (oculto por defecto) -->
                         <svg id="btnSpinner"
                              class="hidden w-4 h-4 animate-spin"
@@ -205,7 +205,7 @@
     <script>
         $(function () {
 
-            // ── Mostrar / ocultar contraseña ──────────────────────────────────
+            // -- Mostrar / ocultar contrase�a ----------------------------------
             $("#togglePassword").on("click", function () {
                 var $input = $("#contrasena");
                 var tipo = $input.attr("type") === "password" ? "text" : "password";
@@ -220,7 +220,7 @@
                 }
             });
 
-            // ── Helpers UI ────────────────────────────────────────────────────
+            // -- Helpers UI ----------------------------------------------------
             function mostrarError(msg) {
                 $("#errorText").text(msg);
                 $("#errorMsg").removeClass("hidden");
@@ -233,11 +233,11 @@
 
             function setLoading(loading) {
                 $("#btnSubmit").prop("disabled", loading);
-                $("#btnText").text(loading ? "Validando..." : "Iniciar Sesión");
+                $("#btnText").text(loading ? "Validando..." : "Iniciar Sesi�n");
                 $("#btnSpinner").toggleClass("hidden", !loading);
             }
 
-            // ── Submit del formulario ─────────────────────────────────────────
+            // -- Submit del formulario -----------------------------------------
             $("#loginForm").on("submit", function (e) {
                 e.preventDefault();
                 ocultarError();
@@ -245,7 +245,7 @@
                 var usuario   = $.trim($("#usuario").val());
                 var contrasena = $("#contrasena").val();
 
-                // Validación mínima en cliente
+                // Validaci�n m�nima en cliente
                 if (!usuario || !contrasena) {
                     mostrarError("Por favor completa todos los campos.");
                     return;
@@ -267,7 +267,7 @@
                         }
                     },
                     error: function () {
-                        mostrarError("Error de conexión. Intenta nuevamente.");
+                        mostrarError("Error de conexi�n. Intenta nuevamente.");
                         setLoading(false);
                     }
                 });
@@ -278,3 +278,5 @@
 
 </body>
 </html>
+
+

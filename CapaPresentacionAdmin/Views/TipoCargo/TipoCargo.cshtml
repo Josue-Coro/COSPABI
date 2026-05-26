@@ -1,11 +1,11 @@
-﻿@{
+@{
     ViewBag.Title = "TipoCargo";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
 <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
     <div>
-        <h1 class="text-xl font-semibold text-gray-800">Gestión de Tipos de Cargo</h1>
+        <h1 class="text-xl font-semibold text-gray-800">Gesti�n de Tipos de Cargo</h1>
         <p class="text-sm text-gray-400 mt-0.5">Administra los tipos de cargo del sistema</p>
     </div>
     <button onclick="abrirCrear()"
@@ -85,7 +85,7 @@
             <div class="mb-5">
                 <label class="block text-sm font-medium text-gray-700 mb-1.5">Estado</label>
                 <select id="c_estado" class="input-field w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm bg-gray-50 text-gray-800">
-                    <option value="">— Seleccionar —</option>
+                    <option value="">� Seleccionar �</option>
                     <option value="true">Activo</option>
                     <option value="false">Inactivo</option>
                 </select>
@@ -181,10 +181,10 @@
                     </svg>
                 </div>
                 <p class="text-sm text-gray-600">
-                    ¿Estás seguro de que deseas desactivar el tipo de cargo
+                    �Est�s seguro de que deseas desactivar el tipo de cargo
                     <span id="d_nombre" class="font-semibold text-gray-800"></span>?
                 </p>
-                <p class="text-xs text-gray-400 mt-1">Quedará inactivo y no podrá asignarse.</p>
+                <p class="text-xs text-gray-400 mt-1">Quedar� inactivo y no podr� asignarse.</p>
             </div>
             <div id="d_errorMsg" class="hidden mb-4 flex items-start gap-2 text-red-700 text-sm bg-red-50 border border-red-200 px-3 py-2.5 rounded-xl">
                 <svg class="w-4 h-4 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -199,7 +199,7 @@
                 </button>
                 <button id="d_btnEliminar" onclick="eliminar()"
                         class="btn-danger flex-1 py-2.5 rounded-xl text-sm font-semibold text-white flex items-center justify-center gap-2">
-                    <span id="d_btnText">Sí, desactivar</span>
+                    <span id="d_btnText">S�, desactivar</span>
                     <svg id="d_btnSpinner" class="hidden animate-spin" style="width:16px;height:16px;" fill="none" viewBox="0 0 24 24">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
@@ -255,7 +255,7 @@
 
 @section scripts {
     <script>
-    // ── Cargar tabla ──
+    // -- Cargar tabla --
     function cargarTipoCargo() {
         $.ajax({
             url: '@Url.Action("ListarTipoCargo", "TipoCargo")',
@@ -310,7 +310,7 @@
         });
     });
 
-    // ── Crear ──
+    // -- Crear --
     function abrirCrear() {
         $('#c_nombre').val(''); $('#c_monto').val(''); $('#c_estado').val('');
         ocultarError('c'); setLoading('c', false);
@@ -340,11 +340,11 @@
                 if (res.resultado > 0) { cerrarCrear(); cargarTipoCargo(); }
                 else { mostrarError('c', res.mensaje || 'No se pudo registrar.'); setLoading('c', false); }
             },
-            error: function () { mostrarError('c', 'Error de conexión.'); setLoading('c', false); }
+            error: function () { mostrarError('c', 'Error de conexi�n.'); setLoading('c', false); }
         });
     }
 
-    // ── Editar ──
+    // -- Editar --
     function abrirEditar(id) {
         ocultarError('e'); setLoading('e', false);
         $.ajax({
@@ -386,11 +386,11 @@
                 if (res.resultado === true) { cerrarEditar(); cargarTipoCargo(); }
                 else { mostrarError('e', res.mensaje || 'No se pudo actualizar.'); setLoading('e', false); }
             },
-            error: function () { mostrarError('e', 'Error de conexión.'); setLoading('e', false); }
+            error: function () { mostrarError('e', 'Error de conexi�n.'); setLoading('e', false); }
         });
     }
 
-    // ── Eliminar ──
+    // -- Eliminar --
     function abrirEliminar(id, nombre) {
         $('#d_idTipo').val(id);
         $('#d_nombre').text('"' + nombre + '"');
@@ -414,15 +414,15 @@
                 if (res.resultado === true) { cerrarEliminar(); cargarTipoCargo(); }
                 else { mostrarError('d', res.mensaje || 'No se pudo desactivar.'); setLoading('d', false); }
             },
-            error: function () { mostrarError('d', 'Error de conexión.'); setLoading('d', false); }
+            error: function () { mostrarError('d', 'Error de conexi�n.'); setLoading('d', false); }
         });
     }
 
-    // ── Helpers ──
+    // -- Helpers --
     function mostrarError(p, msg) { $('#' + p + '_errorText').text(msg); $('#' + p + '_errorMsg').removeClass('hidden'); }
     function ocultarError(p)      { $('#' + p + '_errorMsg').addClass('hidden'); }
     function setLoading(p, v) {
-        var textos = { c: ['Guardar', 'Guardando...'], e: ['Guardar Cambios', 'Guardando...'], d: ['Sí, desactivar', 'Desactivando...'] };
+        var textos = { c: ['Guardar', 'Guardando...'], e: ['Guardar Cambios', 'Guardando...'], d: ['S�, desactivar', 'Desactivando...'] };
         var btn    = p === 'd' ? 'd_btnEliminar' : p + '_btnGuardar';
         $('#' + btn).prop('disabled', v);
         $('#' + p + '_btnText').text(v ? textos[p][1] : textos[p][0]);
@@ -432,3 +432,4 @@
     $(function () { cargarTipoCargo(); });
     </script>
 }
+

@@ -1,4 +1,4 @@
-ï»¿
+
 @{
     ViewBag.Title = "Tarifa";
     Layout = "~/Views/Shared/_Layout.cshtml";
@@ -7,7 +7,7 @@
 
 <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
     <div>
-        <h1 class="text-xl font-semibold text-gray-800">GestiÃ³n de Tarifas</h1>
+        <h1 class="text-xl font-semibold text-gray-800">Gestión de Tarifas</h1>
         <p class="text-sm text-gray-400 mt-0.5">Administra las tarifas del sistema</p>
     </div>
 </div>
@@ -47,9 +47,9 @@ GO
             <thead>
                 <tr class="bg-gray-50 text-left">
                     <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">#</th>
-                    <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Consumo mÃ­nimo (mÂ³)</th>
-                    <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Monto mÃ­nimo</th>
-                    <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Precio por mÂ³</th>
+                    <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Consumo mínimo (m³)</th>
+                    <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Monto mínimo</th>
+                    <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Precio por m³</th>
                     <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Rol</th>
                     <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide text-center">Acciones</th>
                 </tr>
@@ -122,11 +122,11 @@ function cargarTarifas() {
                 $.each(res.data, function (i, u) {
                     filas += '<tr class="hover:bg-gray-50 transition fila-usuario">' +
                         '<td class="px-6 py-3.5 text-gray-400 text-xs">' + (i + 1) + '</td>' +
-                        '<td class="px-6 py-3.5 text-gray-700">' + (u.consumo_minimo_m3 ?? 'â€”') + '</td>' +
+                        '<td class="px-6 py-3.5 text-gray-700">' + (u.consumo_minimo_m3 ?? '—') + '</td>' +
                         '<td class="px-6 py-3.5 text-gray-700">Bs. ' + parseFloat(u.monto_minimo).toFixed(2) + '</td>' +
                         '<td class="px-6 py-3.5 text-gray-700">Bs. ' + u.precio_m3 + '</td>' +
                         '<td class="px-6 py-3.5">' +
-                        '  <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-600">' + (u.rol_socio ? u.rol_socio.rol_socio : 'â€”') + '</span>' +
+                        '  <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-600">' + (u.rol_socio ? u.rol_socio.rol_socio : '—') + '</span>' +
                         '</td>' +
                         '<td class="px-6 py-3.5 text-center">' +
                         '  <div class="inline-flex items-center gap-1">' +
@@ -169,3 +169,4 @@ function onAccionCompletada() { cerrarEditar(); cargarTarifas(); }
 $(function () { cargarTarifas(); });
     </script>
 }
+

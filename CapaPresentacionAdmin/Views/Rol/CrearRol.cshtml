@@ -1,4 +1,4 @@
-ï»¿@{
+@{
     ViewBag.Title = "CrearRol";
     Layout = null; 
 }
@@ -6,12 +6,9 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="~/Content/app.css" rel="stylesheet" />
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script>
-        tailwind.config = { theme: { extend: { colors: { primary: { 500:'#22c55e', 600:'#16a34a', 700:'#15803d' } }, fontFamily: { sans: ['Plus Jakarta Sans','sans-serif'] } } } }
-    </script>
     <style>
         body {
             font-family: 'Plus Jakarta Sans',sans-serif;
@@ -53,7 +50,7 @@
     </div>
 
     <div class="mb-4">
-        <label class="block text-sm font-medium text-gray-700 mb-1.5">DescripciÃ³n</label>
+        <label class="block text-sm font-medium text-gray-700 mb-1.5">Descripción</label>
         <textarea id="descripcion" rows="3" placeholder="Describe las responsabilidades de este rol..."
                   class="input-field w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm bg-gray-50 text-gray-800 placeholder-gray-400 resize-none"></textarea>
     </div>
@@ -61,7 +58,7 @@
     <div class="mb-5">
         <label class="block text-sm font-medium text-gray-700 mb-1.5">Estado</label>
         <select id="estado" class="input-field w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm bg-gray-50 text-gray-800">
-            <option value="">â€” Seleccionar â€”</option>
+            <option value="">— Seleccionar —</option>
             <option value="true">Activo</option>
             <option value="false">Inactivo</option>
         </select>
@@ -90,7 +87,7 @@
             var estado     = $('#estado').val();
 
             if (!nombre)      { mostrarError('El nombre del rol es obligatorio.'); return; }
-            if (!descripcion) { mostrarError('La descripciÃ³n es obligatoria.'); return; }
+            if (!descripcion) { mostrarError('La descripción es obligatoria.'); return; }
             if (estado === '') { mostrarError('Selecciona el estado del rol.'); return; }
 
             ocultarError();
@@ -109,7 +106,7 @@
                     }
                 },
                 error: function () {
-                    mostrarError('Error de conexiÃ³n. Intenta nuevamente.');
+                    mostrarError('Error de conexión. Intenta nuevamente.');
                     setLoading(false);
                 }
             });
@@ -121,3 +118,4 @@
     </script>
 </body>
 </html>
+

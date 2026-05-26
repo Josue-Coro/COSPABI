@@ -1,4 +1,4 @@
-ï»¿@using CapaModelo
+@using CapaModelo
 @using System.Linq
 @functions {
     bool TienePermiso(string nombreAccion)
@@ -11,7 +11,7 @@
 @{
     CM_Usuario_Activo oUsuario = (CM_Usuario_Activo)Session["Usuario"];
 
-    // Agrupadores de secciÃ³n
+    // Agrupadores de sección
     bool tieneGestion =
         TienePermiso("Gestionar Cliente") ||
         TienePermiso("Gestionar Avisos") ||
@@ -50,39 +50,12 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@ViewBag.Title â€” COSPABI R.L.</title>
+    <title>@ViewBag.Title — COSPABI R.L.</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: {
-                            50: '#f0fdf4',
-                            100: '#dcfce7',
-                            500: '#22c55e',
-                            600: '#16a34a',
-                            700: '#15803d',
-                        },
-                        sidebar: {
-                            DEFAULT: '#1c2434',
-                            light: '#242f42',
-                            hover: '#2d3a4e',
-                            active: '#334155',
-                            border: '#2d3a4e',
-                        }
-                    },
-                    fontFamily: {
-                        sans: ['Plus Jakarta Sans', 'sans-serif'],
-                    }
-                }
-            }
-        }
-    </script>
+    <link href="~/Content/app.css" rel="stylesheet" />
 
     @Styles.Render("~/Content/css")
     @Scripts.Render("~/bundles/modernizr")
@@ -245,7 +218,7 @@
                 </div>
             </div>
 
-            <!-- NavegaciÃ³n -->
+            <!-- Navegación -->
             <nav class="flex-1 overflow-y-auto py-4 px-3 space-y-0.5">
 
                 <p class="nav-section">Principal</p>
@@ -255,7 +228,7 @@
 
                 @if (tieneGestion)
                 {
-                    <p class="nav-section">GestiÃ³n</p>
+                    <p class="nav-section">Gestión</p>
 
 
                     if (TienePermiso("Gestionar Avisos"))
@@ -312,7 +285,7 @@
                     }
                     if (TienePermiso("Gestionar Credito"))
                     {
-                        @Html.ActionLink("CrÃ©ditos", "Credito", "Credito",
+                        @Html.ActionLink("Créditos", "Credito", "Credito",
                             new { area = "" },
                             new { @class = "nav-link" })
                     }
@@ -326,7 +299,7 @@
                 }
                 @if (tieneConfiguracion)
                 {
-                    <p class="nav-section">ConfiguraciÃ³n</p>
+                    <p class="nav-section">Configuración</p>
 
 
                     if (TienePermiso("Gestionar Tarifa"))
@@ -352,7 +325,7 @@
 
                 @if (tieneAdmin)
                 {
-                    <p class="nav-section">AdministraciÃ³n</p>
+                    <p class="nav-section">Administración</p>
                     if (TienePermiso("Gestionar Usuarios"))
                     {
                         @Html.ActionLink("Usuarios", "Usuario", "Usuario",
@@ -391,14 +364,14 @@
                     </div>
                     <div class="overflow-hidden">
                         <p class="text-white text-xs font-semibold truncate">@(Session["NombreUsuario"] ?? "Administrador")</p>
-                        <p class="text-slate-500 text-[11px] truncate">@(Session["RolUsuario"] ?? "â€”")</p>
+                        <p class="text-slate-500 text-[11px] truncate">@(Session["RolUsuario"] ?? "—")</p>
                     </div>
                 </div>
             </div>
 
         </aside>
 
-        <!-- ÃREA DE CONTENIDO -->
+        <!-- ÁREA DE CONTENIDO -->
         <div class="flex-1 flex flex-col overflow-hidden min-w-0">
 
             <div class="top-accent h-[3px] flex-shrink-0"></div>
@@ -409,7 +382,7 @@
                 <div class="flex items-center gap-4">
                     <button onclick="toggleSidebar()"
                             class="md:hidden p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition"
-                            aria-label="Abrir menÃº">
+                            aria-label="Abrir menú">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
                         </svg>
@@ -449,7 +422,7 @@
                             </div>
                             <div class="hidden sm:block text-left leading-none">
                                 <p class="text-sm font-semibold text-gray-800">@(Session["NombreUsuario"] ?? "Administrador")</p>
-                                <p class="text-[11px] text-gray-400 mt-0.5">@(Session["RolUsuario"] ?? "â€”")</p>
+                                <p class="text-[11px] text-gray-400 mt-0.5">@(Session["RolUsuario"] ?? "—")</p>
                             </div>
                             <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
@@ -470,7 +443,7 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                           d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                                 </svg>
-                                Cerrar sesiÃ³n
+                                Cerrar sesión
                             </a>
                         </div>
                     </div>
@@ -527,3 +500,4 @@
 
 </body>
 </html>
+

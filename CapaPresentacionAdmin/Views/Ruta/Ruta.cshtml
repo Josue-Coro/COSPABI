@@ -1,4 +1,4 @@
-﻿
+
 @{
     ViewBag.Title = "Ruta";
     Layout = "~/Views/Shared/_Layout.cshtml";
@@ -7,7 +7,7 @@
 
 <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
     <div>
-        <h1 class="text-xl font-semibold text-gray-800">Gestión de Rutas</h1>
+        <h1 class="text-xl font-semibold text-gray-800">Gesti�n de Rutas</h1>
         <p class="text-sm text-gray-400 mt-0.5">Administra las rutas del sistema</p>
     </div>
     <button onclick="abrirCrear()"
@@ -36,8 +36,8 @@
             <thead>
                 <tr class="bg-gray-50 text-left">
                     <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">#</th>
-                    <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">N° Ruta</th>
-                    <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Descripción</th>
+                    <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">N� Ruta</th>
+                    <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Descripci�n</th>
                     <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide text-center">Acciones</th>
                 </tr>
             </thead>
@@ -77,12 +77,12 @@
             <!-- Formulario Crear inline -->
             <div id="formCrear">
                 <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-1.5">N° de Ruta</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1.5">N� de Ruta</label>
                     <input type="number" id="c_ruta" placeholder="Ej: 101"
                            class="input-field w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm bg-gray-50 text-gray-800 placeholder-gray-400">
                 </div>
                 <div class="mb-5">
-                    <label class="block text-sm font-medium text-gray-700 mb-1.5">Descripción</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1.5">Descripci�n</label>
                     <input type="text" id="c_descripcion" placeholder="Ej: Ruta norte - centro"
                            class="input-field w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm bg-gray-50 text-gray-800 placeholder-gray-400">
                 </div>
@@ -124,12 +124,12 @@
             <div id="formEditar">
                 <input type="hidden" id="e_idRuta">
                 <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-1.5">N° de Ruta</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1.5">N� de Ruta</label>
                     <input type="number" id="e_ruta" placeholder="Ej: 101"
                            class="input-field w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm bg-gray-50 text-gray-800 placeholder-gray-400">
                 </div>
                 <div class="mb-5">
-                    <label class="block text-sm font-medium text-gray-700 mb-1.5">Descripción</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1.5">Descripci�n</label>
                     <input type="text" id="e_descripcion" placeholder="Ej: Ruta norte - centro"
                            class="input-field w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm bg-gray-50 text-gray-800 placeholder-gray-400">
                 </div>
@@ -191,7 +191,7 @@
                         filas += '<tr class="hover:bg-gray-50 transition fila-ruta">' +
                             '<td class="px-6 py-3.5 text-gray-400 text-xs">' + (i + 1) + '</td>' +
                             '<td class="px-6 py-3.5 font-medium text-gray-800">' + r.ruta + '</td>' +
-                            '<td class="px-6 py-3.5 text-gray-500">' + (r.descripcion || '—') + '</td>' +
+                            '<td class="px-6 py-3.5 text-gray-500">' + (r.descripcion || '�') + '</td>' +
                             '<td class="px-6 py-3.5 text-center">' +
                             '  <button onclick="abrirEditar(' + r.id_ruta + ')" title="Editar" ' +
                             '          class="p-1.5 rounded-lg text-gray-400 hover:bg-green-50 hover:text-green-600 transition">' +
@@ -218,7 +218,7 @@
         });
     });
 
-    // ── Crear ──
+    // -- Crear --
     function abrirCrear() {
         $('#c_ruta').val(''); $('#c_descripcion').val(''); ocultarError('c');
         $('#modalCrear').removeClass('hidden').addClass('flex');
@@ -232,7 +232,7 @@
         var ruta        = $.trim($('#c_ruta').val());
         var descripcion = $.trim($('#c_descripcion').val());
 
-        if (!ruta || parseInt(ruta) <= 0) { mostrarError('c', 'El número de ruta es obligatorio y debe ser mayor a cero.'); return; }
+        if (!ruta || parseInt(ruta) <= 0) { mostrarError('c', 'El n�mero de ruta es obligatorio y debe ser mayor a cero.'); return; }
 
         ocultarError('c'); setLoading('c', true);
 
@@ -244,11 +244,11 @@
                 if (res.resultado > 0) { cerrarCrear(); cargarRutas(); }
                 else { mostrarError('c', res.mensaje || 'No se pudo registrar la ruta.'); setLoading('c', false); }
             },
-            error: function () { mostrarError('c', 'Error de conexión. Intenta nuevamente.'); setLoading('c', false); }
+            error: function () { mostrarError('c', 'Error de conexi�n. Intenta nuevamente.'); setLoading('c', false); }
         });
     }
 
-    // ── Editar ──
+    // -- Editar --
     function abrirEditar(id) {
         ocultarError('e');
         $.ajax({
@@ -275,7 +275,7 @@
         var ruta        = $.trim($('#e_ruta').val());
         var descripcion = $.trim($('#e_descripcion').val());
 
-        if (!ruta || parseInt(ruta) <= 0) { mostrarError('e', 'El número de ruta es obligatorio y debe ser mayor a cero.'); return; }
+        if (!ruta || parseInt(ruta) <= 0) { mostrarError('e', 'El n�mero de ruta es obligatorio y debe ser mayor a cero.'); return; }
 
         ocultarError('e'); setLoading('e', true);
 
@@ -287,11 +287,11 @@
                 if (res.resultado === true) { cerrarEditar(); cargarRutas(); }
                 else { mostrarError('e', res.mensaje || 'No se pudo actualizar la ruta.'); setLoading('e', false); }
             },
-            error: function () { mostrarError('e', 'Error de conexión. Intenta nuevamente.'); setLoading('e', false); }
+            error: function () { mostrarError('e', 'Error de conexi�n. Intenta nuevamente.'); setLoading('e', false); }
         });
     }
 
-    // ── Helpers ──
+    // -- Helpers --
     function mostrarError(p, msg) { $('#' + p + '_errorText').text(msg); $('#' + p + '_errorMsg').removeClass('hidden'); }
     function ocultarError(p)      { $('#' + p + '_errorMsg').addClass('hidden'); }
     function setLoading(p, v) {
@@ -303,3 +303,4 @@
     $(function () { cargarRutas(); });
     </script>
 }
+

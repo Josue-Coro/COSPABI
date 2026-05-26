@@ -74,6 +74,8 @@
     --color-primary-500: #22c55e;
     --color-primary-600: #16a34a;
     --color-primary-700: #15803d;
+    --color-sidebar: #1c2434;
+    --color-sidebar-border: #2d3a4e;
   }
 }
 @layer base {
@@ -1012,6 +1014,9 @@
   .border-red-200 {
     border-color: var(--color-red-200);
   }
+  .border-sidebar-border {
+    border-color: var(--color-sidebar-border);
+  }
   .border-white {
     border-color: var(--color-white);
   }
@@ -1065,6 +1070,9 @@
   }
   .bg-red-500 {
     background-color: var(--color-red-500);
+  }
+  .bg-sidebar {
+    background-color: var(--color-sidebar);
   }
   .bg-slate-100 {
     background-color: var(--color-slate-100);

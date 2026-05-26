@@ -6,7 +6,10 @@
   --color-primary-500: #22c55e;
   --color-primary-600: #16a34a;
   --color-primary-700: #15803d;
-  --color-surface: #1c2434;
-  --color-surface-light: #242f42;
+  --color-sidebar: #1c2434;
+  --color-sidebar-light: #242f42;
+  --color-sidebar-hover: #2d3a4e;
+  --color-sidebar-active: #334155;
+  --color-sidebar-border: #2d3a4e;
   --font-sans: "Plus Jakarta Sans", sans-serif;
 }

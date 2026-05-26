@@ -1,4 +1,4 @@
-ï»¿@{
+@{
     ViewBag.Title = "EliminarUsuario";
     Layout = null;
     int id = 0;
@@ -9,12 +9,9 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="~/Content/app.css" rel="stylesheet" />
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script>
-        tailwind.config = { theme: { extend: { fontFamily: { sans: ['Plus Jakarta Sans','sans-serif'] } } } }
-    </script>
     <style>
         body {
             font-family: 'Plus Jakarta Sans',sans-serif;
@@ -49,10 +46,10 @@
             </svg>
         </div>
         <p class="text-sm text-gray-600">
-            Â¿EstÃ¡s seguro de que deseas desactivar al usuario
+            ¿Estás seguro de que deseas desactivar al usuario
             <span class="font-semibold text-gray-800">"@nombre"</span>?
         </p>
-        <p class="text-xs text-gray-400 mt-1">El usuario no podrÃ¡ iniciar sesiÃ³n mientras estÃ© inactivo.</p>
+        <p class="text-xs text-gray-400 mt-1">El usuario no podrá iniciar sesión mientras esté inactivo.</p>
     </div>
 
     <div id="errorMsg" class="hidden mb-4 flex items-start gap-2 text-red-700 text-sm bg-red-50 border border-red-200 px-3 py-2.5 rounded-xl">
@@ -69,7 +66,7 @@
         </button>
         <button id="btnEliminar" onclick="eliminar()"
                 class="btn-danger flex-1 py-2.5 rounded-xl text-sm font-semibold text-white flex items-center justify-center gap-2">
-            <span id="btnText">SÃ­, desactivar</span>
+            <span id="btnText">Sí, desactivar</span>
             <svg id="btnSpinner" class="hidden animate-spin" style="width:16px;height:16px;" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
@@ -95,14 +92,15 @@
                     }
                 },
                 error: function () {
-                    mostrarError('Error de conexiÃ³n. Intenta nuevamente.');
+                    mostrarError('Error de conexión. Intenta nuevamente.');
                     setLoading(false);
                 }
             });
         }
 
         function mostrarError(msg) { $('#errorText').text(msg); $('#errorMsg').removeClass('hidden'); }
-        function setLoading(v)     { $('#btnEliminar').prop('disabled', v); $('#btnText').text(v ? 'Desactivando...' : 'SÃ­, desactivar'); $('#btnSpinner').toggleClass('hidden', !v); }
+        function setLoading(v)     { $('#btnEliminar').prop('disabled', v); $('#btnText').text(v ? 'Desactivando...' : 'Sí, desactivar'); $('#btnSpinner').toggleClass('hidden', !v); }
     </script>
 </body>
 </html>
+
