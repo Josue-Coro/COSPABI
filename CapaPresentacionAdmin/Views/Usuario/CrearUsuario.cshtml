@@ -1,4 +1,4 @@
-@{
+ï»¿@{
     ViewBag.Title = "CrearUsuario";
     Layout = null;
 }
@@ -52,7 +52,7 @@
         </div>
         <div>
             <label class="block text-sm font-medium text-gray-700 mb-1.5">Apellido</label>
-            <input type="text" id="apellido" placeholder="Ej: Pérez"
+            <input type="text" id="apellido" placeholder="Ej: PÃ©rez"
                    class="input-field w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm bg-gray-50 text-gray-800 placeholder-gray-400">
         </div>
     </div>
@@ -71,18 +71,18 @@
     </div>
 
     <div class="mb-3">
-        <label class="block text-sm font-medium text-gray-700 mb-1.5">Contraseña</label>
+        <label class="block text-sm font-medium text-gray-700 mb-1.5">ContraseÃ±a</label>
         <div class="relative">
             <span class="absolute inset-y-0 left-3 flex items-center pointer-events-none">
                 <svg style="width:15px;height:15px;" class="text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                 </svg>
             </span>
-            <input type="password" id="contrasena" placeholder="Mínimo 6 caracteres"
+            <input type="password" id="contrasena" placeholder="MÃ­nimo 6 caracteres"
                    class="input-field w-full pl-9 pr-10 py-2.5 border border-gray-300 rounded-xl text-sm bg-gray-50 text-gray-800 placeholder-gray-400">
             <button type="button" id="togglePass"
                     class="absolute inset-y-0 right-3 flex items-center text-gray-400 hover:text-gray-600 transition"
-                    aria-label="Mostrar u ocultar contraseña">
+                    aria-label="Mostrar u ocultar contraseÃ±a">
                 <svg id="iconVer" style="width:16px;height:16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
@@ -99,13 +99,13 @@
         <div>
             <label class="block text-sm font-medium text-gray-700 mb-1.5">Rol</label>
             <select id="rol" class="input-field w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm bg-gray-50 text-gray-800">
-                <option value="">— Cargando roles... —</option>
+                <option value="">Â— Cargando roles... Â—</option>
             </select>
         </div>
         <div>
             <label class="block text-sm font-medium text-gray-700 mb-1.5">Estado</label>
             <select id="estado" class="input-field w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm bg-gray-50 text-gray-800">
-                <option value="">— Seleccionar —</option>
+                <option value="">Â— Seleccionar Â—</option>
                 <option value="true">Activo</option>
                 <option value="false">Inactivo</option>
             </select>
@@ -135,7 +135,7 @@
                 url: '@Url.Action("ListarRoles", "Usuario")',
                 type: 'GET',
                 success: function (res) {
-                    var opts = '<option value="">— Seleccionar rol —</option>';
+                    var opts = '<option value="">Â— Seleccionar rol Â—</option>';
                     $.each(res.data, function (i, r) {
                         opts += '<option value="' + r.id_rol + '">' + r.nombre + '</option>';
                     });
@@ -143,7 +143,7 @@
                 }
             });
 
-            // Toggle contraseña
+            // Toggle contraseÃ±a
             $('#togglePass').on('click', function () {
                 var $input = $('#contrasena');
                 var tipo = $input.attr('type') === 'password' ? 'text' : 'password';
@@ -164,8 +164,8 @@
             if (!nombre)           { mostrarError('El nombre es obligatorio.'); return; }
             if (!apellido)         { mostrarError('El apellido es obligatorio.'); return; }
             if (!usuario)          { mostrarError('El nombre de usuario es obligatorio.'); return; }
-            if (!contrasena)       { mostrarError('La contraseña es obligatoria.'); return; }
-            if (contrasena.length < 6) { mostrarError('La contraseña debe tener al menos 6 caracteres.'); return; }
+            if (!contrasena)       { mostrarError('La contraseÃ±a es obligatoria.'); return; }
+            if (contrasena.length < 6) { mostrarError('La contraseÃ±a debe tener al menos 6 caracteres.'); return; }
             if (!rol)              { mostrarError('Debes seleccionar un rol.'); return; }
             if (estado === '')     { mostrarError('Debes seleccionar el estado.'); return; }
 
@@ -179,7 +179,7 @@
                     nombre:     nombre,
                     apellido:   apellido,
                     usuario:    usuario,
-                    contraseña: contrasena,
+                    contraseÃ±a: contrasena,
                     estado:     estado,
                     rol_id_dol: rol
                 },
@@ -192,7 +192,7 @@
                     }
                 },
                 error: function () {
-                    mostrarError('Error de conexión. Intenta nuevamente.');
+                    mostrarError('Error de conexiÃ³n. Intenta nuevamente.');
                     setLoading(false);
                 }
             });

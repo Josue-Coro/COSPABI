@@ -60,7 +60,7 @@ namespace CapaPresentacionAdmin.Controllers
         {
             try
             {
-                var resultado = new CD_Cliente().Listar(busqueda, pagina, tamanoPagina);
+                var resultado = new CN_Cliente().Listar(busqueda, pagina, tamanoPagina);
 
                 if (resultado == null)
                     return Json(new { exito = false, mensaje = "Error al obtener los datos." },
@@ -79,6 +79,26 @@ namespace CapaPresentacionAdmin.Controllers
                             JsonRequestBehavior.AllowGet);
             }
         }
+        [HttpGet]
+        [ValidarPermisos(NombrePermiso = "Gestionar Socio")]
+        public JsonResult Obtener(int id)
+        {
+            try
+            {
+                var socio = new CN_Socio().Obtener(id);
+
+                if (socio == null)
+                    return Json(new { exito = false, mensaje = "Socio no encontrado." },
+                                JsonRequestBehavior.AllowGet);
+
+                return Json(new { exito = true, socio }, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                return Json(new { exito = false, mensaje = ex.Message },
+                            JsonRequestBehavior.AllowGet);
+            }
+        }
 
 
 
@@ -86,7 +106,7 @@ namespace CapaPresentacionAdmin.Controllers
         [ValidarPermisos(NombrePermiso = "Gestionar Socio")]
         public JsonResult ListarMedidores(string busqueda = "", int pagina = 1, int tamanoPagina = 10)
         {
-            var (lista, total) = new CN_Medidor().Listar(busqueda, pagina, tamanoPagina);
+            var (lista, total) = new CN_Medidor().ListarRegistrar(busqueda, pagina, tamanoPagina);
             return Json(new
             {
                 data = lista,
@@ -136,7 +156,8 @@ namespace CapaPresentacionAdmin.Controllers
         [ValidarPermisos(NombrePermiso = "Editar Socio")]
         public JsonResult Editar(CM_Socio socio)
         {
-            int idUsuario = Convert.ToInt32(Session["id_usuario_admin"]);
+            var oUsuario = (CM_Usuario_Activo)Session["Usuario"];
+            int idUsuario = oUsuario.id_usuario_admin;
             bool resultado = new CN_Socio().Editar(socio, idUsuario, out string Mensaje);
             return Json(new { exito = resultado, mensaje = Mensaje });
         }
@@ -153,7 +174,8 @@ namespace CapaPresentacionAdmin.Controllers
         [ValidarPermisos(NombrePermiso = "Eliminar Socio")]
         public JsonResult Eliminar(int id)
         {
-            int idUsuario = Convert.ToInt32(Session["id_usuario_admin"]);
+            var oUsuario = (CM_Usuario_Activo)Session["Usuario"];
+            int idUsuario = oUsuario.id_usuario_admin;
             bool resultado = new CN_Socio().Eliminar(id, idUsuario, out string Mensaje);
             return Json(new { exito = resultado, mensaje = Mensaje });
         }

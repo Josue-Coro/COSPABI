@@ -1,4 +1,4 @@
-@{
+ï»¿@{
     ViewBag.Title = "EditarTarifa";
     Layout = null;
     int id = 0;
@@ -47,23 +47,23 @@
 
     <input type="hidden" id="idTarifa" value="@id">
 
-    <!-- Consumo mínimo y Precio por m³ -->
+    <!-- Consumo mÃ­nimo y Precio por mÂ³ -->
     <div class="grid grid-cols-2 gap-3 mb-3">
         <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1.5">Consumo mínimo (m³)</label>
+            <label class="block text-sm font-medium text-gray-700 mb-1.5">Consumo mÃ­nimo (mÂ³)</label>
             <input type="number" id="consumo_minimo_m3" min="0" placeholder="Ej: 10"
                    class="input-field w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm bg-gray-50 text-gray-800 placeholder-gray-400">
         </div>
         <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1.5">Precio por m³ (Bs.)</label>
+            <label class="block text-sm font-medium text-gray-700 mb-1.5">Precio por mÂ³ (Bs.)</label>
             <input type="number" id="precio_m3" min="0" step="0.01" placeholder="Ej: 5"
                    class="input-field w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm bg-gray-50 text-gray-800 placeholder-gray-400">
         </div>
     </div>
 
-    <!-- Monto mínimo -->
+    <!-- Monto mÃ­nimo -->
     <div class="mb-3">
-        <label class="block text-sm font-medium text-gray-700 mb-1.5">Monto mínimo (Bs.)</label>
+        <label class="block text-sm font-medium text-gray-700 mb-1.5">Monto mÃ­nimo (Bs.)</label>
         <div class="relative">
             <span class="absolute inset-y-0 left-3 flex items-center pointer-events-none text-gray-400 text-sm font-medium">Bs.</span>
             <input type="number" id="monto_minimo" min="0" step="0.001" placeholder="Ej: 50.000"
@@ -76,7 +76,7 @@
         <label class="block text-sm font-medium text-gray-700 mb-1.5">Rol de socio</label>
         <select id="rol_socio_id_rol_socio"
                 class="input-field w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm bg-gray-50 text-gray-800">
-            <option value="">— Cargando... —</option>
+            <option value="">Â— Cargando... Â—</option>
         </select>
     </div>
 
@@ -88,7 +88,7 @@
         <span id="errorText"></span>
     </div>
 
-    <!-- Botón guardar -->
+    <!-- BotÃ³n guardar -->
     <button id="btnGuardar" onclick="editar()"
             class="btn-primary w-full py-2.5 rounded-xl text-sm font-semibold text-white flex items-center justify-center gap-2">
         <span id="btnText">Guardar Cambios</span>
@@ -135,9 +135,9 @@
             var precio  = parseFloat($('#precio_m3').val());
             var rol     = $('#rol_socio_id_rol_socio').val();
 
-            if (isNaN(consumo) || consumo < 0) { mostrarError('Ingresa un consumo mínimo válido.'); return; }
-            if (isNaN(monto)   || monto < 0)   { mostrarError('Ingresa un monto mínimo válido.');   return; }
-            if (isNaN(precio)  || precio < 0)  { mostrarError('Ingresa un precio por m³ válido.');  return; }
+            if (isNaN(consumo) || consumo < 0) { mostrarError('Ingresa un consumo mÃ­nimo vÃ¡lido.'); return; }
+            if (isNaN(monto)   || monto < 0)   { mostrarError('Ingresa un monto mÃ­nimo vÃ¡lido.');   return; }
+            if (isNaN(precio)  || precio < 0)  { mostrarError('Ingresa un precio por mÂ³ vÃ¡lido.');  return; }
             if (!rol)                           { mostrarError('Selecciona un rol de socio.');        return; }
 
             ocultarError();
@@ -162,7 +162,7 @@
                     }
                 },
                 error: function () {
-                    mostrarError('Error de conexión. Intenta nuevamente.');
+                    mostrarError('Error de conexiÃ³n. Intenta nuevamente.');
                     setLoading(false);
                 }
             });

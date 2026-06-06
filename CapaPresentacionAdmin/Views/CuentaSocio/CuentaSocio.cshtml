@@ -1,0 +1,420 @@
+﻿@{
+    ViewBag.Title = "Cuenta Socio";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div>
+        <h1 class="text-xl font-semibold text-gray-800">Cuentas de Socios</h1>
+        <p class="text-sm text-gray-400 mt-0.5">Administra los accesos web para los socios</p>
+    </div>
+    <button onclick="abrirModal()"
+            class="btn-primary inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white">
+        <svg style="width:16px;height:16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+        </svg>
+        Nueva Cuenta
+    </button>
+</div>
+
+<div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+    <div class="px-6 py-4 border-b border-gray-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <span class="text-sm font-semibold text-gray-700">Lista de Cuentas</span>
+        <div class="flex items-center gap-3">
+            <div class="flex items-center gap-2 bg-gray-100 rounded-lg px-3 py-1.5 w-52">
+                <svg style="width:15px;height:15px;" class="text-gray-400 flex-shrink-0"
+                     fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <input type="text" id="txtBusqueda" placeholder="Buscar..."
+                       class="bg-transparent text-sm text-gray-600 outline-none w-full placeholder-gray-400">
+            </div>
+            <select id="selTamano"
+                    class="text-sm border border-gray-300 rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-primary-500 outline-none">
+                <option value="10">10 por página</option>
+                <option value="25">25 por página</option>
+                <option value="50">50 por página</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="bg-gray-50 text-left">
+                    <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Usuario</th>
+                    <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Socio</th>
+                    <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Último Acceso</th>
+                    <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Estado</th>
+                    <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide text-center">Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="tbodyCuentas" class="divide-y divide-gray-100">
+                <!-- Se llenará con Ajax -->
+            </tbody>
+        </table>
+    </div>
+
+    <div class="px-6 py-3 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-2">
+        <span class="text-xs text-gray-400" id="infoPaginacion"></span>
+        <div id="controlesPaginacion" class="flex items-center gap-1"></div>
+    </div>
+</div>
+
+<!-- MODAL FORMULARIO -->
+<div id="modalFormulario" class="fixed inset-0 z-50 hidden items-center justify-center p-4">
+    <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" onclick="cerrarModal()"></div>
+    <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+        <div class="h-1.5 bg-gradient-to-r from-primary-500 to-primary-700"></div>
+        <div class="p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-base font-semibold text-gray-800" id="modalTitulo">Nueva Cuenta de Socio</h3>
+                <button onclick="cerrarModal()"
+                        class="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 transition">
+                    <svg style="width:18px;height:18px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            
+            <input type="hidden" id="txtId" value="0" />
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Socio</label>
+                    <input type="hidden" id="hdnSocioId" />
+                    <div class="flex items-center gap-2">
+                        <div class="flex-1 px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-sm min-h-[38px]">
+                            <span id="lblSocio" class="text-gray-400">Ningún socio seleccionado</span>
+                        </div>
+                        <button type="button" onclick="abrirModalSocio()"
+                                class="bg-primary-600 hover:bg-primary-700 text-white text-xs font-semibold px-3 py-2 rounded-lg transition whitespace-nowrap">
+                            Buscar Socio
+                        </button>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Nombre de Usuario</label>
+                    <input type="text" id="txtUsuario" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" placeholder="Ej: jperez123" />
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
+                    <input type="password" id="txtContrasena" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" placeholder="Contraseña..." />
+                    <p class="text-xs text-gray-400 mt-1" id="lblInfoContra">Dejar en blanco si no desea cambiar la contraseña (solo al editar).</p>
+                </div>
+            </div>
+
+            <div class="mt-6 flex justify-end gap-3">
+                <button onclick="cerrarModal()" class="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition">Cancelar</button>
+                <button onclick="guardar()" class="px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL BUSCAR SOCIO -->
+<div id="modalSocio" class="fixed inset-0 z-[60] hidden items-center justify-center p-4">
+    <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" onclick="cerrarModalSocio()"></div>
+    <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[85vh] flex flex-col overflow-hidden">
+        <div class="px-5 py-3 border-b border-gray-200 flex items-center justify-between">
+            <span class="text-sm font-semibold text-gray-800">Buscar Socio</span>
+            <button onclick="cerrarModalSocio()" class="p-1.5 hover:bg-gray-100 rounded-lg transition">
+                <svg style="width:16px;height:16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+        <div class="px-5 py-2 border-b border-gray-100">
+            <input type="text" id="txtBuscarSocio" placeholder="Nombre, CI o código fijo..."
+                   class="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-500">
+        </div>
+        <div class="overflow-y-auto flex-1">
+            <table class="w-full text-xs">
+                <thead class="bg-gray-50 sticky top-0">
+                    <tr>
+                        <th class="px-4 py-2 text-left text-gray-500 font-semibold uppercase">Nombre</th>
+                        <th class="px-4 py-2 text-left text-gray-500 font-semibold uppercase">Cód. Fijo</th>
+                        <th class="px-4 py-2 text-left text-gray-500 font-semibold uppercase">CI Cliente</th>
+                        <th class="px-4 py-2"></th>
+                    </tr>
+                </thead>
+                <tbody id="tbodySocios" class="divide-y divide-gray-100"></tbody>
+            </table>
+        </div>
+        <div class="px-5 py-2 border-t border-gray-100 flex items-center justify-between bg-gray-50">
+            <span id="lblInfoSocio" class="text-xs text-gray-400"></span>
+            <div id="divPagSocio" class="flex gap-1"></div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .btn-primary {
+        background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+        transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
+    }
+    .btn-primary:hover {
+        opacity: 0.92;
+        transform: translateY(-1px);
+        box-shadow: 0 8px 20px rgba(34,197,94,0.30);
+    }
+</style>
+
+@section scripts {
+    <script>
+        var paginaActual = 1;
+        var totalPaginas = 1;
+        var busquedaActual = '';
+        var tamanoPagina = 10;
+        var pagSocio = 1, totalSocio = 0, timerSocio;
+
+        $(function () {
+            cargarDatos();
+
+            $('#txtBuscarSocio').on('input', function () {
+                clearTimeout(timerSocio);
+                timerSocio = setTimeout(function () { pagSocio = 1; cargarSociosModal(); }, 350);
+            });
+
+            var timer;
+            $('#txtBusqueda').on('input', function () {
+                clearTimeout(timer);
+                timer = setTimeout(function () {
+                    busquedaActual = $('#txtBusqueda').val().trim();
+                    paginaActual = 1;
+                    cargarDatos();
+                }, 400);
+            });
+
+            $('#selTamano').on('change', function () {
+                tamanoPagina = parseInt($(this).val());
+                paginaActual = 1;
+                cargarDatos();
+            });
+        });
+
+        // ── Modal Buscar Socio ──────────────────────
+        function abrirModalSocio() {
+            pagSocio = 1;
+            $('#txtBuscarSocio').val('');
+            $('#modalSocio').removeClass('hidden').addClass('flex');
+            cargarSociosModal();
+            setTimeout(function () { $('#txtBuscarSocio').focus(); }, 100);
+        }
+
+        function cerrarModalSocio() {
+            $('#modalSocio').removeClass('flex').addClass('hidden');
+        }
+
+        function cargarSociosModal() {
+            var tbody = $('#tbodySocios');
+            tbody.html('<tr><td colspan="4" class="text-center py-6 text-gray-400">Cargando...</td></tr>');
+            $.get('@Url.Action("ListarSocios", "CuentaSocio")', {
+                busqueda: $('#txtBuscarSocio').val(), pagina: pagSocio, tamanoPagina: 8
+            }, function (res) {
+                tbody.empty();
+                if (!res.exito || !res.socios || res.socios.length === 0) {
+                    tbody.html('<tr><td colspan="4" class="text-center py-6 text-gray-400">Sin resultados</td></tr>');
+                    $('#lblInfoSocio').text('');
+                    $('#divPagSocio').empty();
+                    return;
+                }
+                totalSocio = res.totalRegistros;
+                $.each(res.socios, function (_, s) {
+                    tbody.append(
+                        '<tr class="hover:bg-green-50 cursor-pointer transition" ' +
+                        'onclick="seleccionarSocio(' + s.id_socio + ',\'' + s.nombre_socio.replace(/'/g, "\\'") + '\')">' +
+                        '<td class="px-4 py-2.5 font-medium text-gray-800">' + s.nombre_socio + '</td>' +
+                        '<td class="px-4 py-2.5 text-gray-600 font-mono">' + s.codigo_fijo + '</td>' +
+                        '<td class="px-4 py-2.5 text-gray-500">' + (s.ci_cliente || '-') + '</td>' +
+                        '<td class="px-4 py-2.5 text-center">' +
+                        '<button class="bg-primary-600 text-white text-xs px-2.5 py-1 rounded-lg hover:bg-primary-700 transition">Seleccionar</button>' +
+                        '</td></tr>'
+                    );
+                });
+                renderPagSocio();
+            });
+        }
+
+        function seleccionarSocio(id, nombre) {
+            $('#hdnSocioId').val(id);
+            $('#lblSocio').html('<span class="font-medium text-gray-800">' + nombre + '</span>');
+            cerrarModalSocio();
+        }
+
+        function renderPagSocio() {
+            var tam = 8;
+            var totalP = Math.ceil(totalSocio / tam) || 1;
+            var inicio = totalSocio === 0 ? 0 : (pagSocio - 1) * tam + 1;
+            var fin = Math.min(pagSocio * tam, totalSocio);
+            $('#lblInfoSocio').text(inicio + '–' + fin + ' de ' + totalSocio);
+            var div = $('#divPagSocio'); div.empty();
+            var b = 'px-2 py-1 text-xs rounded border transition font-medium ';
+            div.append('<button ' + (pagSocio === 1 ? 'disabled' : '') + ' onclick="pagSocio--; cargarSociosModal()" class="' + b + (pagSocio === 1 ? 'text-gray-300 border-gray-200' : 'text-gray-600 border-gray-300 hover:bg-gray-100') + '">‹</button>');
+            for (var p = Math.max(1, pagSocio - 2); p <= Math.min(totalP, pagSocio + 2); p++)
+                div.append('<button onclick="pagSocio=' + p + '; cargarSociosModal()" class="' + b + (p === pagSocio ? 'bg-primary-500 text-white border-primary-500' : 'text-gray-600 border-gray-300 hover:bg-gray-100') + '">' + p + '</button>');
+            div.append('<button ' + (pagSocio === totalP ? 'disabled' : '') + ' onclick="pagSocio++; cargarSociosModal()" class="' + b + (pagSocio === totalP ? 'text-gray-300 border-gray-200' : 'text-gray-600 border-gray-300 hover:bg-gray-100') + '">›</button>');
+        }
+
+        function cargarDatos() {
+            $('#tbodyCuentas').html('<tr><td colspan="5" class="px-6 py-10 text-center text-gray-400">Cargando...</td></tr>');
+            $.ajax({
+                url: '@Url.Action("Listar", "CuentaSocio")',
+                type: 'GET',
+                data: { busqueda: busquedaActual, pagina: paginaActual, tamanoPagina: tamanoPagina },
+                success: function (res) {
+                    if (!res.exito) { mostrarToast(res.mensaje, 'error'); return; }
+                    var tbody = $('#tbodyCuentas');
+                    tbody.empty();
+                    
+                    if (res.cuentas.length === 0) {
+                        tbody.append('<tr><td colspan="5" class="px-6 py-10 text-center text-gray-400">No hay registros.</td></tr>');
+                    } else {
+                        $.each(res.cuentas, function (i, item) {
+                            var badge = item.estado
+                                ? '<span class="px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">Activo</span>'
+                                : '<span class="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-500">Inactivo</span>';
+
+                            var btnEditar = '<button onclick="abrirModal(' + item.id_cuenta_socio + ')" class="p-1.5 rounded-lg text-gray-400 hover:text-green-600 transition"><svg style="width:15px;height:15px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></button>';
+                            var btnEstado = '<button onclick="cambiarEstado(' + item.id_cuenta_socio + ')" class="p-1.5 rounded-lg text-gray-400 hover:text-red-500 transition" title="Cambiar Estado"><svg style="width:15px;height:15px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">' + (item.estado ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/>' : '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>') + '</svg></button>';
+
+                            tbody.append(
+                                '<tr class="hover:bg-gray-50">' +
+                                '<td class="px-6 py-3.5 font-medium text-gray-800">' + item.usuario + '</td>' +
+                                '<td class="px-6 py-3.5 text-gray-600">' + item.nombre_socio + '</td>' +
+                                '<td class="px-6 py-3.5 text-gray-600">' + parsearFechaNet(item.ultimo_acceso) + '</td>' +
+                                '<td class="px-6 py-3.5">' + badge + '</td>' +
+                                '<td class="px-6 py-3.5 text-center"><div class="inline-flex items-center gap-1">' + btnEditar + btnEstado + '</div></td>' +
+                                '</tr>'
+                            );
+                        });
+                    }
+
+                    totalPaginas = Math.ceil(res.totalRegistros / tamanoPagina) || 1;
+                    renderPaginacion(res.totalRegistros);
+                }
+            });
+        }
+
+        function renderPaginacion(total) {
+            var inicio = total === 0 ? 0 : (paginaActual - 1) * tamanoPagina + 1;
+            var fin = Math.min(paginaActual * tamanoPagina, total);
+            $('#infoPaginacion').text('Mostrando ' + inicio + ' a ' + fin + ' de ' + total + ' registros');
+
+            var ctrl = $('#controlesPaginacion');
+            ctrl.empty();
+            var base = 'px-3 py-1.5 text-xs rounded-lg border transition font-medium ';
+
+            ctrl.append('<button ' + (paginaActual === 1 ? 'disabled' : '') +
+                ' onclick="irPagina(' + (paginaActual - 1) + ')" class="' + base +
+                (paginaActual === 1 ? 'opacity-40 cursor-not-allowed border-gray-200 text-gray-400'
+                                    : 'border-gray-300 text-gray-600 hover:bg-gray-100') + '">< Ant</button>');
+
+            var desde = Math.max(1, paginaActual - 2);
+            var hasta = Math.min(totalPaginas, paginaActual + 2);
+            for (var p = desde; p <= hasta; p++) {
+                ctrl.append('<button onclick="irPagina(' + p + ')" class="' + base +
+                    (p === paginaActual
+                        ? 'bg-primary-500 text-white border-primary-500'
+                        : 'border-gray-300 text-gray-600 hover:bg-gray-100') + '">' + p + '</button>');
+            }
+
+            ctrl.append('<button ' + (paginaActual === totalPaginas ? 'disabled' : '') +
+                ' onclick="irPagina(' + (paginaActual + 1) + ')" class="' + base +
+                (paginaActual === totalPaginas ? 'opacity-40 cursor-not-allowed border-gray-200 text-gray-400'
+                                               : 'border-gray-300 text-gray-600 hover:bg-gray-100') + '">Sig ></button>');
+        }
+
+        function irPagina(p) {
+            if (p < 1 || p > totalPaginas) return;
+            paginaActual = p;
+            cargarDatos();
+        }
+
+        function abrirModal(id) {
+            id = id || 0;
+            $('#txtId').val(id);
+            $('#txtUsuario').val('');
+            $('#txtContrasena').val('');
+            $('#hdnSocioId').val('');
+            $('#lblSocio').html('<span class="text-gray-400">Ningún socio seleccionado</span>');
+
+            if (id > 0) {
+                // Modo edición: obtener datos con CN_CuentaSocio.Obtener + CN_Socio.Obtener
+                $.get('@Url.Action("ObtenerCuenta", "CuentaSocio")', { id: id }, function (res) {
+                    if (res.exito) {
+                        $('#txtUsuario').val(res.cuenta.usuario);
+                        $('#hdnSocioId').val(res.cuenta.socio_id_socio);
+                        $('#lblSocio').html('<span class="font-medium text-gray-800">' + res.cuenta.nombre_socio + '</span>');
+                    } else {
+                        mostrarToast(res.mensaje, 'error');
+                    }
+                });
+            }
+
+            $('#lblInfoContra').toggle(id > 0);
+            $('#modalTitulo').text(id === 0 ? "Nueva Cuenta de Socio" : "Editar Cuenta");
+            $('#modalFormulario').removeClass('hidden').addClass('flex');
+        }
+
+        function cerrarModal() {
+            $('#modalFormulario').removeClass('flex').addClass('hidden');
+        }
+
+        function guardar() {
+            var obj = {
+                id_cuenta_socio: $('#txtId').val(),
+                usuario: $('#txtUsuario').val(),
+                contrasena: $('#txtContrasena').val(),
+                socio_id_socio: $('#hdnSocioId').val()
+            };
+
+            $.ajax({
+                url: '@Url.Action("Guardar", "CuentaSocio")',
+                type: 'POST',
+                data: obj,
+                success: function (res) {
+                    if (res.exito) {
+                        mostrarToast(res.mensaje, 'success');
+                        cerrarModal();
+                        cargarDatos();
+                    } else {
+                        mostrarToast(res.mensaje, 'error');
+                    }
+                }
+            });
+        }
+
+        function cambiarEstado(id) {
+            if (confirm('¿Está seguro de cambiar el estado de este acceso?')) {
+                $.ajax({
+                    url: '@Url.Action("CambiarEstado", "CuentaSocio")',
+                    type: 'POST',
+                    data: { id: id },
+                    success: function (res) {
+                        if (res.exito) {
+                            mostrarToast(res.mensaje, 'success');
+                            cargarDatos();
+                        } else {
+                            mostrarToast(res.mensaje, 'error');
+                        }
+                    }
+                });
+            }
+        }
+
+        function mostrarToast(msg, tipo) {
+            var bg = tipo === 'success' ? 'bg-green-500' : 'bg-red-500';
+            var toast = $('<div>').addClass('fixed bottom-6 right-6 z-50 text-white text-sm font-medium px-5 py-3 rounded-xl shadow-lg ' + bg).text(msg);
+            $('body').append(toast);
+            setTimeout(function () { toast.fadeOut(400, function () { $(this).remove(); }); }, 3000);
+        }
+
+        function parsearFechaNet(val) {
+            if (!val) return '—';
+            var m = /\/Date\((\d+)\)\//.exec(val);
+            if (m) return new Date(parseInt(m[1])).toISOString().substring(0, 10);
+            return typeof val === 'string' ? val.substring(0, 10) : '—';
+        }
+    </script>
+}

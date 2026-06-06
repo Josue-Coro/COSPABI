@@ -1,4 +1,4 @@
-@{
+ï»¿@{
     ViewBag.Title = "EliminarCliente";
     Layout = null;
     int id = 0;
@@ -57,15 +57,15 @@
             }
         </div>
         <p class="text-sm text-gray-600">
-            ¿Deseas <span class="font-semibold @(estadoActual ? "text-red-600" : "text-green-600")">
+            Â¿Deseas <span class="font-semibold @(estadoActual ? "text-red-600" : "text-green-600")">
                 @(estadoActual ? "desactivar" : "activar")
             </span> al cliente
             <span class="font-semibold text-gray-800">"@nombre"</span>?
         </p>
         <p class="text-xs text-gray-400 mt-1">
             @(estadoActual
-                ? "El cliente quedará inactivo en el sistema."
-                : "El cliente volverá a estar activo en el sistema.")
+                ? "El cliente quedarÃ¡ inactivo en el sistema."
+                : "El cliente volverÃ¡ a estar activo en el sistema.")
         </p>
     </div>
 
@@ -83,7 +83,7 @@
         </button>
         <button id="btnAccion" onclick="cambiarEstado()"
                 class="btn-danger flex-1 py-2.5 rounded-xl text-sm font-semibold text-white flex items-center justify-center gap-2">
-            <span id="btnText">Sí, @(estadoActual ? "desactivar" : "activar")</span>
+            <span id="btnText">SÃ­, @(estadoActual ? "desactivar" : "activar")</span>
             <svg id="btnSpinner" class="hidden animate-spin" style="width:16px;height:16px;" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
@@ -109,7 +109,7 @@
                     }
                 },
                 error: function () {
-                    mostrarError('Error de conexión. Intenta nuevamente.');
+                    mostrarError('Error de conexiÃ³n. Intenta nuevamente.');
                     setLoading(false);
                 }
             });
@@ -118,7 +118,7 @@
         function mostrarError(msg) { $('#errorText').text(msg); $('#errorMsg').removeClass('hidden'); }
         function setLoading(v)     {
             $('#btnAccion').prop('disabled', v);
-            $('#btnText').text(v ? 'Procesando...' : 'Sí, @(estadoActual ? "desactivar" : "activar")');
+            $('#btnText').text(v ? 'Procesando...' : 'SÃ­, @(estadoActual ? "desactivar" : "activar")');
             $('#btnSpinner').toggleClass('hidden', !v);
         }
     </script>

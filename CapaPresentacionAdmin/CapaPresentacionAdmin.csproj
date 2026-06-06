@@ -123,15 +123,19 @@
     <Compile Include="Controllers\AvisoController.cs" />
     <Compile Include="Controllers\BitacoraController.cs" />
     <Compile Include="Controllers\CajaController.cs" />
+    <Compile Include="Controllers\CargoExtraController.cs" />
     <Compile Include="Controllers\ClienteController.cs" />
     <Compile Include="Controllers\CreditoController.cs" />
+    <Compile Include="Controllers\CuentaSocioController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="Controllers\LecturaController.cs" />
     <Compile Include="Controllers\LoginController.cs" />
     <Compile Include="Controllers\MedidorController.cs" />
+    <Compile Include="Controllers\MetodoPagoController.cs" />
     <Compile Include="Controllers\NotificacionController.cs" />
     <Compile Include="Controllers\PagoController.cs" />
     <Compile Include="Controllers\PermisoController.cs" />
+    <Compile Include="Controllers\ReporteController.cs" />
     <Compile Include="Controllers\RolController.cs" />
     <Compile Include="Controllers\RutaController.cs" />
     <Compile Include="Controllers\SocioController.cs" />
@@ -227,10 +231,16 @@
     <Content Include="Views\Socio\EditarSocio.cshtml" />
     <Content Include="Views\Socio\EliminarSocio.cshtml" />
     <Content Include="Views\Tarifa\EditarTarifa.cshtml" />
+    <Content Include="Views\Reporte\Caja.cshtml" />
+    <Content Include="Views\Reporte\Morosidad.cshtml" />
+    <Content Include="Views\MetodoPago\MetodoPago.cshtml" />
+    <Content Include="Views\CargoExtra\CargoExtra.cshtml" />
+    <Content Include="Views\CuentaSocio\CuentaSocio.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\SQLServer\" />
     <Folder Include="Models\" />
+    <Folder Include="Views\TipoCargoExtra\" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Content\bootstrap.rtl.min.css.map" />

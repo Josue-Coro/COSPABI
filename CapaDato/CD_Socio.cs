@@ -226,7 +226,7 @@ namespace CapaDato
             {
                 using (SqlConnection cn = new SqlConnection(CD_Conexion.cn))
                 {
-                    SqlCommand cmd = new SqlCommand("dbo.sp_eliminar_socio", cn);
+                    SqlCommand cmd = new SqlCommand("SP_Socio_Eliminar", cn);
                     cmd.CommandType = CommandType.StoredProcedure;
                     cmd.Parameters.AddWithValue("@id_socio", idSocio);
                     cmd.Parameters.Add("@Resultado", SqlDbType.Int).Direction = ParameterDirection.Output;

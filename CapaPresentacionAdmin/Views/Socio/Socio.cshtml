@@ -1,34 +1,54 @@
+﻿
+
 
 @{
-    ViewBag.Title = "Socio";
+    ViewBag.Title = "Socios";
     Layout = "~/Views/Shared/_Layout.cshtml";
-}
 
+    var oUsuario = (CapaModelo.CM_Usuario_Activo)Session["Usuario"];
+    var listaPermisos = oUsuario?.ListaPermisos ?? new System.Collections.Generic.List<CapaModelo.CM_Permiso>();
+
+    bool puedeRegistrar = listaPermisos.Any(p => p.accion.ToUpper() == "REGISTRAR SOCIO");
+    bool puedeEditar = listaPermisos.Any(p => p.accion.ToUpper() == "EDITAR SOCIO");
+    bool puedeEliminar = listaPermisos.Any(p => p.accion.ToUpper() == "ELIMINAR SOCIO");
+}
 
 <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
     <div>
-        <h1 class="text-xl font-semibold text-gray-800">Gesti�n de Socios</h1>
-        <p class="text-sm text-gray-400 mt-0.5">Administra los Socios de la cooperativa</p>
+        <h1 class="text-xl font-semibold text-gray-800">Gestión de Socios</h1>
+        <p class="text-sm text-gray-400 mt-0.5">Administra los socios registrados en la cooperativa</p>
     </div>
-    <button onclick="abrirCrear()"
-            class="btn-primary inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white">
-        <svg style="width:16px;height:16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-        </svg>
-        Nuevo Socio
-    </button>
+    @if (puedeRegistrar)
+    {
+        <button onclick="abrirCrear()"
+                class="btn-primary inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white">
+            <svg style="width:16px;height:16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            </svg>
+            Nuevo Socio
+        </button>
+    }
 </div>
 
-<!-- Tabla -->
 <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-    <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-        <span class="text-sm font-semibold text-gray-700">Lista de Usuarios</span>
-        <div class="flex items-center gap-2 bg-gray-100 rounded-lg px-3 py-1.5 w-52">
-            <svg style="width:15px;height:15px;" class="text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-            <input type="text" id="buscador" placeholder="Buscar socio..."
-                   class="bg-transparent text-sm text-gray-600 outline-none w-full placeholder-gray-400">
+    <div class="px-6 py-4 border-b border-gray-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <span class="text-sm font-semibold text-gray-700">Lista de Socios</span>
+        <div class="flex items-center gap-3">
+            <div class="flex items-center gap-2 bg-gray-100 rounded-lg px-3 py-1.5 w-64">
+                <svg style="width:15px;height:15px;" class="text-gray-400 flex-shrink-0"
+                     fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <input type="text" id="txtBusqueda" placeholder="Buscar socio..."
+                       class="bg-transparent text-sm text-gray-600 outline-none w-full placeholder-gray-400">
+            </div>
+            <select id="selTamano"
+                    class="text-sm border border-gray-300 rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-primary-500 outline-none">
+                <option value="10">10 por página</option>
+                <option value="25">25 por página</option>
+                <option value="50">50 por página</option>
+            </select>
         </div>
     </div>
 
@@ -37,187 +57,301 @@
             <thead>
                 <tr class="bg-gray-50 text-left">
                     <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">#</th>
-                    <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Usuario</th>
-                    <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Nombre completo</th>
+                    <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Cód. Fijo</th>
+                    <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Nombre Socio</th>
+                    <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Cliente</th>
+                    <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Medidor</th>
+                    <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Ruta</th>
                     <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Rol</th>
-                    <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Fecha creaci�n</th>
-                    <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Estado</th>
+                    <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Categoría</th>
+                    <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">F. Registro</th>
                     <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide text-center">Acciones</th>
                 </tr>
             </thead>
-            <tbody id="bodyUsuarios" class="divide-y divide-gray-100">
+            <tbody id="tbodySocios" class="divide-y divide-gray-100">
                 <tr>
-                    <td colspan="7" class="px-6 py-10 text-center text-sm text-gray-400">
-                        <svg class="animate-spin mx-auto mb-2" style="width:22px;height:22px;" fill="none" viewBox="0 0 24 24">
+                    <td colspan="10" class="px-6 py-10 text-center text-sm text-gray-400">
+                        <svg class="animate-spin mx-auto mb-2" style="width:22px;height:22px;"
+                             fill="none" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
                         </svg>
-                        Cargando usuarios...
+                        Cargando socios...
                     </td>
                 </tr>
             </tbody>
         </table>
     </div>
-    <div class="px-6 py-3 border-t border-gray-100">
-        <span class="text-xs text-gray-400" id="contadorUsuarios"></span>
+
+    <div class="px-6 py-3 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-2">
+        <span class="text-xs text-gray-400" id="infoPaginacion"></span>
+        <div id="controlesPaginacion" class="flex items-center gap-1"></div>
     </div>
 </div>
 
-<!-- Modal Crear -->
 <div id="modalCrear" class="fixed inset-0 z-50 hidden items-center justify-center p-4">
     <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" onclick="cerrarCrear()"></div>
-    <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
+    <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden">
         <div class="h-1.5 bg-gradient-to-r from-primary-500 to-primary-700"></div>
         <div class="p-6">
             <div class="flex items-center justify-between mb-4">
-                <h3 class="text-base font-semibold text-gray-800">Nuevo Usuario</h3>
+                <h3 class="text-base font-semibold text-gray-800">Nuevo Socio</h3>
                 <button onclick="cerrarCrear()" class="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 transition">
                     <svg style="width:18px;height:18px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                     </svg>
                 </button>
             </div>
-            <iframe id="iframeCrear" src="" style="width:100%;height:480px;border:none;display:block;"></iframe>
+            <iframe id="iframeCrear" src="" style="width:100%;height:600px;border:none;display:block;"></iframe>
         </div>
     </div>
 </div>
 
-<!-- Modal Editar -->
 <div id="modalEditar" class="fixed inset-0 z-50 hidden items-center justify-center p-4">
     <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" onclick="cerrarEditar()"></div>
-    <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
+    <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden">
         <div class="h-1.5 bg-gradient-to-r from-primary-500 to-primary-700"></div>
         <div class="p-6">
             <div class="flex items-center justify-between mb-4">
-                <h3 class="text-base font-semibold text-gray-800">Editar Usuario</h3>
+                <h3 class="text-base font-semibold text-gray-800">Editar Socio</h3>
                 <button onclick="cerrarEditar()" class="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 transition">
                     <svg style="width:18px;height:18px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                     </svg>
                 </button>
             </div>
-            <iframe id="iframeEditar" src="" style="width:100%;height:510px;border:none;display:block;"></iframe>
+            <iframe id="iframeEditar" src="" style="width:100%;height:600px;border:none;display:block;"></iframe>
         </div>
     </div>
 </div>
 
-<!-- Modal Eliminar -->
 <div id="modalEliminar" class="fixed inset-0 z-50 hidden items-center justify-center p-4">
     <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" onclick="cerrarEliminar()"></div>
     <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
         <div class="h-1.5 bg-gradient-to-r from-red-400 to-red-600"></div>
         <div class="p-6">
             <div class="flex items-center justify-between mb-4">
-                <h3 class="text-base font-semibold text-gray-800">Desactivar Usuario</h3>
+                <h3 class="text-base font-semibold text-gray-800">Eliminar Socio</h3>
                 <button onclick="cerrarEliminar()" class="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 transition">
                     <svg style="width:18px;height:18px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                     </svg>
                 </button>
             </div>
-            <iframe id="iframeEliminar" src="" style="width:100%;height:230px;border:none;display:block;"></iframe>
+            <iframe id="iframeEliminar" src="" style="width:100%;height:260px;border:none;display:block;"></iframe>
         </div>
     </div>
 </div>
 
 <style>
     .btn-primary {
-        background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
         transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
     }
 
         .btn-primary:hover {
             opacity: 0.92;
             transform: translateY(-1px);
-            box-shadow: 0 8px 20px rgba(34,197,94,0.30);
+            box-shadow: 0 8px 20px rgba(37,99,235,0.30);
         }
 </style>
 
 @section scripts {
     <script>
-    function cargarUsuarios() {
+    var puedeEditar   = @puedeEditar.ToString().ToLower();
+    var puedeEliminar = @puedeEliminar.ToString().ToLower();
+
+    var paginaActual   = 1;
+    var totalPaginas   = 1;
+    var busquedaActual = '';
+    var tamanoPagina   = 10;
+
+    $(function () {
+        cargarSocios();
+
+        var timer;
+        $('#txtBusqueda').on('input', function () {
+            clearTimeout(timer);
+            timer = setTimeout(function () {
+                busquedaActual = $('#txtBusqueda').val().trim();
+                paginaActual   = 1;
+                cargarSocios();
+            }, 400);
+        });
+
+        $('#selTamano').on('change', function () {
+            tamanoPagina = parseInt($(this).val());
+            paginaActual = 1;
+            cargarSocios();
+        });
+    });
+
+    function cargarSocios() {
+        $('#tbodySocios').html(
+            '<tr><td colspan="10" class="px-6 py-10 text-center text-sm text-gray-400">' +
+            '<svg class="animate-spin mx-auto mb-2" style="width:22px;height:22px;" fill="none" viewBox="0 0 24 24">' +
+            '<circle class="opacity-25" cx="12" cy="12" r="10" stroke="#2563eb" stroke-width="4"/>' +
+            '<path class="opacity-75" fill="#2563eb" d="M4 12a8 8 0 018-8v8H4z"/></svg>Cargando...</td></tr>'
+        );
+
         $.ajax({
-            url: '@Url.Action("ListarUsuarios", "Usuario")',
+            url:  '@Url.Action("Listar", "Socio")',
             type: 'GET',
+            data: { busqueda: busquedaActual, pagina: paginaActual, tamanoPagina: tamanoPagina },
             success: function (res) {
-                var filas = '';
-                if (!res.data || res.data.length === 0) {
-                    filas = '<tr><td colspan="7" class="px-6 py-10 text-center text-sm text-gray-400">No hay usuarios registrados.</td></tr>';
-                    $('#contadorUsuarios').text('');
-                } else {
-                    $.each(res.data, function (i, u) {
-
-                        var badge = u.estado
-                            ? '<span class="px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">Activo</span>'
-                            : '<span class="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-500">Inactivo</span>';
-
-                        var fecha = u.fecha_creacion
-                            ? new Date(parseInt(u.fecha_creacion.replace('/Date(', '').replace(')/', '')))
-                                .toLocaleDateString('es-BO', { day:'2-digit', month:'2-digit', year:'numeric' })
-                            : '�';
-
-                        // Iniciales para el avatar
-                        var iniciales = (u.nombre.charAt(0) + u.apellido.charAt(0)).toUpperCase();
-                        var nomEsc    = (u.nombre + ' ' + u.apellido).replace(/'/g, "\\'");
-
-                        filas += '<tr class="hover:bg-gray-50 transition fila-usuario">' +
-                            '<td class="px-6 py-3.5 text-gray-400 text-xs">' + (i+1) + '</td>' +
-                            '<td class="px-6 py-3.5">' +
-                            '  <div class="flex items-center gap-3">' +
-                            '    <div class="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 text-xs font-bold flex-shrink-0">' + iniciales + '</div>' +
-                            '    <span class="font-medium text-gray-800">' + u.usuario + '</span>' +
-                            '  </div>' +
-                            '</td>' +
-                            '<td class="px-6 py-3.5 text-gray-600">' + u.nombre + ' ' + u.apellido + '</td>' +
-                            '<td class="px-6 py-3.5">' +
-                            '  <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-600">' + (u.rol ? u.rol.nombre : '�') + '</span>' +
-                            '</td>' +
-                            '<td class="px-6 py-3.5 text-gray-400 text-xs">' + fecha + '</td>' +
-                            '<td class="px-6 py-3.5">' + badge + '</td>' +
-                            '<td class="px-6 py-3.5 text-center">' +
-                            '  <div class="inline-flex items-center gap-1">' +
-                            '    <button onclick="abrirEditar(' + u.id_usuario_admin + ')" title="Editar"' +
-                            '            class="p-1.5 rounded-lg text-gray-400 hover:bg-green-50 hover:text-green-600 transition">' +
-                            '      <svg style="width:15px;height:15px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>' +
-                            '    </button>' +
-                            '    <button onclick="abrirEliminar(' + u.id_usuario_admin + ',\'' + nomEsc + '\')" title="Desactivar"' +
-                            '            class="p-1.5 rounded-lg text-gray-400 hover:bg-red-50 hover:text-red-500 transition">' +
-                            '      <svg style="width:15px;height:15px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>' +
-                            '    </button>' +
-                            '  </div>' +
-                            '</td>' +
-                            '</tr>';
-                    });
-                    $('#contadorUsuarios').text(res.data.length + ' usuario(s)');
-                }
-                $('#bodyUsuarios').html(filas);
+                if (!res.exito) { mostrarToast(res.mensaje, 'error'); return; }
+                renderTabla(res.socios, res.totalRegistros);
+                totalPaginas = Math.ceil(res.totalRegistros / tamanoPagina) || 1;
+                renderPaginacion(res.totalRegistros);
             },
             error: function () {
-                $('#bodyUsuarios').html('<tr><td colspan="7" class="px-6 py-10 text-center text-sm text-red-500">Error al cargar los datos.</td></tr>');
+                $('#tbodySocios').html('<tr><td colspan="10" class="px-6 py-10 text-center text-sm text-red-500">Error al cargar los datos.</td></tr>');
             }
         });
     }
 
-    $('#buscador').on('input', function () {
-        var t = $(this).val().toLowerCase();
-        $('.fila-usuario').each(function () {
-            $(this).toggle($(this).text().toLowerCase().indexOf(t) !== -1);
+    function renderTabla(socios, total) {
+        var tbody = $('#tbodySocios');
+        tbody.empty();
+
+        if (!socios || socios.length === 0) {
+            tbody.append('<tr><td colspan="10" class="px-6 py-10 text-center text-sm text-gray-400">No se encontraron socios.</td></tr>');
+            return;
+        }
+
+        var inicio = (paginaActual - 1) * tamanoPagina + 1;
+
+        $.each(socios, function (i, s) {
+            var fecha = parsearFechaNet(s.fecha_registro);
+            var nomEsc = s.nombre_socio.replace(/'/g, "\\'");
+
+            var btnEditar = puedeEditar
+                ? '<button onclick="abrirEditar(' + s.id_socio + ')" title="Editar" ' +
+                  'class="p-1.5 rounded-lg text-gray-400 hover:bg-blue-50 hover:text-blue-600 transition">' +
+                  '<svg style="width:15px;height:15px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">' +
+                  '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" ' +
+                  'd="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>' +
+                  '</svg></button>'
+                : '';
+
+            var btnEliminar = puedeEliminar
+                ? '<button onclick="abrirEliminar(' + s.id_socio + ',\'' + nomEsc + '\')" title="Eliminar" ' +
+                  'class="p-1.5 rounded-lg text-gray-400 hover:bg-red-50 hover:text-red-500 transition">' +
+                  '<svg style="width:15px;height:15px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">' +
+                  '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" ' +
+                  'd="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>' +
+                  '</svg></button>'
+                : '';
+
+            tbody.append(
+                '<tr class="hover:bg-gray-50 transition">' +
+                '<td class="px-6 py-3.5 text-gray-400 text-xs">'     + (inicio + i)       + '</td>' +
+                '<td class="px-6 py-3.5 font-mono font-semibold text-blue-700">' + s.codigo_fijo + '</td>' +
+                '<td class="px-6 py-3.5 font-medium text-gray-800">' + s.nombre_socio      + '</td>' +
+                '<td class="px-6 py-3.5 text-gray-600">' +
+                    '<div>' + s.nombre_cliente + '</div>' +
+                    '<div class="text-xs text-gray-400">CI: ' + s.ci_cliente + '</div>' +
+                '</td>' +
+                '<td class="px-6 py-3.5 font-mono text-xs text-gray-600">' + s.num_serie_medidor + '</td>' +
+                '<td class="px-6 py-3.5 text-gray-600">'               + s.nombre_ruta      + '</td>' +
+                '<td class="px-6 py-3.5">' +
+                    '<span class="px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">' + s.NombreRolSocio + '</span>' +
+                '</td>' +
+                '<td class="px-6 py-3.5 text-gray-600 text-xs">'      + s.categoria        + '</td>' +
+                '<td class="px-6 py-3.5 text-gray-500 text-xs">'      + fecha              + '</td>' +
+                '<td class="px-6 py-3.5 text-center">' +
+                    '<div class="inline-flex items-center gap-1">' + btnEditar + btnEliminar + '</div>' +
+                '</td>' +
+                '</tr>'
+            );
         });
-    });
+    }
 
-    function abrirCrear()  { $('#iframeCrear').attr('src','@Url.Action("CrearUsuario","Usuario")'); $('#modalCrear').removeClass('hidden').addClass('flex'); }
-    function cerrarCrear() { $('#modalCrear').removeClass('flex').addClass('hidden'); $('#iframeCrear').attr('src',''); }
+    function renderPaginacion(total) {
+        var inicio = total === 0 ? 0 : (paginaActual - 1) * tamanoPagina + 1;
+        var fin    = Math.min(paginaActual * tamanoPagina, total);
+        $('#infoPaginacion').text('Mostrando ' + inicio + ' a ' + fin + ' de ' + total + ' registros');
 
-    function abrirEditar(id)  { $('#iframeEditar').attr('src','@Url.Action("EditarUsuario","Usuario")?id='+id); $('#modalEditar').removeClass('hidden').addClass('flex'); }
-    function cerrarEditar()   { $('#modalEditar').removeClass('flex').addClass('hidden'); $('#iframeEditar').attr('src',''); }
+        var ctrl = $('#controlesPaginacion');
+        ctrl.empty();
+        var base = 'px-3 py-1.5 text-xs rounded-lg border transition font-medium ';
 
-    function abrirEliminar(id, nombre)  { $('#iframeEliminar').attr('src','@Url.Action("EliminarUsuario","Usuario")?id='+id+'&nombre='+encodeURIComponent(nombre)); $('#modalEliminar').removeClass('hidden').addClass('flex'); }
-    function cerrarEliminar()           { $('#modalEliminar').removeClass('flex').addClass('hidden'); $('#iframeEliminar').attr('src',''); }
+        ctrl.append('<button ' + (paginaActual === 1 ? 'disabled' : '') +
+            ' onclick="irPagina(' + (paginaActual - 1) + ')" class="' + base +
+            (paginaActual === 1 ? 'opacity-40 cursor-not-allowed border-gray-200 text-gray-400'
+                                : 'border-gray-300 text-gray-600 hover:bg-gray-100') + '">‹ Ant</button>');
 
-    function onAccionCompletada() { cerrarCrear(); cerrarEditar(); cerrarEliminar(); cargarUsuarios(); }
+        var desde = Math.max(1, paginaActual - 2);
+        var hasta = Math.min(totalPaginas, paginaActual + 2);
+        for (var p = desde; p <= hasta; p++) {
+            ctrl.append('<button onclick="irPagina(' + p + ')" class="' + base +
+                (p === paginaActual
+                    ? 'bg-blue-600 text-white border-blue-600'
+                    : 'border-gray-300 text-gray-600 hover:bg-gray-100') + '">' + p + '</button>');
+        }
 
-    $(function () { cargarUsuarios(); });
+        ctrl.append('<button ' + (paginaActual === totalPaginas ? 'disabled' : '') +
+            ' onclick="irPagina(' + (paginaActual + 1) + ')" class="' + base +
+            (paginaActual === totalPaginas ? 'opacity-40 cursor-not-allowed border-gray-200 text-gray-400'
+                                           : 'border-gray-300 text-gray-600 hover:bg-gray-100') + '">Sig ›</button>');
+    }
+
+    function irPagina(p) {
+        if (p < 1 || p > totalPaginas) return;
+        paginaActual = p;
+        cargarSocios();
+    }
+
+    function abrirCrear() {
+        $('#iframeCrear').attr('src', '@Url.Action("CrearSocio", "Socio")');
+        $('#modalCrear').removeClass('hidden').addClass('flex');
+    }
+    function cerrarCrear() {
+        $('#modalCrear').removeClass('flex').addClass('hidden');
+        $('#iframeCrear').attr('src', '');
+    }
+
+    function abrirEditar(id) {
+        $('#iframeEditar').attr('src', '@Url.Action("EditarSocio", "Socio")?id=' + id);
+        $('#modalEditar').removeClass('hidden').addClass('flex');
+    }
+    function cerrarEditar() {
+        $('#modalEditar').removeClass('flex').addClass('hidden');
+        $('#iframeEditar').attr('src', '');
+    }
+
+    function abrirEliminar(id, nombre) {
+        $('#iframeEliminar').attr('src',
+            '@Url.Action("EliminarSocio", "Socio")?id=' + id +
+            '&nombre=' + encodeURIComponent(nombre));
+        $('#modalEliminar').removeClass('hidden').addClass('flex');
+    }
+    function cerrarEliminar() {
+        $('#modalEliminar').removeClass('flex').addClass('hidden');
+        $('#iframeEliminar').attr('src', '');
+    }
+
+    function onAccionCompletada() {
+        cerrarCrear();
+        cerrarEditar();
+        cerrarEliminar();
+        cargarSocios();
+    }
+
+    function parsearFechaNet(val) {
+        if (!val) return '';
+        var m = /\/Date\((\d+)\)\//.exec(val);
+        if (m) return new Date(parseInt(m[1])).toISOString().substring(0, 10);
+        return typeof val === 'string' ? val.substring(0, 10) : '';
+    }
+
+    function mostrarToast(msg, tipo) {
+        var toast = $('<div>')
+            .addClass('fixed bottom-6 right-6 z-50 text-white text-sm font-medium px-5 py-3 rounded-xl shadow-lg ' +
+                      (tipo === 'success' ? 'bg-green-500' : 'bg-red-500'))
+            .text(msg);
+        $('body').append(toast);
+        setTimeout(function () { toast.fadeOut(400, function () { $(this).remove(); }); }, 3000);
+    }
     </script>
 }
-
-

@@ -1,11 +1,11 @@
-@{
+ï»¿@{
     ViewBag.Title = "Usuario";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
 <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
     <div>
-        <h1 class="text-xl font-semibold text-gray-800">Gestión de Usuarios</h1>
+        <h1 class="text-xl font-semibold text-gray-800">GestiÃ³n de Usuarios</h1>
         <p class="text-sm text-gray-400 mt-0.5">Administra los usuarios administrativos del sistema</p>
     </div>
     <button onclick="abrirCrear()"
@@ -38,7 +38,7 @@
                     <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Usuario</th>
                     <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Nombre completo</th>
                     <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Rol</th>
-                    <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Fecha creación</th>
+                    <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Fecha creaciÃ³n</th>
                     <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Estado</th>
                     <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide text-center">Acciones</th>
                 </tr>
@@ -152,7 +152,7 @@
                         var fecha = u.fecha_creacion
                             ? new Date(parseInt(u.fecha_creacion.replace('/Date(', '').replace(')/', '')))
                                 .toLocaleDateString('es-BO', { day:'2-digit', month:'2-digit', year:'numeric' })
-                            : '—';
+                            : 'Â—';
 
                         // Iniciales para el avatar
                         var iniciales = (u.nombre.charAt(0) + u.apellido.charAt(0)).toUpperCase();
@@ -168,7 +168,7 @@
                             '</td>' +
                             '<td class="px-6 py-3.5 text-gray-600">' + u.nombre + ' ' + u.apellido + '</td>' +
                             '<td class="px-6 py-3.5">' +
-                            '  <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-600">' + (u.rol ? u.rol.nombre : '—') + '</span>' +
+                            '  <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-600">' + (u.rol ? u.rol.nombre : 'Â—') + '</span>' +
                             '</td>' +
                             '<td class="px-6 py-3.5 text-gray-400 text-xs">' + fecha + '</td>' +
                             '<td class="px-6 py-3.5">' + badge + '</td>' +

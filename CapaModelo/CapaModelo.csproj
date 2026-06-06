@@ -42,8 +42,13 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CM_Bitacora.cs" />
+    <Compile Include="CM_CargoExtra.cs" />
     <Compile Include="CM_Cliente.cs" />
+    <Compile Include="CM_CuentaSocio.cs" />
     <Compile Include="CM_Medidor.cs" />
+    <Compile Include="CM_MetodoPago.cs" />
+    <Compile Include="CM_Notificacion.cs" />
+    <Compile Include="CM_Periodo.cs" />
     <Compile Include="CM_Permiso.cs" />
     <Compile Include="CM_Rol.cs" />
     <Compile Include="CM_RolSocio.cs" />

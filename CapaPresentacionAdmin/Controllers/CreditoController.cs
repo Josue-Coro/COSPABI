@@ -11,7 +11,7 @@ namespace CapaPresentacionAdmin.Controllers
     public class CreditoController : Controller
     {        
         // GET: Credito
-        [ValidarPermisos(NombrePermiso = "Gestionar Credito")]
+        [ValidarPermisos(NombrePermiso = "Gestionar Credito Inscripcion")]
         public ActionResult Credito()
         {
             return View();

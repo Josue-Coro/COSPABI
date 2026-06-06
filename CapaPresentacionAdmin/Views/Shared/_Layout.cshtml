@@ -1,4 +1,4 @@
-@using CapaModelo
+ï»¿@using CapaModelo
 @using System.Linq
 @functions {
     bool TienePermiso(string nombreAccion)
@@ -11,15 +11,19 @@
 @{
     CM_Usuario_Activo oUsuario = (CM_Usuario_Activo)Session["Usuario"];
 
-    // Agrupadores de sección
-    bool tieneGestion =
-        TienePermiso("Gestionar Cliente") ||
-        TienePermiso("Gestionar Avisos") ||
-        TienePermiso("Gestionar Caja") ||
-        TienePermiso("Gestionar Lecturas") ||
-        TienePermiso("Gestionar Notificaciones");
+    // Agrupadores de secciÃ³n
+    
+
     bool tieneOperaciones =
-        TienePermiso("Gestionar Ruta");
+        TienePermiso("Gestionar Ruta") ||
+        TienePermiso("Gestionar Avisos") ||
+        TienePermiso("Gestionar Cargo Extra") ||
+        TienePermiso("Gestionar Lecturas");
+
+    bool tienePortalSocio =
+        TienePermiso("Gestionar Cuenta Socio") ||
+        TienePermiso("Gestionar Notificaciones") ||
+        TienePermiso("Gestionar Metodo Pago");
 
     bool tieneConfiguracion =
         TienePermiso("Gestionar Tarifa") ||
@@ -29,14 +33,18 @@
     bool tieneComercial =
         TienePermiso("Gestionar Cliente") ||
         TienePermiso("Gestionar Socio") ||
-        TienePermiso("Gestionar Credito") ||
+        TienePermiso("Gestionar Credito Inscripcion") ||
         TienePermiso("Gestionar Pago");
 
     bool tieneAdmin =
+        TienePermiso("Gestionar Caja") ||
         TienePermiso("Gestionar Usuarios") ||
         TienePermiso("Gestionar Rol") ||
         TienePermiso("Gestionar Permiso") ||
         TienePermiso("Visualizar Bitacora");
+    bool tieneReporte =
+        TienePermiso("Generar Reporte Caja") ||
+        TienePermiso("Generar Reporte Morosidad") ;
 
     // Iniciales del usuario para el avatar
     var nombreSesion = Session["NombreUsuario"] as string ?? "AD";
@@ -50,7 +58,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@ViewBag.Title — COSPABI R.L.</title>
+    <title>@ViewBag.Title - COSPABI R.L.</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -218,28 +226,20 @@
                 </div>
             </div>
 
-            <!-- Navegación -->
+            <!-- NavegaciÃ³n -->
             <nav class="flex-1 overflow-y-auto py-4 px-3 space-y-0.5">
 
                 <p class="nav-section">Principal</p>
-                @Html.ActionLink("Dashboard", "Index", "Home",
+                @Html.ActionLink("Inicio", "Index", "Home",
                     new { area = "" },
                     new { @class = "nav-link" })
 
-                @if (tieneGestion)
+                @if (tieneOperaciones)
                 {
-                    <p class="nav-section">Gestión</p>
-
-
+                    <p class="nav-section">Operaciones</p>
                     if (TienePermiso("Gestionar Avisos"))
                     {
                         @Html.ActionLink("Avisos y Cobros", "Aviso", "Aviso",
-                            new { area = "" },
-                            new { @class = "nav-link" })
-                    }
-                    if (TienePermiso("Gestionar Caja"))
-                    {
-                        @Html.ActionLink("Cajas", "Caja", "Caja",
                             new { area = "" },
                             new { @class = "nav-link" })
                     }
@@ -249,19 +249,39 @@
                             new { area = "" },
                             new { @class = "nav-link" })
                     }
+                    if (TienePermiso("Gestionar Ruta"))
+                    {
+                        @Html.ActionLink("Rutas", "Ruta", "Ruta",
+                            new { area = "" },
+                            new { @class = "nav-link" })
+                    }
+                    if (TienePermiso("Gestionar Cargo Extra"))
+                    {
+                        @Html.ActionLink("Cargos Extras", "CargoExtra", "CargoExtra",
+                            new { area = "" },
+                            new { @class = "nav-link" })
+                    }
+
+                }
+
+                @if (tienePortalSocio)
+                {
+                    <p class="nav-section">Portal de Socios</p>
+                    if (TienePermiso("Gestionar Cuenta Socio"))
+                    {
+                        @Html.ActionLink("Cuentas de Socio", "CuentaSocio", "CuentaSocio",
+                            new { area = "" },
+                            new { @class = "nav-link" })
+                    }
                     if (TienePermiso("Gestionar Notificaciones"))
                     {
                         @Html.ActionLink("Notificaciones", "Notificacion", "Notificacion",
                             new { area = "" },
                             new { @class = "nav-link" })
                     }
-                }
-                @if (tieneOperaciones)
-                {
-                    <p class="nav-section">Operaciones</p>
-                    if (TienePermiso("Gestionar Ruta"))
+                    if (TienePermiso("Gestionar Metodo Pago"))
                     {
-                        @Html.ActionLink("Rutas", "Ruta", "Ruta",
+                        @Html.ActionLink("Metodo de pago", "MetodoPago", "MetodoPago",
                             new { area = "" },
                             new { @class = "nav-link" })
                     }
@@ -269,7 +289,7 @@
                 }
                 @if (tieneComercial)
                 {
-                    <p class="nav-section">Comercial</p>
+                    <p class="nav-section">Atencion al Cliente</p>
 
                     if (TienePermiso("Gestionar Cliente"))
                     {
@@ -283,9 +303,9 @@
                             new { area = "" },
                             new { @class = "nav-link" })
                     }
-                    if (TienePermiso("Gestionar Credito"))
+                    if (TienePermiso("Gestionar Credito Inscripcion"))
                     {
-                        @Html.ActionLink("Créditos", "Credito", "Credito",
+                        @Html.ActionLink("CrÃ©dito de Inscripcion", "Credito", "Credito",
                             new { area = "" },
                             new { @class = "nav-link" })
                     }
@@ -299,7 +319,7 @@
                 }
                 @if (tieneConfiguracion)
                 {
-                    <p class="nav-section">Configuración</p>
+                    <p class="nav-section">ConfiguraciÃ³n</p>
 
 
                     if (TienePermiso("Gestionar Tarifa"))
@@ -325,7 +345,13 @@
 
                 @if (tieneAdmin)
                 {
-                    <p class="nav-section">Administración</p>
+                    <p class="nav-section">AdministraciÃ³n</p>
+                    if (TienePermiso("Gestionar Caja"))
+                    {
+                        @Html.ActionLink("Cajas", "Caja", "Caja",
+                            new { area = "" },
+                            new { @class = "nav-link" })
+                    }
                     if (TienePermiso("Gestionar Usuarios"))
                     {
                         @Html.ActionLink("Usuarios", "Usuario", "Usuario",
@@ -353,6 +379,23 @@
                     }
 
                 }
+                @if (tieneReporte)
+                {
+                    <p class="nav-section">Reporte</p>
+                    if (TienePermiso("Generar Reporte Caja"))
+                    {
+                        @Html.ActionLink("Reporte de Caja", "Caja", "Reporte",
+                            new { area = "" },
+                            new { @class = "nav-link" })
+                    }
+                    if (TienePermiso("Generar Reporte Morosidad"))
+                    {
+                        @Html.ActionLink("Reporte de Morosidad", "Morosidad", "Reporte",
+                            new { area = "" },
+                            new { @class = "nav-link" })
+                    }
+
+                }
 
             </nav>
 
@@ -364,14 +407,14 @@
                     </div>
                     <div class="overflow-hidden">
                         <p class="text-white text-xs font-semibold truncate">@(Session["NombreUsuario"] ?? "Administrador")</p>
-                        <p class="text-slate-500 text-[11px] truncate">@(Session["RolUsuario"] ?? "—")</p>
+                        <p class="text-slate-500 text-[11px] truncate">@(Session["RolUsuario"] ?? "Â—")</p>
                     </div>
                 </div>
             </div>
 
         </aside>
 
-        <!-- ÁREA DE CONTENIDO -->
+        <!-- ÃREA DE CONTENIDO -->
         <div class="flex-1 flex flex-col overflow-hidden min-w-0">
 
             <div class="top-accent h-[3px] flex-shrink-0"></div>
@@ -382,7 +425,7 @@
                 <div class="flex items-center gap-4">
                     <button onclick="toggleSidebar()"
                             class="md:hidden p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition"
-                            aria-label="Abrir menú">
+                            aria-label="Abrir menÃº">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
                         </svg>
@@ -422,7 +465,7 @@
                             </div>
                             <div class="hidden sm:block text-left leading-none">
                                 <p class="text-sm font-semibold text-gray-800">@(Session["NombreUsuario"] ?? "Administrador")</p>
-                                <p class="text-[11px] text-gray-400 mt-0.5">@(Session["RolUsuario"] ?? "—")</p>
+                                <p class="text-[11px] text-gray-400 mt-0.5">@(Session["RolUsuario"] ?? "Â—")</p>
                             </div>
                             <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
@@ -443,7 +486,7 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                           d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                                 </svg>
-                                Cerrar sesión
+                                Cerrar sesiÃ³n
                             </a>
                         </div>
                     </div>

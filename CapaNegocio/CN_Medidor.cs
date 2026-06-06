@@ -15,6 +15,11 @@ namespace CapaNegocio
             return cdmedidor.Listar(busqueda, pagina, tamanoPagina);
         }
 
+        public (List<CM_Medidor> lista, int totalRegistros) ListarRegistrar(
+            string busqueda, int pagina, int tamanoPagina)
+        {
+            return cdmedidor.ListarRegistrar(busqueda, pagina, tamanoPagina);
+        }
         public int Registrar(CM_Medidor obj, int idUsuario, out string Mensaje)
         {
             Mensaje = string.Empty;
