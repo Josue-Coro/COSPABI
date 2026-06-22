@@ -1,0 +1,163 @@
+﻿@model CapaModelo.CM_Socio
+@{
+    ViewBag.Title = "Mi Perfil";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f1f5f9; }
+
+    .perfil-header {
+        background: #1c2434;
+        border-radius: 16px;
+        padding: 24px 20px;
+        color: white;
+        margin-bottom: 16px;
+    }
+    .avatar-circle {
+        width: 64px; height: 64px;
+        border-radius: 50%;
+        background: #22c55e;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 24px; font-weight: 700;
+        color: white;
+        flex-shrink: 0;
+    }
+    .badge-rol {
+        background: #22c55e;
+        color: white;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 3px 10px;
+        border-radius: 20px;
+        display: inline-block;
+        margin-top: 6px;
+    }
+    .seccion-card {
+        background: #fff;
+        border-radius: 14px;
+        padding: 18px 20px;
+        margin-bottom: 14px;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+    }
+    .seccion-titulo {
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        color: #16a34a;
+        margin-bottom: 14px;
+        padding-bottom: 8px;
+        border-bottom: 2px solid #f0fdf4;
+    }
+    .dato-fila {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        padding: 9px 0;
+        border-bottom: 1px solid #f1f5f9;
+        gap: 12px;
+    }
+    .dato-fila:last-child { border-bottom: none; }
+    .dato-label {
+        font-size: 13px;
+        color: #94a3b8;
+        font-weight: 500;
+        flex-shrink: 0;
+        min-width: 120px;
+    }
+    .dato-valor {
+        font-size: 14px;
+        color: #1e293b;
+        font-weight: 600;
+        text-align: right;
+        word-break: break-word;
+    }
+    .dato-valor.vacio { color: #cbd5e1; font-weight: 400; font-style: italic; }
+</style>
+
+<div style="max-width:520px; margin:0 auto; padding:16px;">
+
+    <!-- Encabezado -->
+    <div class="perfil-header">
+        <div class="d-flex align-items-center" style="gap:16px;">
+            <div class="avatar-circle">
+                @Model.nombre_socio.Substring(0, 1).ToUpper()
+            </div>
+            <div>
+                <div style="font-size:19px; font-weight:700; line-height:1.2;">
+                    @Model.nombre_socio
+                </div>
+                <div style="font-size:13px; opacity:0.8; margin-top:2px;">
+                    Cód. Fijo @Model.codigo_fijo
+                </div>
+                <span class="badge-rol">@Model.NombreRolSocio</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Datos Personales -->
+    <div class="seccion-card">
+        <div class="seccion-titulo">Datos Personales</div>
+
+        <div class="dato-fila">
+            <span class="dato-label">Nombre completo</span>
+            <span class="dato-valor">@Model.nombre_cliente</span>
+        </div>
+        <div class="dato-fila">
+            <span class="dato-label">CI</span>
+            <span class="dato-valor">@Model.ci_cliente</span>
+        </div>
+        <div class="dato-fila">
+            <span class="dato-label">Socio desde</span>
+            <span class="dato-valor">@Model.fecha_registro.ToString("dd/MM/yyyy")</span>
+        </div>
+        <div class="dato-fila">
+            <span class="dato-label">Categoría</span>
+            <span class="dato-valor">@Model.categoria</span>
+        </div>
+        <div class="dato-fila">
+            <span class="dato-label">Actividad</span>
+            <span class="dato-valor">@Model.actividad</span>
+        </div>
+    </div>
+
+    <!-- Instalación -->
+    <div class="seccion-card">
+        <div class="seccion-titulo">Instalación</div>
+
+        <div class="dato-fila">
+            <span class="dato-label">N° Medidor</span>
+            <span class="dato-valor">@Model.num_serie_medidor</span>
+        </div>
+        <div class="dato-fila">
+            <span class="dato-label">Ruta</span>
+            <span class="dato-valor">@Model.nombre_ruta</span>
+        </div>
+        <div class="dato-fila">
+            <span class="dato-label">N° Casa</span>
+            <span class="dato-valor @(Model.num_casa == 0 ? "vacio" : "")">
+                @(Model.num_casa > 0 ? Model.num_casa.ToString() : "No registrado")
+            </span>
+        </div>
+        <div class="dato-fila">
+            <span class="dato-label">N° Ocupantes</span>
+            <span class="dato-valor @(Model.num_ocupantes == 0 ? "vacio" : "")">
+                @(Model.num_ocupantes > 0 ? Model.num_ocupantes.ToString() : "No registrado")
+            </span>
+        </div>
+        <div class="dato-fila">
+            <span class="dato-label">Tipo instalación</span>
+            <span class="dato-valor @(string.IsNullOrEmpty(Model.tipo_instalacion) ? "vacio" : "")">
+                @(string.IsNullOrEmpty(Model.tipo_instalacion) ? "No registrado" : Model.tipo_instalacion)
+            </span>
+        </div>
+        <div class="dato-fila">
+            <span class="dato-label">Dimensión</span>
+            <span class="dato-valor @(string.IsNullOrEmpty(Model.dim_instalacion) ? "vacio" : "")">
+                @(string.IsNullOrEmpty(Model.dim_instalacion) ? "No registrado" : Model.dim_instalacion)
+            </span>
+        </div>
+    </div>
+
+</div>

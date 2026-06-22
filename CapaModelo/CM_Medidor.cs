@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace CapaModelo
 {
@@ -19,5 +20,11 @@ namespace CapaModelo
         // Campos del JOIN con socio
         public string nombre_socio { get; set; }
         public int? codigo_fijo { get; set; }
+
+        public class CM_MedidorListado
+        {
+            public int               TotalRegistros { get; set; }
+            public List<CM_Medidor>  Medidores      { get; set; }
+        }
     }
 }

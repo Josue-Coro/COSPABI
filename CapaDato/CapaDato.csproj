@@ -42,14 +42,22 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CD_Aviso.cs" />
     <Compile Include="CD_Bitacora.cs" />
+    <Compile Include="CD_Caja.cs" />
+    <Compile Include="CD_CargoExtra.cs" />
     <Compile Include="CD_Cliente.cs" />
     <Compile Include="CD_Conexion.cs" />
+    <Compile Include="CD_Credito.cs" />
     <Compile Include="CD_CuentaSocio.cs" />
+    <Compile Include="CD_Dashboard.cs" />
+    <Compile Include="CD_Lectura.cs" />
     <Compile Include="CD_Login.cs" />
+    <Compile Include="CD_LoginSocio.cs" />
     <Compile Include="CD_Medidor.cs" />
     <Compile Include="CD_MetodoPago.cs" />
     <Compile Include="CD_Notificacion.cs" />
+    <Compile Include="CD_Pago.cs" />
     <Compile Include="CD_Permiso.cs" />
     <Compile Include="CD_Recursos.cs" />
     <Compile Include="CD_Rol.cs" />

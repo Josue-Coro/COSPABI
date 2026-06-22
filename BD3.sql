@@ -1,35 +1,31 @@
 -- Generado por Oracle SQL Developer Data Modeler 23.1.0.087.0806
---   en:        2026-04-29 20:27:36 BOT
+--   en:        2026-05-12 23:36:04 BOT
 --   sitio:      SQL Server 2012
 --   tipo:      SQL Server 2012
-CREATE DATABASE COSPABI
-GO
-USE COSPABI;
-GO
+
+--CREATE DATABASE COSPABIRL1;
+--USE  COSPABIRL1
 
 CREATE TABLE aviso 
     (
      id_aviso INTEGER NOT NULL IDENTITY(1,1), 
-     periodo DATE NOT NULL , 
      fecha_emision DATE NOT NULL , 
      fecha_vencimiento DATE NOT NULL , 
      total_consumo DECIMAL (30,2) NOT NULL , 
      total_aviso DECIMAL (30,2) NOT NULL , 
      estado VARCHAR (50) NOT NULL , 
      deuda_actual DECIMAL (30,2) NOT NULL , 
-     cliente_id_cliente INTEGER NOT NULL , 
-     lectura_id_lectura INTEGER , 
-     tarifa_id_tarifa INTEGER NOT NULL , 
      periodo_id_periodo INTEGER NOT NULL , 
      cargo_extra_id_carga_extra INTEGER , 
      credito_inscripcion_id_credito INTEGER , 
      estado_id_estado INTEGER NOT NULL , 
-     caja_id_caja INTEGER , 
-     id_lectura INTEGER 
+     lectura_id_lectura INTEGER , 
+     socio_id_socio INTEGER NOT NULL , 
+     caja_id_caja INTEGER 
     )
 GO
 
-ALTER TABLE aviso ADD CONSTRAINT factura_PK PRIMARY KEY CLUSTERED (id_aviso)
+ALTER TABLE aviso ADD CONSTRAINT aviso_PK PRIMARY KEY CLUSTERED (id_aviso)
      WITH (
      ALLOW_PAGE_LOCKS = ON , 
      ALLOW_ROW_LOCKS = ON )
@@ -76,9 +72,8 @@ CREATE TABLE cargo_extra
      descripcion VARCHAR (150) NOT NULL , 
      fecha_registro DATE NOT NULL , 
      estado VARCHAR (150) NOT NULL , 
-     cliente_id_cliente INTEGER NOT NULL , 
      tipo_cargo_id_tipo INTEGER NOT NULL , 
-     factura_id_factura INTEGER NOT NULL , 
+     socio_id_socio INTEGER NOT NULL , 
      periodo_id_periodo INTEGER NOT NULL 
     )
 GO
@@ -89,46 +84,17 @@ ALTER TABLE cargo_extra ADD CONSTRAINT cargo_extra_PK PRIMARY KEY CLUSTERED (id_
      ALLOW_ROW_LOCKS = ON )
 GO
 
-CREATE TABLE categoria_tarifa 
-    (
-     id_categoria_tarifa INTEGER NOT NULL IDENTITY(1,1), 
-     descripcion VARCHAR (150) NOT NULL 
-    )
-GO
-
-ALTER TABLE categoria_tarifa ADD CONSTRAINT categoria_PK PRIMARY KEY CLUSTERED (id_categoria_tarifa)
-     WITH (
-     ALLOW_PAGE_LOCKS = ON , 
-     ALLOW_ROW_LOCKS = ON )
-GO
-
 CREATE TABLE cliente 
     (
      id_cliente INTEGER NOT NULL IDENTITY(1,1), 
-     codigo_fijo VARCHAR (20) NOT NULL , 
-     codigo_ubicacion VARCHAR (20) NOT NULL , 
+     genero VARCHAR (255) NOT NULL , 
      nombre_completo VARCHAR (250) NOT NULL , 
      ci VARCHAR (50) NOT NULL , 
-     direccion VARCHAR (255) NOT NULL , 
-     actividad VARCHAR (150) NOT NULL , 
+     fecha_nacimiento DATE NOT NULL , 
      fecha_registro DATE NOT NULL , 
      estado BIT NOT NULL , 
-     rol_id_rol INTEGER NOT NULL , 
-     rol_cliente_id_rol_cliente INTEGER NOT NULL , 
-     categoria VARCHAR (150) NOT NULL , 
-     ruta_id_ruta INTEGER NOT NULL , 
-     medidor_id_medidor INTEGER NOT NULL 
+     telefono INTEGER 
     )
-GO 
-
-    
-
-
-CREATE UNIQUE NONCLUSTERED INDEX 
-    cliente__IDX ON cliente 
-    ( 
-     medidor_id_medidor 
-    ) 
 GO
 
 ALTER TABLE cliente ADD CONSTRAINT cliente_PK PRIMARY KEY CLUSTERED (id_cliente)
@@ -141,52 +107,31 @@ CREATE TABLE credito_inscripcion
     (
      id_credito INTEGER NOT NULL IDENTITY(1,1), 
      monto_pago DECIMAL (10,2) NOT NULL , 
-     saldo_pendiente DECIMAL (10,2) NOT NULL , 
-     numero_cuotas INTEGER NOT NULL , 
-     fecha_registro DATE NOT NULL , 
      estado VARCHAR (50) NOT NULL , 
-     cliente_id_cliente INTEGER NOT NULL , 
-     cliente_id_cliente1 INTEGER NOT NULL , 
      num_cuota INTEGER NOT NULL , 
+     socio_id_socio INTEGER NOT NULL , 
      periodo_id_periodo INTEGER NOT NULL 
     )
 GO
 
-ALTER TABLE credito_inscripcion ADD CONSTRAINT inscripcion_PK PRIMARY KEY CLUSTERED (id_credito)
+ALTER TABLE credito_inscripcion ADD CONSTRAINT credito_inscripcion_PK PRIMARY KEY CLUSTERED (id_credito)
      WITH (
      ALLOW_PAGE_LOCKS = ON , 
      ALLOW_ROW_LOCKS = ON )
 GO
 
-CREATE TABLE cuenta_cliente 
+CREATE TABLE cuenta_socio 
     (
-     id_cuenta INTEGER NOT NULL IDENTITY(1,1), 
+     id_cuenta_socio INTEGER NOT NULL IDENTITY(1,1), 
      usuario VARCHAR (150) NOT NULL , 
      contraseña VARCHAR (500) NOT NULL , 
      ultimo_acceso DATETIME NOT NULL , 
      estado BIT NOT NULL , 
-     cliente_id_cliente INTEGER NOT NULL 
+     socio_id_socio INTEGER NOT NULL 
     )
 GO
 
-ALTER TABLE cuenta_cliente ADD CONSTRAINT cuenta_cliente_PK PRIMARY KEY CLUSTERED (id_cuenta)
-     WITH (
-     ALLOW_PAGE_LOCKS = ON , 
-     ALLOW_ROW_LOCKS = ON )
-GO
-
-CREATE TABLE detalle_factura 
-    (
-     id_detalle INTEGER NOT NULL IDENTITY(1,1), 
-     concepto VARCHAR (500) NOT NULL , 
-     importe DECIMAL (30,2) NOT NULL , 
-     monto_unitario DECIMAL (30,2) NOT NULL , 
-     sub_total DECIMAL (30,2) NOT NULL , 
-     factura_id_factura INTEGER NOT NULL 
-    )
-GO
-
-ALTER TABLE detalle_factura ADD CONSTRAINT detalle_factura_PK PRIMARY KEY CLUSTERED (id_detalle)
+ALTER TABLE cuenta_socio ADD CONSTRAINT cuenta_socio_PK PRIMARY KEY CLUSTERED (id_cuenta_socio)
      WITH (
      ALLOW_PAGE_LOCKS = ON , 
      ALLOW_ROW_LOCKS = ON )
@@ -210,15 +155,15 @@ CREATE TABLE lectura
      id_lectura INTEGER NOT NULL IDENTITY(1,1), 
      fecha_lectura DATE NOT NULL , 
      lectura_anterior INTEGER NOT NULL , 
-     consumo_m3 NUMERIC (30,2) NOT NULL , 
+     lectura_actual INTEGER NOT NULL , 
      dias_lectura INTEGER NOT NULL , 
      observacion VARCHAR (255) NOT NULL , 
      cliente_id_cliente INTEGER NOT NULL , 
      usuario_admin_id_usuario_admin INTEGER NOT NULL , 
-     lectura_actual INTEGER NOT NULL , 
      medidor_id_medidor INTEGER NOT NULL , 
      periodo_id_periodo INTEGER NOT NULL , 
-     consumo_m31 DECIMAL (30,2) NOT NULL 
+     consumo_m3 DECIMAL (30,2) NOT NULL , 
+     ruta_id_ruta INTEGER NOT NULL 
     )
 GO
 
@@ -233,19 +178,8 @@ CREATE TABLE medidor
      id_medidor INTEGER NOT NULL IDENTITY(1,1), 
      serie VARCHAR (150) NOT NULL , 
      numero INTEGER NOT NULL , 
-     cliente_id_cliente INTEGER NOT NULL , 
      fecha_instalacion DATE 
     )
-GO 
-
-    
-
-
-CREATE UNIQUE NONCLUSTERED INDEX 
-    medidor__IDX ON medidor 
-    ( 
-     cliente_id_cliente 
-    ) 
 GO
 
 ALTER TABLE medidor ADD CONSTRAINT medidor_PK PRIMARY KEY CLUSTERED (id_medidor)
@@ -258,10 +192,7 @@ CREATE TABLE metodo_pago
     (
      id_metodo_pago INTEGER NOT NULL IDENTITY(1,1), 
      metodo VARCHAR (150) NOT NULL , 
-     referencia VARCHAR (255) NOT NULL , 
-     entidad_pago VARCHAR (150) , 
-     fecha_confirmacion DATE , 
-     pago_id_pago INTEGER NOT NULL 
+     referencia VARCHAR (255) NOT NULL 
     )
 GO
 
@@ -288,17 +219,17 @@ ALTER TABLE notificacion ADD CONSTRAINT notificacion_PK PRIMARY KEY CLUSTERED (i
      ALLOW_ROW_LOCKS = ON )
 GO
 
-CREATE TABLE notificacion_cliente 
+CREATE TABLE notificacion_socio 
     (
-     id_notificacion_cliente INTEGER NOT NULL IDENTITY(1,1), 
+     id_notificacion_socio INTEGER NOT NULL IDENTITY(1,1), 
      fecha_lectura DATE NOT NULL , 
      leido BIT NOT NULL , 
      notificacion_id_notificacion INTEGER NOT NULL , 
-     cliente_id_cliente INTEGER NOT NULL 
+     socio_id_socio INTEGER NOT NULL 
     )
 GO
 
-ALTER TABLE notificacion_cliente ADD CONSTRAINT notificacion_cliente_PK PRIMARY KEY CLUSTERED (id_notificacion_cliente)
+ALTER TABLE notificacion_socio ADD CONSTRAINT notificacion_socio_PK PRIMARY KEY CLUSTERED (id_notificacion_socio)
      WITH (
      ALLOW_PAGE_LOCKS = ON , 
      ALLOW_ROW_LOCKS = ON )
@@ -308,36 +239,16 @@ CREATE TABLE pago
     (
      id_pago INTEGER NOT NULL IDENTITY(1,1), 
      fecha_pago DATE NOT NULL , 
-     metodo_pago VARCHAR (50) NOT NULL , 
      monto_pagado DECIMAL (30,2) NOT NULL , 
-     numero_recibo INTEGER NOT NULL , 
      cajero VARCHAR (150) NOT NULL , 
      estado BIT NOT NULL , 
      aviso_id_aviso INTEGER NOT NULL , 
-     metodo_pago_id_metodo_pago INTEGER NOT NULL 
+     metodo_pago_id_metodo_pago INTEGER NOT NULL , 
+     vuelto DECIMAL (30,3) 
     )
 GO
 
 ALTER TABLE pago ADD CONSTRAINT pago_PK PRIMARY KEY CLUSTERED (id_pago)
-     WITH (
-     ALLOW_PAGE_LOCKS = ON , 
-     ALLOW_ROW_LOCKS = ON )
-GO
-
-CREATE TABLE pago_inscripcion 
-    (
-     id_pago_inscripcion INTEGER NOT NULL IDENTITY(1,1), 
-     monto_pagado DECIMAL (10,2) NOT NULL , 
-     fecha_pago DATE NOT NULL , 
-     numero_recibo INTEGER NOT NULL , 
-     inscripcion_id_inscripcion INTEGER NOT NULL , 
-     metodo_pago_id_metodo_pago INTEGER NOT NULL , 
-     cajero VARCHAR (150) NOT NULL , 
-     credito_inscripcion_id_credito INTEGER NOT NULL 
-    )
-GO
-
-ALTER TABLE pago_inscripcion ADD CONSTRAINT pago_inscripcion_PK PRIMARY KEY CLUSTERED (id_pago_inscripcion)
      WITH (
      ALLOW_PAGE_LOCKS = ON , 
      ALLOW_ROW_LOCKS = ON )
@@ -385,19 +296,6 @@ ALTER TABLE rol ADD CONSTRAINT rol_PK PRIMARY KEY CLUSTERED (id_rol)
      ALLOW_ROW_LOCKS = ON )
 GO
 
-CREATE TABLE rol_cliente 
-    (
-     id_rol_cliente INTEGER NOT NULL IDENTITY(1,1), 
-     rol_cliente VARCHAR (150) NOT NULL 
-    )
-GO
-
-ALTER TABLE rol_cliente ADD CONSTRAINT rol_cliente_PK PRIMARY KEY CLUSTERED (id_rol_cliente)
-     WITH (
-     ALLOW_PAGE_LOCKS = ON , 
-     ALLOW_ROW_LOCKS = ON )
-GO
-
 CREATE TABLE rol_permiso 
     (
      id_rol_permiso INTEGER NOT NULL IDENTITY(1,1), 
@@ -412,16 +310,54 @@ ALTER TABLE rol_permiso ADD CONSTRAINT rol_permiso_PK PRIMARY KEY CLUSTERED (id_
      ALLOW_ROW_LOCKS = ON )
 GO
 
+CREATE TABLE rol_socio 
+    (
+     id_rol_socio INTEGER NOT NULL IDENTITY(1,1), 
+     rol_socio VARCHAR (150) NOT NULL 
+    )
+GO
+
+ALTER TABLE rol_socio ADD CONSTRAINT rol_socio_PK PRIMARY KEY CLUSTERED (id_rol_socio)
+     WITH (
+     ALLOW_PAGE_LOCKS = ON , 
+     ALLOW_ROW_LOCKS = ON )
+GO
+
 CREATE TABLE ruta 
     (
      id_ruta INTEGER NOT NULL IDENTITY(1,1), 
-     ruta INTEGER , 
-     usuario_admin_id_usuario_admin INTEGER NOT NULL , 
+     ruta INTEGER NOT NULL , 
      descripcion VARCHAR (150) 
     )
 GO
 
 ALTER TABLE ruta ADD CONSTRAINT ruta_PK PRIMARY KEY CLUSTERED (id_ruta)
+     WITH (
+     ALLOW_PAGE_LOCKS = ON , 
+     ALLOW_ROW_LOCKS = ON )
+GO
+
+CREATE TABLE socio 
+    (
+     id_socio INTEGER NOT NULL IDENTITY(1,1), 
+     nombre_socio VARCHAR (255) NOT NULL , 
+     cliente_id_cliente INTEGER NOT NULL , 
+     rol_socio_id_rol_socio INTEGER NOT NULL , 
+     ubicacion INTEGER , 
+     medidor_id_medidor INTEGER NOT NULL , 
+     num_casa INTEGER , 
+     num_ocupantes INTEGER , 
+     tipo_instalacion VARCHAR (255) , 
+     dim_instalacion VARCHAR (255) , 
+     actividad VARCHAR (255) NOT NULL , 
+     categoria VARCHAR (255) NOT NULL , 
+     fecha_registro DATE NOT NULL , 
+     ruta_id_ruta INTEGER NOT NULL , 
+     codigo_fijo INTEGER NOT NULL 
+    )
+GO
+
+ALTER TABLE socio ADD CONSTRAINT socio_PK PRIMARY KEY CLUSTERED (id_socio)
      WITH (
      ALLOW_PAGE_LOCKS = ON , 
      ALLOW_ROW_LOCKS = ON )
@@ -433,7 +369,7 @@ CREATE TABLE tarifa
      consumo_minimo_m3 INTEGER , 
      monto_minimo DECIMAL (30,3) NOT NULL , 
      precio_m3 INTEGER NOT NULL , 
-     categoria_tarifa_id_categoria_tarifa INTEGER NOT NULL 
+     rol_socio_id_rol_socio INTEGER NOT NULL 
     )
 GO
 
@@ -504,19 +440,6 @@ ALTER TABLE aviso
 GO
 
 ALTER TABLE aviso 
-    ADD CONSTRAINT aviso_cliente_FK FOREIGN KEY 
-    ( 
-     cliente_id_cliente
-    ) 
-    REFERENCES cliente 
-    ( 
-     id_cliente 
-    ) 
-    ON DELETE NO ACTION 
-    ON UPDATE NO ACTION 
-GO
-
-ALTER TABLE aviso 
     ADD CONSTRAINT aviso_credito_inscripcion_FK FOREIGN KEY 
     ( 
      credito_inscripcion_id_credito
@@ -569,13 +492,13 @@ ALTER TABLE aviso
 GO
 
 ALTER TABLE aviso 
-    ADD CONSTRAINT aviso_tarifa_FK FOREIGN KEY 
+    ADD CONSTRAINT aviso_socio_FK FOREIGN KEY 
     ( 
-     tarifa_id_tarifa
+     socio_id_socio
     ) 
-    REFERENCES tarifa 
+    REFERENCES socio 
     ( 
-     id_tarifa 
+     id_socio 
     ) 
     ON DELETE NO ACTION 
     ON UPDATE NO ACTION 
@@ -608,32 +531,6 @@ ALTER TABLE caja
 GO
 
 ALTER TABLE cargo_extra 
-    ADD CONSTRAINT cargo_extra_cliente_FK FOREIGN KEY 
-    ( 
-     cliente_id_cliente
-    ) 
-    REFERENCES cliente 
-    ( 
-     id_cliente 
-    ) 
-    ON DELETE NO ACTION 
-    ON UPDATE NO ACTION 
-GO
-
-ALTER TABLE cargo_extra 
-    ADD CONSTRAINT cargo_extra_factura_FK FOREIGN KEY 
-    ( 
-     factura_id_factura
-    ) 
-    REFERENCES aviso 
-    ( 
-     id_aviso 
-    ) 
-    ON DELETE NO ACTION 
-    ON UPDATE NO ACTION 
-GO
-
-ALTER TABLE cargo_extra 
     ADD CONSTRAINT cargo_extra_periodo_FK FOREIGN KEY 
     ( 
      periodo_id_periodo
@@ -641,6 +538,19 @@ ALTER TABLE cargo_extra
     REFERENCES periodo 
     ( 
      id_periodo 
+    ) 
+    ON DELETE NO ACTION 
+    ON UPDATE NO ACTION 
+GO
+
+ALTER TABLE cargo_extra 
+    ADD CONSTRAINT cargo_extra_socio_FK FOREIGN KEY 
+    ( 
+     socio_id_socio
+    ) 
+    REFERENCES socio 
+    ( 
+     id_socio 
     ) 
     ON DELETE NO ACTION 
     ON UPDATE NO ACTION 
@@ -659,84 +569,6 @@ ALTER TABLE cargo_extra
     ON UPDATE NO ACTION 
 GO
 
-ALTER TABLE cliente 
-    ADD CONSTRAINT cliente_medidor_FK FOREIGN KEY 
-    ( 
-     medidor_id_medidor
-    ) 
-    REFERENCES medidor 
-    ( 
-     id_medidor 
-    ) 
-    ON DELETE NO ACTION 
-    ON UPDATE NO ACTION 
-GO
-
-ALTER TABLE cliente 
-    ADD CONSTRAINT cliente_rol_cliente_FK FOREIGN KEY 
-    ( 
-     rol_cliente_id_rol_cliente
-    ) 
-    REFERENCES rol_cliente 
-    ( 
-     id_rol_cliente 
-    ) 
-    ON DELETE NO ACTION 
-    ON UPDATE NO ACTION 
-GO
-
-ALTER TABLE cliente 
-    ADD CONSTRAINT cliente_rol_FK FOREIGN KEY 
-    ( 
-     rol_id_rol
-    ) 
-    REFERENCES rol 
-    ( 
-     id_rol 
-    ) 
-    ON DELETE NO ACTION 
-    ON UPDATE NO ACTION 
-GO
-
-ALTER TABLE cliente 
-    ADD CONSTRAINT cliente_ruta_FK FOREIGN KEY 
-    ( 
-     ruta_id_ruta
-    ) 
-    REFERENCES ruta 
-    ( 
-     id_ruta 
-    ) 
-    ON DELETE NO ACTION 
-    ON UPDATE NO ACTION 
-GO
-
-ALTER TABLE metodo_pago 
-    ADD CONSTRAINT comprobante_pago_pago_FK FOREIGN KEY 
-    ( 
-     pago_id_pago
-    ) 
-    REFERENCES pago 
-    ( 
-     id_pago 
-    ) 
-    ON DELETE NO ACTION 
-    ON UPDATE NO ACTION 
-GO
-
-ALTER TABLE credito_inscripcion 
-    ADD CONSTRAINT credito_inscripcion_cliente_FK FOREIGN KEY 
-    ( 
-     cliente_id_cliente1
-    ) 
-    REFERENCES cliente 
-    ( 
-     id_cliente 
-    ) 
-    ON DELETE NO ACTION 
-    ON UPDATE NO ACTION 
-GO
-
 ALTER TABLE credito_inscripcion 
     ADD CONSTRAINT credito_inscripcion_periodo_FK FOREIGN KEY 
     ( 
@@ -750,40 +582,27 @@ ALTER TABLE credito_inscripcion
     ON UPDATE NO ACTION 
 GO
 
-ALTER TABLE cuenta_cliente 
-    ADD CONSTRAINT cuenta_cliente_cliente_FK FOREIGN KEY 
-    ( 
-     cliente_id_cliente
-    ) 
-    REFERENCES cliente 
-    ( 
-     id_cliente 
-    ) 
-    ON DELETE NO ACTION 
-    ON UPDATE NO ACTION 
-GO
-
-ALTER TABLE detalle_factura 
-    ADD CONSTRAINT detalle_factura_factura_FK FOREIGN KEY 
-    ( 
-     factura_id_factura
-    ) 
-    REFERENCES aviso 
-    ( 
-     id_aviso 
-    ) 
-    ON DELETE NO ACTION 
-    ON UPDATE NO ACTION 
-GO
-
 ALTER TABLE credito_inscripcion 
-    ADD CONSTRAINT inscripcion_cliente_FK FOREIGN KEY 
+    ADD CONSTRAINT credito_inscripcion_socio_FK FOREIGN KEY 
     ( 
-     cliente_id_cliente
+     socio_id_socio
     ) 
-    REFERENCES cliente 
+    REFERENCES socio 
     ( 
-     id_cliente 
+     id_socio 
+    ) 
+    ON DELETE NO ACTION 
+    ON UPDATE NO ACTION 
+GO
+
+ALTER TABLE cuenta_socio 
+    ADD CONSTRAINT cuenta_socio_socio_FK FOREIGN KEY 
+    ( 
+     socio_id_socio
+    ) 
+    REFERENCES socio 
+    ( 
+     id_socio 
     ) 
     ON DELETE NO ACTION 
     ON UPDATE NO ACTION 
@@ -829,6 +648,19 @@ ALTER TABLE lectura
 GO
 
 ALTER TABLE lectura 
+    ADD CONSTRAINT lectura_ruta_FK FOREIGN KEY 
+    ( 
+     ruta_id_ruta
+    ) 
+    REFERENCES ruta 
+    ( 
+     id_ruta 
+    ) 
+    ON DELETE NO ACTION 
+    ON UPDATE NO ACTION 
+GO
+
+ALTER TABLE lectura 
     ADD CONSTRAINT lectura_usuario_admin_FK FOREIGN KEY 
     ( 
      usuario_admin_id_usuario_admin
@@ -841,40 +673,27 @@ ALTER TABLE lectura
     ON UPDATE NO ACTION 
 GO
 
-ALTER TABLE medidor 
-    ADD CONSTRAINT medidor_cliente_FK FOREIGN KEY 
-    ( 
-     cliente_id_cliente
-    ) 
-    REFERENCES cliente 
-    ( 
-     id_cliente 
-    ) 
-    ON DELETE NO ACTION 
-    ON UPDATE NO ACTION 
-GO
-
-ALTER TABLE notificacion_cliente 
-    ADD CONSTRAINT notificacion_cliente_cliente_FK FOREIGN KEY 
-    ( 
-     cliente_id_cliente
-    ) 
-    REFERENCES cliente 
-    ( 
-     id_cliente 
-    ) 
-    ON DELETE NO ACTION 
-    ON UPDATE NO ACTION 
-GO
-
-ALTER TABLE notificacion_cliente 
-    ADD CONSTRAINT notificacion_cliente_notificacion_FK FOREIGN KEY 
+ALTER TABLE notificacion_socio 
+    ADD CONSTRAINT notificacion_socio_notificacion_FK FOREIGN KEY 
     ( 
      notificacion_id_notificacion
     ) 
     REFERENCES notificacion 
     ( 
      id_notificacion 
+    ) 
+    ON DELETE NO ACTION 
+    ON UPDATE NO ACTION 
+GO
+
+ALTER TABLE notificacion_socio 
+    ADD CONSTRAINT notificacion_socio_socio_FK FOREIGN KEY 
+    ( 
+     socio_id_socio
+    ) 
+    REFERENCES socio 
+    ( 
+     id_socio 
     ) 
     ON DELETE NO ACTION 
     ON UPDATE NO ACTION 
@@ -888,45 +707,6 @@ ALTER TABLE pago
     REFERENCES aviso 
     ( 
      id_aviso 
-    ) 
-    ON DELETE NO ACTION 
-    ON UPDATE NO ACTION 
-GO
-
-ALTER TABLE pago_inscripcion 
-    ADD CONSTRAINT pago_inscripcion_credito_inscripcion_FK FOREIGN KEY 
-    ( 
-     credito_inscripcion_id_credito
-    ) 
-    REFERENCES credito_inscripcion 
-    ( 
-     id_credito 
-    ) 
-    ON DELETE NO ACTION 
-    ON UPDATE NO ACTION 
-GO
-
-ALTER TABLE pago_inscripcion 
-    ADD CONSTRAINT pago_inscripcion_inscripcion_FK FOREIGN KEY 
-    ( 
-     inscripcion_id_inscripcion
-    ) 
-    REFERENCES credito_inscripcion 
-    ( 
-     id_credito 
-    ) 
-    ON DELETE NO ACTION 
-    ON UPDATE NO ACTION 
-GO
-
-ALTER TABLE pago_inscripcion 
-    ADD CONSTRAINT pago_inscripcion_metodo_pago_FK FOREIGN KEY 
-    ( 
-     metodo_pago_id_metodo_pago
-    ) 
-    REFERENCES metodo_pago 
-    ( 
-     id_metodo_pago 
     ) 
     ON DELETE NO ACTION 
     ON UPDATE NO ACTION 
@@ -971,27 +751,66 @@ ALTER TABLE rol_permiso
     ON UPDATE NO ACTION 
 GO
 
-ALTER TABLE ruta 
-    ADD CONSTRAINT ruta_usuario_admin_FK FOREIGN KEY 
+ALTER TABLE socio 
+    ADD CONSTRAINT socio_cliente_FK FOREIGN KEY 
     ( 
-     usuario_admin_id_usuario_admin
+     cliente_id_cliente
     ) 
-    REFERENCES usuario_admin 
+    REFERENCES cliente 
     ( 
-     id_usuario_admin 
+     id_cliente 
+    ) 
+    ON DELETE NO ACTION 
+    ON UPDATE NO ACTION 
+GO
+
+ALTER TABLE socio 
+    ADD CONSTRAINT socio_medidor_FK FOREIGN KEY 
+    ( 
+     medidor_id_medidor
+    ) 
+    REFERENCES medidor 
+    ( 
+     id_medidor 
+    ) 
+    ON DELETE NO ACTION 
+    ON UPDATE NO ACTION 
+GO
+
+ALTER TABLE socio 
+    ADD CONSTRAINT socio_rol_socio_FK FOREIGN KEY 
+    ( 
+     rol_socio_id_rol_socio
+    ) 
+    REFERENCES rol_socio 
+    ( 
+     id_rol_socio 
+    ) 
+    ON DELETE NO ACTION 
+    ON UPDATE NO ACTION 
+GO
+
+ALTER TABLE socio 
+    ADD CONSTRAINT socio_ruta_FK FOREIGN KEY 
+    ( 
+     ruta_id_ruta
+    ) 
+    REFERENCES ruta 
+    ( 
+     id_ruta 
     ) 
     ON DELETE NO ACTION 
     ON UPDATE NO ACTION 
 GO
 
 ALTER TABLE tarifa 
-    ADD CONSTRAINT tarifa_categoria_tarifa_FK FOREIGN KEY 
+    ADD CONSTRAINT tarifa_rol_socio_FK FOREIGN KEY 
     ( 
-     categoria_tarifa_id_categoria_tarifa
+     rol_socio_id_rol_socio
     ) 
-    REFERENCES categoria_tarifa 
+    REFERENCES rol_socio 
     ( 
-     id_categoria_tarifa 
+     id_rol_socio 
     ) 
     ON DELETE NO ACTION 
     ON UPDATE NO ACTION 
@@ -1009,14 +828,22 @@ ALTER TABLE usuario_admin
     ON DELETE NO ACTION 
     ON UPDATE NO ACTION 
 GO
+-- 1. Eliminar la FK primero
+ALTER TABLE cliente
+    DROP CONSTRAINT cliente_rol_FK;
+GO
 
+-- 2. Eliminar la columna
+ALTER TABLE cliente
+    DROP COLUMN rol_id_rol;
+GO
 
 
 -- Informe de Resumen de Oracle SQL Developer Data Modeler: 
 -- 
--- CREATE TABLE                            26
--- CREATE INDEX                             2
--- ALTER TABLE                             67
+-- CREATE TABLE                            24
+-- CREATE INDEX                             0
+-- ALTER TABLE                             57
 -- CREATE VIEW                              0
 -- ALTER VIEW                               0
 -- CREATE PACKAGE                           0

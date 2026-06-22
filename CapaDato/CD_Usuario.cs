@@ -30,7 +30,7 @@ namespace CapaDato
                                 usuario = dr["usuario"].ToString(),
                                 estado = Convert.ToBoolean(dr["estado"]),
                                 fecha_creacion = Convert.ToDateTime(dr["fecha_creacion"]),
-                                rol_id_dol = Convert.ToInt32(dr["rol_id_rol"]),
+                                rol_id_rol = Convert.ToInt32(dr["rol_id_rol"]),
                                 rol = new CM_Rol()
                                 {
                                     nombre = dr["nombre_rol"].ToString()
@@ -63,7 +63,7 @@ namespace CapaDato
                         cmd.Parameters.AddWithValue("@usuario", obj.usuario);
                         cmd.Parameters.AddWithValue("@contrasena", obj.contraseña);
                         cmd.Parameters.AddWithValue("@estado", obj.estado);
-                        cmd.Parameters.AddWithValue("@rol_id_rol", obj.rol_id_dol);
+                        cmd.Parameters.AddWithValue("@rol_id_rol", obj.rol_id_rol);
                         cmd.Parameters.Add("@Resultado", SqlDbType.Int).Direction = ParameterDirection.Output;
                         cmd.Parameters.Add("@Mensaje", SqlDbType.VarChar, 500).Direction = ParameterDirection.Output;
 
@@ -101,7 +101,7 @@ namespace CapaDato
                         // Si contraseña viene vacía se pasa vacío — el SP decide si actualiza o no
                         cmd.Parameters.AddWithValue("@contrasena", obj.contraseña ?? string.Empty);
                         cmd.Parameters.AddWithValue("@estado", obj.estado);
-                        cmd.Parameters.AddWithValue("@rol_id_rol", obj.rol_id_dol);
+                        cmd.Parameters.AddWithValue("@rol_id_rol", obj.rol_id_rol);
                         cmd.Parameters.Add("@Resultado", SqlDbType.Int).Direction = ParameterDirection.Output;
                         cmd.Parameters.Add("@Mensaje", SqlDbType.VarChar, 500).Direction = ParameterDirection.Output;
 

@@ -24,7 +24,7 @@ namespace CapaNegocio
             return cdSocio.Obtener(idSocio);
         }
 
-        public int Registrar(CM_Socio socio, int idUsuarioSesion, out string Mensaje)
+        public int Registrar(CM_Socio socio, int idUsuarioSesion, int idCaja, string cajero, out string Mensaje)
         {
             Mensaje = string.Empty;
 
@@ -68,8 +68,24 @@ namespace CapaNegocio
                 Mensaje = "El código fijo es obligatorio.";
                 return 0;
             }
+            // ── Validaciones de inscripción ──
+            if (socio.id_metodo_pago <= 0)
+            {
+                Mensaje = "Debe seleccionar un método de pago.";
+                return 0;
+            }
+            if (socio.monto_inicial < 500)
+            {
+                Mensaje = "El pago inicial mínimo es Bs. 500.";
+                return 0;
+            }
+            if (socio.num_cuotas < 1 || socio.num_cuotas > 4)
+            {
+                Mensaje = "El número de cuotas debe estar entre 1 y 4.";
+                return 0;
+            }
 
-            int idGenerado = cdSocio.Registrar(socio, idUsuarioSesion, out Mensaje);
+            int idGenerado = cdSocio.Registrar(socio, idCaja, cajero, out Mensaje);
 
             if (idGenerado > 0)
                 cdBitacora.Registrar("Registro de nuevo socio: " + socio.nombre_socio, idUsuarioSesion);

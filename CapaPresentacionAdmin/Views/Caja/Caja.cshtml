@@ -1,10 +1,197 @@
-﻿
 @{
     ViewBag.Title = "Caja";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<h2>Caja</h2>
+<div class="p-6">
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold text-gray-800">Mi Caja</h1>
+        <p class="text-sm text-gray-500 mt-1">Apertura, cobros y cierre de tu caja</p>
+    </div>
 
+    <div id="panelEstado" class="mb-6"></div>
 
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100">
+        <div class="px-5 py-3 border-b border-gray-100">
+            <span class="text-sm font-semibold text-gray-700">Mis cajas</span>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead class="bg-gray-50 text-gray-500">
+                    <tr>
+                        <th class="px-4 py-3 text-left  font-semibold uppercase text-xs">#</th>
+                        <th class="px-4 py-3 text-left  font-semibold uppercase text-xs">Fecha</th>
+                        <th class="px-4 py-3 text-left  font-semibold uppercase text-xs">Apertura</th>
+                        <th class="px-4 py-3 text-left  font-semibold uppercase text-xs">Cierre</th>
+                        <th class="px-4 py-3 text-right font-semibold uppercase text-xs">Fondo</th>
+                        <th class="px-4 py-3 text-right font-semibold uppercase text-xs">Cobrado</th>
+                        <th class="px-4 py-3 text-center font-semibold uppercase text-xs">Estado</th>
+                        <th class="px-4 py-3"></th>
+                    </tr>
+                </thead>
+                <tbody id="tbodyCajas" class="divide-y divide-gray-100"></tbody>
+            </table>
+        </div>
+        <div class="p-4 border-t border-gray-100 flex items-center justify-between">
+            <span id="lblInfo" class="text-xs text-gray-400"></span>
+            <div id="divPag" class="flex gap-1"></div>
+        </div>
+    </div>
+</div>
 
+<div id="modalArqueo" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div class="absolute inset-0 bg-black/40" onclick="cerrarArqueo()"></div>
+    <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+        <div class="px-5 py-3 border-b border-gray-100 flex items-center justify-between">
+            <h3 class="text-base font-bold text-gray-800" id="arqueoTitulo">Arqueo de caja</h3>
+            <button onclick="cerrarArqueo()" class="p-1 hover:bg-gray-100 rounded-lg text-gray-500">&times;</button>
+        </div>
+        <div id="arqueoBody" class="px-5 py-4"></div>
+    </div>
+</div>
+
+@section scripts {
+<script>
+    var pagina = 1, total = 0, tam = 10;
+
+    $(function () { cargarEstado(); cargarHistorial(); });
+
+    function fmt(n) { return (n == null ? 0 : n).toLocaleString('es-BO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+    function parseNet(v) {
+        if (!v) return null;
+        var m = /\/Date\((\d+)\)\//.exec(v);
+        var d = m ? new Date(parseInt(m[1])) : new Date(v);
+        return isNaN(d) ? null : d;
+    }
+    function fhora(v)  { var d = parseNet(v); return d ? d.toLocaleString('es-BO')     : '-'; }
+    function ffecha(v) { var d = parseNet(v); return d ? d.toLocaleDateString('es-BO') : '-'; }
+
+    // ---- Estado: abrir / abierta ----
+    function cargarEstado() {
+        $.get('@Url.Action("EstadoCaja", "Caja")', function (res) {
+            if (res.exito && res.caja) renderAbierta(res.caja);
+            else renderAbrir();
+        });
+    }
+
+    function renderAbrir() {
+        $('#panelEstado').html(
+            '<div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 max-w-md">' +
+            '<h2 class="text-base font-semibold text-gray-800 mb-1">No tienes una caja abierta</h2>' +
+            '<p class="text-sm text-gray-500 mb-4">Abre tu caja para empezar a cobrar.</p>' +
+            '<label class="block text-xs font-medium text-gray-700 mb-1">Monto de apertura (fondo)</label>' +
+            '<input type="number" id="txtFondo" min="0" step="1" value="0" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mb-3 focus:ring-2 focus:ring-blue-500 outline-none">' +
+            '<button onclick="abrirCaja()" class="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold py-2.5 rounded-xl">Abrir caja</button>' +
+            '<p id="msgAbrir" class="hidden text-xs text-red-500 mt-2"></p>' +
+            '</div>'
+        );
+    }
+
+    function renderAbierta(c) {
+        $('#panelEstado').html(
+            '<div class="bg-white rounded-2xl shadow-sm border border-green-200 p-6">' +
+            '<div class="flex items-center justify-between flex-wrap gap-4">' +
+              '<div>' +
+                '<span class="inline-block px-2.5 py-1 rounded-full bg-green-100 text-green-700 text-xs font-semibold mb-2">CAJA ABIERTA</span>' +
+                '<p class="text-sm text-gray-500">Apertura: ' + fhora(c.hora_apertura) + '</p>' +
+              '</div>' +
+              '<div class="grid grid-cols-3 gap-6 text-center">' +
+                '<div><p class="text-xs text-gray-400">Fondo</p><p class="font-bold text-gray-800">Bs. ' + fmt(c.monto_apertura) + '</p></div>' +
+                '<div><p class="text-xs text-gray-400">Cobrado</p><p class="font-bold text-green-700">Bs. ' + fmt(c.total_cobrado) + '</p></div>' +
+                '<div><p class="text-xs text-gray-400">Pagos</p><p class="font-bold text-gray-800">' + c.num_pagos + '</p></div>' +
+              '</div>' +
+              '<button onclick="verArqueo(' + c.id_caja + ', true)" class="bg-red-600 hover:bg-red-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl">Cerrar caja</button>' +
+            '</div></div>'
+        );
+    }
+
+    function abrirCaja() {
+        var fondo = parseFloat($('#txtFondo').val()) || 0;
+        if (fondo < 0) { $('#msgAbrir').text('El fondo no puede ser negativo.').removeClass('hidden'); return; }
+        $.post('@Url.Action("AbrirCaja", "Caja")', { montoApertura: fondo }, function (res) {
+            if (res.exito) { cargarEstado(); cargarHistorial(); }
+            else { $('#msgAbrir').text(res.mensaje || 'No se pudo abrir.').removeClass('hidden'); }
+        });
+    }
+
+    // ---- Arqueo + cierre ----
+    function verArqueo(idCaja, conCierre) {
+        $('#arqueoTitulo').text('Arqueo — Caja #' + idCaja);
+        $('#arqueoBody').html('<div class="text-center py-6 text-gray-400">Cargando...</div>');
+        $('#modalArqueo').removeClass('hidden');
+        $.get('@Url.Action("Arqueo", "Caja")', { idCaja: idCaja }, function (res) {
+            if (!res.exito || !res.arqueo) { $('#arqueoBody').html('<div class="text-red-500 py-4 text-center">No se pudo cargar.</div>'); return; }
+            var a = res.arqueo;
+            var filas = (a.porMetodo || []).map(function (m) {
+                return '<div class="flex justify-between py-1.5 text-sm border-b border-gray-100">' +
+                    '<span class="text-gray-600">' + m.metodo + ' <span class="text-gray-400 text-xs">(' + m.cantidad + ')</span></span>' +
+                    '<span class="font-mono text-gray-800">Bs. ' + fmt(m.total) + '</span></div>';
+            }).join('');
+            if (!filas) filas = '<div class="text-gray-400 text-sm py-2">Sin pagos.</div>';
+
+            var html =
+                '<div class="flex justify-between text-sm mb-2"><span class="text-gray-500">Fondo de apertura</span><span class="font-mono">Bs. ' + fmt(a.monto_apertura) + '</span></div>' +
+                '<p class="text-xs font-semibold text-gray-400 uppercase mb-1">Cobrado por método</p>' +
+                filas +
+                '<div class="flex justify-between mt-3 pt-2 border-t border-gray-200 font-semibold text-gray-800"><span>Total cobrado</span><span class="font-mono">Bs. ' + fmt(a.total_cobrado) + '</span></div>' +
+                '<div class="flex justify-between mt-1 text-sm text-gray-600"><span>Efectivo esperado en cajón</span><span class="font-mono">Bs. ' + fmt(a.efectivo_esperado) + '</span></div>';
+
+            if (conCierre)
+                html += '<button onclick="confirmarCierre(' + idCaja + ')" class="w-full mt-4 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold py-2.5 rounded-xl">Confirmar cierre</button>';
+
+            $('#arqueoBody').html(html);
+        });
+    }
+
+    function confirmarCierre(idCaja) {
+        $.post('@Url.Action("CerrarCaja", "Caja")', { idCaja: idCaja }, function (res) {
+            cerrarArqueo();
+            if (res.exito) { cargarEstado(); cargarHistorial(); }
+            else { alert(res.mensaje || 'No se pudo cerrar.'); }
+        });
+    }
+
+    function cerrarArqueo() { $('#modalArqueo').addClass('hidden'); }
+
+    // ---- Historial (solo mis cajas) ----
+    function cargarHistorial() {
+        $.get('@Url.Action("Historial", "Caja")', { pagina: pagina, tamanoPagina: tam }, function (res) {
+            var tb = $('#tbodyCajas'); tb.empty();
+            if (!res.exito || !res.cajas || res.cajas.length === 0) {
+                tb.html('<tr><td colspan="8" class="text-center py-6 text-gray-400">Sin cajas</td></tr>');
+                $('#divPag').empty(); $('#lblInfo').text(''); return;
+            }
+            total = res.totalRegistros;
+            $.each(res.cajas, function (_, c) {
+                var badge = c.estado
+                    ? '<span class="px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-xs font-semibold">ABIERTA</span>'
+                    : '<span class="px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 text-xs font-semibold">CERRADA</span>';
+                tb.append(
+                    '<tr class="hover:bg-gray-50">' +
+                    '<td class="px-4 py-3 text-gray-400 text-xs">' + c.id_caja + '</td>' +
+                    '<td class="px-4 py-3 text-gray-600">' + ffecha(c.fecha) + '</td>' +
+                    '<td class="px-4 py-3 text-gray-600">' + fhora(c.hora_apertura) + '</td>' +
+                    '<td class="px-4 py-3 text-gray-600">' + fhora(c.hora_cierre) + '</td>' +
+                    '<td class="px-4 py-3 text-right font-mono text-gray-600">Bs. ' + fmt(c.monto_apertura) + '</td>' +
+                    '<td class="px-4 py-3 text-right font-mono text-gray-800">Bs. ' + fmt(c.monto_cobrado) + '</td>' +
+                    '<td class="px-4 py-3 text-center">' + badge + '</td>' +
+                    '<td class="px-4 py-3 text-right"><button onclick="verArqueo(' + c.id_caja + ', false)" class="text-blue-600 hover:text-blue-800 text-xs font-semibold">Ver arqueo</button></td>' +
+                    '</tr>'
+                );
+            });
+            renderPag();
+        });
+    }
+
+    function renderPag() {
+        var totalP = Math.ceil(total / tam) || 1;
+        $('#lblInfo').text(((pagina - 1) * tam + 1) + '–' + Math.min(pagina * tam, total) + ' de ' + total);
+        var div = $('#divPag'); div.empty();
+        var b = 'px-2.5 py-1 text-xs rounded border transition ';
+        div.append('<button ' + (pagina === 1 ? 'disabled' : '') + ' onclick="pagina--;cargarHistorial()" class="' + b + (pagina === 1 ? 'text-gray-300 border-gray-200' : 'text-gray-600 border-gray-300 hover:bg-gray-100') + '">‹</button>');
+        for (var p = 1; p <= totalP; p++)
+            div.append('<button onclick="pagina=' + p + ';cargarHistorial()" class="' + b + (p === pagina ? 'bg-blue-600 text-white border-blue-600' : 'text-gray-600 border-gray-300 hover:bg-gray-100') + '">' + p + '</button>');
+        div.append('<button ' + (pagina === totalP ? 'disabled' : '') + ' onclick="pagina++;cargarHistorial()" class="' + b + (pagina === totalP ? 'text-gray-300 border-gray-200' : 'text-gray-600 border-gray-300 hover:bg-gray-100') + '">›</button>');
+    }
+</script>
+}

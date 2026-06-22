@@ -150,6 +150,44 @@
         </div>
     </div>
 
+    <div class="mb-4 border border-emerald-200 rounded-xl p-3">
+        <div class="section-title" style="color:#059669">Inscripción del Socio</div>
+        <div class="grid grid-cols-2 gap-3">
+            <div>
+                <label class="block text-xs font-medium text-gray-700 mb-1">Costo de inscripción</label>
+                <div class="px-3 py-2 border border-gray-300 rounded-xl bg-gray-50 text-sm text-gray-800">
+                    Bs. <span id="lblCosto" class="font-mono font-semibold">—</span>
+                </div>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-700 mb-1">Método de pago *</label>
+                <select id="selMetodoPago" class="input-field w-full px-3 py-2 border border-gray-300 rounded-xl text-sm bg-gray-50 text-gray-800">
+                    <option value="">-- Seleccionar --</option>
+                </select>
+                <span id="errMetodo" class="hidden text-xs text-red-500">Seleccione un método de pago.</span>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-700 mb-1">Pago inicial (Bs.) *</label>
+                <input type="number" id="txtMontoInicial" placeholder="mín. 500" min="500" step="1"
+                       class="input-field w-full px-3 py-2 border border-gray-300 rounded-xl text-sm bg-gray-50 text-gray-800 placeholder-gray-400">
+                <span id="errInicial" class="hidden text-xs text-red-500">Mín. 500, entero y no mayor al costo.</span>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-700 mb-1">N° de cuotas *</label>
+                <select id="selNumCuotas" class="input-field w-full px-3 py-2 border border-gray-300 rounded-xl text-sm bg-gray-50 text-gray-800">
+                    <option value="1">1 (pago total)</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                </select>
+            </div>
+            <div class="col-span-2 text-xs text-gray-500 bg-gray-50 rounded-lg px-3 py-2">
+                Saldo a financiar: <span id="lblSaldo" class="font-mono font-semibold text-gray-700">Bs. 0</span>
+                <span id="hintCuotas" class="ml-1 text-gray-400"></span>
+            </div>
+        </div>
+    </div>
+
     <div class="mb-4">
         <div class="section-title">Datos de Instalación <span class="font-normal normal-case text-gray-400">(opcional)</span></div>
         <div class="grid grid-cols-3 gap-3">
@@ -270,11 +308,14 @@
     <script>
     var pagCliente = 1, totalCliente = 0, timerCliente;
     var pagMedidor = 1, totalMedidor = 0, timerMedidor;
+    var costoInscripcion = 0;
 
     $(function () {
         $('#txtFechaRegistro').val(new Date().toISOString().split('T')[0]);
         cargarRoles();
         cargarRutas();
+        cargarDatosInscripcion();
+        $('#txtMontoInicial').on('input', actualizarSaldo);
 
         $('#txtBuscarCliente').on('input', function () {
             clearTimeout(timerCliente);
@@ -300,6 +341,29 @@
                 $('#selRuta').append('<option value="' + r.id_ruta + '">' + r.ruta + '</option>');
             });
         });
+    }
+
+    function cargarDatosInscripcion() {
+        $.get('@Url.Action("DatosInscripcion", "Socio")', function (res) {
+            if (!res.exito) return;
+            costoInscripcion = res.costo;
+            $('#lblCosto').text(res.costo);
+            $.each(res.metodos, function (_, m) {
+                $('#selMetodoPago').append('<option value="' + m.id_metodo_pago + '">' + m.metodo + '</option>');
+            });
+            actualizarSaldo();
+            if (!res.cajaAbierta) {
+                mostrarError('Debes abrir tu caja antes de registrar un socio (el pago de inscripción entra a caja).');
+                $('#btnGuardar').prop('disabled', true);
+            }
+        });
+    }
+
+    function actualizarSaldo() {
+        var ini   = parseInt($('#txtMontoInicial').val()) || 0;
+        var saldo = Math.max(0, costoInscripcion - ini);
+        $('#lblSaldo').text('Bs. ' + saldo);
+        $('#hintCuotas').text(saldo === 0 ? '(pago total → 1 cuota)' : '(elija entre 2 y 4 cuotas)');
     }
 
     // ── Modal Cliente ───────────────────────────
@@ -402,7 +466,7 @@
     // ── Registrar ───────────────────────────────
     function registrar() {
         var valido = true;
-        ['errCliente','errNombreSocio','errRol','errRuta','errMedidor','errCodigoFijo','errActividad','errCategoria']
+        ['errCliente','errNombreSocio','errRol','errRuta','errMedidor','errCodigoFijo','errActividad','errCategoria','errMetodo','errInicial']
             .forEach(function (id) { $('#'+id).addClass('hidden'); });
 
         if (!$('#hdnClienteId').val())            { $('#errCliente').removeClass('hidden');    valido = false; }
@@ -413,6 +477,9 @@
         if (!$('#txtCodigoFijo').val())           { $('#errCodigoFijo').removeClass('hidden'); valido = false; }
         if (!$.trim($('#txtActividad').val()))    { $('#errActividad').removeClass('hidden');  valido = false; }
         if (!$('#selCategoria').val())            { $('#errCategoria').removeClass('hidden');  valido = false; }
+        if (!$('#selMetodoPago').val())           { $('#errMetodo').removeClass('hidden');     valido = false; }
+        var iniPago = parseInt($('#txtMontoInicial').val()) || 0;
+        if (iniPago < 500 || (costoInscripcion > 0 && iniPago > costoInscripcion)) { $('#errInicial').removeClass('hidden'); valido = false; }
         if (!valido) return;
 
         ocultarError(); setLoading(true);
@@ -435,7 +502,10 @@
                 num_casa:               parseInt($('#txtNumCasa').val()) || 0,
                 num_ocupantes:          parseInt($('#txtNumOcupantes').val()) || 0,
                 tipo_instalacion:       $('#txtTipoInstalacion').val(),
-                dim_instalacion:        $('#txtDimInstalacion').val()
+                dim_instalacion:        $('#txtDimInstalacion').val(),
+                monto_inicial:          parseInt($('#txtMontoInicial').val()) || 0,
+                num_cuotas:             parseInt($('#selNumCuotas').val()),
+                id_metodo_pago:         parseInt($('#selMetodoPago').val()) || 0
             }),
             success: function (res) {
                 if (res.exito) { window.parent.onAccionCompletada(); }

@@ -3,7 +3,7 @@
 -- ══════════════════════════════════════════
 -- LISTAR con paginación y búsqueda
 -- ══════════════════════════════════════════
-CREATE PROCEDURE dbo.sp_listar_clientes
+CREATE OR ALTER PROCEDURE dbo.sp_listar_clientes
 (
     @Busqueda     VARCHAR(250) = '',
     @Pagina       INT          = 1,
@@ -27,6 +27,7 @@ BEGIN
         ci,
         genero,
         telefono,
+        email,
         fecha_nacimiento,
         fecha_registro,
         estado
@@ -42,7 +43,7 @@ GO
 -- ══════════════════════════════════════════
 -- OBTENER por ID
 -- ══════════════════════════════════════════
-CREATE PROCEDURE dbo.sp_obtener_cliente
+CREATE OR ALTER PROCEDURE dbo.sp_obtener_cliente
 (
     @IdCliente INT
 )
@@ -56,6 +57,7 @@ BEGIN
         ci,
         genero,
         telefono,
+        email,
         fecha_nacimiento,
         fecha_registro,
         estado
@@ -67,13 +69,16 @@ GO
 -- ══════════════════════════════════════════
 -- REGISTRAR
 -- ══════════════════════════════════════════
-CREATE PROCEDURE dbo.sp_registrar_cliente
+CREATE OR ALTER PROCEDURE dbo.sp_registrar_cliente
 (
     @NombreCompleto  VARCHAR(250),
     @CI              VARCHAR(50),
     @Genero          VARCHAR(255),
     @Telefono        INTEGER,
-    @FechaNacimiento DATE
+    @Email           VARCHAR(150),
+    @FechaNacimiento DATE,
+    @Resultado       INT          OUTPUT,
+    @Mensaje         VARCHAR(500) OUTPUT
 )
 AS
 BEGIN
@@ -81,7 +86,8 @@ BEGIN
 
     IF EXISTS (SELECT 1 FROM cliente WHERE ci = @CI)
     BEGIN
-        SELECT 0 AS Resultado, 'El CI ya está registrado.' AS Mensaje;
+        SET @Resultado = 0;
+        SET @Mensaje   = 'El CI ya está registrado.';
         RETURN;
     END
 
@@ -90,6 +96,7 @@ BEGIN
         ci,
         genero,
         telefono,
+        email,
         fecha_nacimiento,
         fecha_registro,
         estado
@@ -99,26 +106,31 @@ BEGIN
         @CI,
         @Genero,
         @Telefono,
+        @Email,
         @FechaNacimiento,
         CAST(GETDATE() AS DATE),
         1
     );
 
-    SELECT 1 AS Resultado, 'Cliente registrado correctamente.' AS Mensaje;
+    SET @Resultado = 1;
+    SET @Mensaje   = 'Cliente registrado correctamente.';
 END
 GO
 
 -- ══════════════════════════════════════════
 -- EDITAR
 -- ══════════════════════════════════════════
-CREATE PROCEDURE dbo.sp_editar_cliente
+CREATE OR ALTER PROCEDURE dbo.sp_editar_cliente
 (
     @IdCliente       INT,
     @NombreCompleto  VARCHAR(250),
     @CI              VARCHAR(50),
     @Genero          VARCHAR(255),
     @Telefono        INTEGER,
-    @FechaNacimiento DATE
+    @Email           VARCHAR(150),
+    @FechaNacimiento DATE,
+    @Resultado       INT          OUTPUT,
+    @Mensaje         VARCHAR(500) OUTPUT
 )
 AS
 BEGIN
@@ -126,7 +138,8 @@ BEGIN
 
     IF EXISTS (SELECT 1 FROM cliente WHERE ci = @CI AND id_cliente <> @IdCliente)
     BEGIN
-        SELECT 0 AS Resultado, 'El CI ya está registrado en otro cliente.' AS Mensaje;
+        SET @Resultado = 0;
+        SET @Mensaje   = 'El CI ya está registrado en otro cliente.';
         RETURN;
     END
 
@@ -135,28 +148,40 @@ BEGIN
         ci               = @CI,
         genero           = @Genero,
         telefono         = @Telefono,
+        email            = @Email,
         fecha_nacimiento = @FechaNacimiento
     WHERE id_cliente = @IdCliente;
 
-    SELECT 1 AS Resultado, 'Cliente actualizado correctamente.' AS Mensaje;
+    SET @Resultado = 1;
+    SET @Mensaje   = 'Cliente actualizado correctamente.';
 END
 GO
 
 -- ══════════════════════════════════════════
 -- CAMBIAR ESTADO
 -- ══════════════════════════════════════════
-CREATE PROCEDURE dbo.sp_cambiar_estado_cliente
+CREATE OR ALTER PROCEDURE dbo.sp_cambiar_estado_cliente
 (
-    @IdCliente INT
+    @IdCliente INT,
+    @Resultado INT          OUTPUT,
+    @Mensaje   VARCHAR(500) OUTPUT
 )
 AS
 BEGIN
     SET NOCOUNT ON;
 
+    IF NOT EXISTS (SELECT 1 FROM cliente WHERE id_cliente = @IdCliente)
+    BEGIN
+        SET @Resultado = 0;
+        SET @Mensaje   = 'El cliente no existe.';
+        RETURN;
+    END
+
     UPDATE cliente
     SET estado = CASE WHEN estado = 1 THEN 0 ELSE 1 END
     WHERE id_cliente = @IdCliente;
 
-    SELECT estado AS NuevoEstado FROM cliente WHERE id_cliente = @IdCliente;
+    SET @Resultado = 1;
+    SET @Mensaje   = 'Estado actualizado correctamente.';
 END
 GO

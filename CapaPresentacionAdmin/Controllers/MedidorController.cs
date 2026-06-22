@@ -2,7 +2,6 @@
 using CapaNegocio;
 using CapaPresentacionAdmin.Filtros;
 using System;
-using System.Collections.Generic;
 using System.Web.Mvc;
 
 namespace CapaPresentacionAdmin.Controllers
@@ -20,13 +19,13 @@ namespace CapaPresentacionAdmin.Controllers
         [ValidarPermisos(NombrePermiso = "Gestionar Medidor")]
         public JsonResult ListarMedidores(string busqueda = "", int pagina = 1, int tamanoPagina = 10)
         {
-            var (lista, total) = new CN_Medidor().Listar(busqueda, pagina, tamanoPagina);
+            var resultado = new CN_Medidor().Listar(busqueda, pagina, tamanoPagina);
             return Json(new
             {
-                data = lista,
-                totalRegistros = total,
-                totalPaginas = (int)Math.Ceiling((double)total / tamanoPagina),
-                paginaActual = pagina
+                data           = resultado.Medidores,
+                totalRegistros = resultado.TotalRegistros,
+                totalPaginas   = (int)Math.Ceiling((double)resultado.TotalRegistros / tamanoPagina),
+                paginaActual   = pagina
             }, JsonRequestBehavior.AllowGet);
         }
 

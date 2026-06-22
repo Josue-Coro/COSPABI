@@ -44,7 +44,7 @@ namespace CapaNegocio
                 Mensaje = "La contraseña debe tener al menos 6 caracteres.";
                 return 0;
             }
-            if (obj.rol_id_dol <= 0)
+            if (obj.rol_id_rol <= 0)
             {
                 Mensaje = "Debes seleccionar un rol.";
                 return 0;
@@ -85,7 +85,7 @@ namespace CapaNegocio
                 Mensaje = "La contraseña debe tener al menos 6 caracteres.";
                 return false;
             }
-            if (obj.rol_id_dol <= 0)
+            if (obj.rol_id_rol <= 0)
             {
                 Mensaje = "Debes seleccionar un rol.";
                 return false;

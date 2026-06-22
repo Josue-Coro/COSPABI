@@ -127,7 +127,7 @@ namespace CapaDato
             return socio;
         }
 
-        public int Registrar(CM_Socio socio, int idUsuarioSesion, out string Mensaje)
+        public int Registrar(CM_Socio socio, int idCaja, string cajero, out string Mensaje)
         {
             int idGenerado = 0;
             Mensaje = string.Empty;
@@ -136,7 +136,7 @@ namespace CapaDato
             {
                 using (SqlConnection cn = new SqlConnection(CD_Conexion.cn))
                 {
-                    SqlCommand cmd = new SqlCommand("dbo.sp_registrar_socio", cn);
+                    SqlCommand cmd = new SqlCommand("dbo.sp_registrar_socio_con_inscripcion", cn);
                     cmd.CommandType = CommandType.StoredProcedure;
                     cmd.Parameters.AddWithValue("@nombre_socio", socio.nombre_socio);
                     cmd.Parameters.AddWithValue("@cliente_id_cliente", socio.cliente_id_cliente);
@@ -152,8 +152,14 @@ namespace CapaDato
                     cmd.Parameters.AddWithValue("@fecha_registro", socio.fecha_registro);
                     cmd.Parameters.AddWithValue("@ruta_id_ruta", socio.ruta_id_ruta);
                     cmd.Parameters.AddWithValue("@codigo_fijo", socio.codigo_fijo);
+                    // Inscripción
+                    cmd.Parameters.AddWithValue("@monto_inicial", socio.monto_inicial);
+                    cmd.Parameters.AddWithValue("@num_cuotas", socio.num_cuotas);
+                    cmd.Parameters.AddWithValue("@id_metodo_pago", socio.id_metodo_pago);
+                    cmd.Parameters.AddWithValue("@id_caja", idCaja);
+                    cmd.Parameters.AddWithValue("@cajero", cajero ?? "");
                     cmd.Parameters.Add("@Resultado", SqlDbType.Int).Direction = ParameterDirection.Output;
-                    cmd.Parameters.Add("@Mensaje", SqlDbType.VarChar, 500).Direction = ParameterDirection.Output;
+                    cmd.Parameters.Add("@Mensaje", SqlDbType.NVarChar, 500).Direction = ParameterDirection.Output;
 
                     cn.Open();
                     cmd.ExecuteNonQuery();

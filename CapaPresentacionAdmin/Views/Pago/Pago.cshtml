@@ -1,10 +1,230 @@
-﻿
 @{
     ViewBag.Title = "Pago";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<h2>Pago</h2>
+<div class="p-6">
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold text-gray-800">Cobros</h1>
+        <p class="text-sm text-gray-500 mt-1">Cobro de avisos en caja</p>
+    </div>
 
+    <div id="panelCaja" class="mb-5"></div>
 
+    <div id="zonaCobro" class="hidden">
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 mb-6">
+            <div class="p-4 border-b border-gray-100">
+                <input type="text" id="txtBuscar" placeholder="Buscar aviso por socio o código..."
+                       class="w-full sm:w-80 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead class="bg-gray-50 text-gray-500">
+                        <tr>
+                            <th class="px-4 py-3 text-left  font-semibold uppercase text-xs">Socio</th>
+                            <th class="px-4 py-3 text-left  font-semibold uppercase text-xs">Código</th>
+                            <th class="px-4 py-3 text-left  font-semibold uppercase text-xs">Período</th>
+                            <th class="px-4 py-3 text-left  font-semibold uppercase text-xs">Vence</th>
+                            <th class="px-4 py-3 text-right font-semibold uppercase text-xs">Total</th>
+                            <th class="px-4 py-3"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbodyAvisos" class="divide-y divide-gray-100"></tbody>
+                </table>
+            </div>
+            <div class="p-4 border-t border-gray-100 flex items-center justify-between">
+                <span id="lblInfo" class="text-xs text-gray-400"></span>
+                <div id="divPag" class="flex gap-1"></div>
+            </div>
+        </div>
 
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100">
+            <div class="px-5 py-3 border-b border-gray-100">
+                <span class="text-sm font-semibold text-gray-700">Pagos de esta caja</span>
+            </div>
+            <div id="listaPagos" class="divide-y divide-gray-100"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal cobro -->
+<div id="modalCobro" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div class="absolute inset-0 bg-black/40" onclick="cerrarCobro()"></div>
+    <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+        <div class="px-5 py-3 border-b border-gray-100 flex items-center justify-between">
+            <h3 class="text-base font-bold text-gray-800">Cobrar aviso</h3>
+            <button onclick="cerrarCobro()" class="p-1 hover:bg-gray-100 rounded-lg text-gray-500">&times;</button>
+        </div>
+        <div class="px-5 py-4 space-y-3">
+            <div class="bg-gray-50 rounded-xl p-3 text-sm">
+                <p class="font-semibold text-gray-800" id="cobroSocio"></p>
+                <div class="flex justify-between mt-1"><span class="text-gray-500">Total a cobrar</span><span class="font-mono font-bold text-gray-800" id="cobroTotal"></span></div>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-700 mb-1">Método de pago *</label>
+                <select id="selMetodo" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                    <option value="">-- Seleccionar --</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-700 mb-1">Monto recibido</label>
+                <input type="number" id="txtRecibido" min="0" step="1"
+                       class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+            </div>
+            <div class="flex justify-between text-sm">
+                <span class="text-gray-500">Vuelto</span>
+                <span class="font-mono font-semibold text-gray-800" id="lblVuelto">Bs. 0.00</span>
+            </div>
+            <p id="msgCobro" class="hidden text-xs text-red-500"></p>
+            <button id="btnCobrar" onclick="confirmarCobro()" class="w-full bg-green-600 hover:bg-green-700 text-white text-sm font-semibold py-2.5 rounded-xl">Confirmar cobro</button>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+<script>
+    var pagina = 1, total = 0, tam = 10, timer;
+    var metodos = [];
+    var cobroAviso = 0, cobroMonto = 0;
+
+    $(function () {
+        cargarMiCaja();
+        $('#txtBuscar').on('input', function () {
+            clearTimeout(timer);
+            timer = setTimeout(function () { pagina = 1; cargarPorCobrar(); }, 350);
+        });
+        $('#txtRecibido').on('input', calcVuelto);
+    });
+
+    function fmt(n) { return (n == null ? 0 : n).toLocaleString('es-BO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+    function parseNet(v) { if (!v) return null; var m = /\/Date\((\d+)\)\//.exec(v); var d = m ? new Date(parseInt(m[1])) : new Date(v); return isNaN(d) ? null : d; }
+    function ffecha(v) { var d = parseNet(v); return d ? d.toLocaleDateString('es-BO') : '-'; }
+    function fhora(v)  { var d = parseNet(v); return d ? d.toLocaleString('es-BO')     : '-'; }
+
+    // ---- Estado de caja ----
+    function cargarMiCaja() {
+        $.get('@Url.Action("MiCaja", "Pago")', function (res) {
+            metodos = (res && res.metodos) ? res.metodos : [];
+            if (res.exito && res.caja) {
+                $('#panelCaja').html(
+                    '<div class="bg-white rounded-2xl shadow-sm border border-green-200 px-5 py-3 flex items-center justify-between">' +
+                    '<span class="inline-flex items-center gap-2 text-sm font-semibold text-green-700">' +
+                    '<span class="w-2 h-2 rounded-full bg-green-500"></span>Caja abierta</span>' +
+                    '<span class="text-sm text-gray-600">Cobrado: <b class="font-mono">Bs. ' + fmt(res.caja.total_cobrado) + '</b></span>' +
+                    '</div>'
+                );
+                $('#zonaCobro').removeClass('hidden');
+                cargarPorCobrar();
+                cargarPagos();
+            } else {
+                $('#panelCaja').html(
+                    '<div class="bg-amber-50 border border-amber-200 rounded-2xl px-5 py-4 text-sm text-amber-800">' +
+                    'No tienes una caja abierta. Ábrela en el módulo <a href="@Url.Action("Caja", "Caja")" class="font-semibold underline">Caja</a> para poder cobrar.' +
+                    '</div>'
+                );
+                $('#zonaCobro').addClass('hidden');
+            }
+        });
+    }
+
+    // ---- Avisos por cobrar ----
+    function cargarPorCobrar() {
+        $.get('@Url.Action("ListarPorCobrar", "Pago")', { busqueda: $('#txtBuscar').val(), pagina: pagina, tamanoPagina: tam }, function (res) {
+            var tb = $('#tbodyAvisos'); tb.empty();
+            if (!res.exito || !res.avisos || res.avisos.length === 0) {
+                tb.html('<tr><td colspan="6" class="text-center py-6 text-gray-400">Sin avisos por cobrar</td></tr>');
+                $('#divPag').empty(); $('#lblInfo').text(''); return;
+            }
+            total = res.totalRegistros;
+            $.each(res.avisos, function (_, a) {
+                var nom = a.nombre_socio.replace(/'/g, "\\'");
+                tb.append(
+                    '<tr class="hover:bg-gray-50">' +
+                    '<td class="px-4 py-3 font-medium text-gray-800">' + a.nombre_socio + '</td>' +
+                    '<td class="px-4 py-3 text-gray-500">' + a.codigo_fijo + '</td>' +
+                    '<td class="px-4 py-3 text-gray-600">' + a.nombre_periodo + '</td>' +
+                    '<td class="px-4 py-3 text-gray-600">' + ffecha(a.fecha_vencimiento) + '</td>' +
+                    '<td class="px-4 py-3 text-right font-mono font-semibold text-gray-800">Bs. ' + fmt(a.total_aviso) + '</td>' +
+                    '<td class="px-4 py-3 text-right"><button onclick="abrirCobro(' + a.id_aviso + ',' + a.total_aviso + ',\'' + nom + ' — ' + a.nombre_periodo + '\')" class="bg-green-600 hover:bg-green-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg">Cobrar</button></td>' +
+                    '</tr>'
+                );
+            });
+            renderPag();
+        });
+    }
+
+    function renderPag() {
+        var totalP = Math.ceil(total / tam) || 1;
+        $('#lblInfo').text(((pagina - 1) * tam + 1) + '–' + Math.min(pagina * tam, total) + ' de ' + total);
+        var div = $('#divPag'); div.empty();
+        var b = 'px-2.5 py-1 text-xs rounded border transition ';
+        div.append('<button ' + (pagina === 1 ? 'disabled' : '') + ' onclick="pagina--;cargarPorCobrar()" class="' + b + (pagina === 1 ? 'text-gray-300 border-gray-200' : 'text-gray-600 border-gray-300 hover:bg-gray-100') + '">‹</button>');
+        for (var p = 1; p <= totalP; p++)
+            div.append('<button onclick="pagina=' + p + ';cargarPorCobrar()" class="' + b + (p === pagina ? 'bg-blue-600 text-white border-blue-600' : 'text-gray-600 border-gray-300 hover:bg-gray-100') + '">' + p + '</button>');
+        div.append('<button ' + (pagina === totalP ? 'disabled' : '') + ' onclick="pagina++;cargarPorCobrar()" class="' + b + (pagina === totalP ? 'text-gray-300 border-gray-200' : 'text-gray-600 border-gray-300 hover:bg-gray-100') + '">›</button>');
+    }
+
+    // ---- Cobro ----
+    function abrirCobro(idAviso, totalAviso, etiqueta) {
+        cobroAviso = idAviso; cobroMonto = totalAviso;
+        $('#cobroSocio').text(etiqueta);
+        $('#cobroTotal').text('Bs. ' + fmt(totalAviso));
+        $('#txtRecibido').val(totalAviso);
+        $('#msgCobro').addClass('hidden');
+        var sel = $('#selMetodo'); sel.html('<option value="">-- Seleccionar --</option>');
+        $.each(metodos, function (_, m) { sel.append('<option value="' + m.id_metodo_pago + '">' + m.metodo + '</option>'); });
+        calcVuelto();
+        $('#modalCobro').removeClass('hidden');
+    }
+
+    function calcVuelto() {
+        var rec = parseFloat($('#txtRecibido').val()) || 0;
+        var v = rec - cobroMonto;
+        $('#lblVuelto').text('Bs. ' + fmt(v > 0 ? v : 0));
+    }
+
+    function confirmarCobro() {
+        var met = $('#selMetodo').val();
+        var rec = parseFloat($('#txtRecibido').val()) || 0;
+        if (!met) { $('#msgCobro').text('Selecciona un método de pago.').removeClass('hidden'); return; }
+        if (rec < cobroMonto) { $('#msgCobro').text('El monto recibido es menor al total.').removeClass('hidden'); return; }
+
+        $('#btnCobrar').prop('disabled', true).text('Cobrando...');
+        $.post('@Url.Action("RegistrarPago", "Pago")', { idAviso: cobroAviso, idMetodoPago: parseInt(met), montoRecibido: rec }, function (res) {
+            $('#btnCobrar').prop('disabled', false).text('Confirmar cobro');
+            if (res.exito) {
+                cerrarCobro();
+                cargarPorCobrar(); cargarPagos(); cargarMiCaja();
+            } else {
+                $('#msgCobro').text(res.mensaje || 'No se pudo cobrar.').removeClass('hidden');
+            }
+        }).fail(function () {
+            $('#btnCobrar').prop('disabled', false).text('Confirmar cobro');
+            $('#msgCobro').text('Error de conexión.').removeClass('hidden');
+        });
+    }
+
+    function cerrarCobro() { $('#modalCobro').addClass('hidden'); }
+
+    // ---- Pagos de la caja ----
+    function cargarPagos() {
+        $.get('@Url.Action("PagosCaja", "Pago")', function (res) {
+            var cont = $('#listaPagos'); cont.empty();
+            if (!res.exito || !res.pagos || res.pagos.length === 0) {
+                cont.html('<div class="px-5 py-6 text-center text-gray-400 text-sm">Aún no hay pagos en esta caja.</div>');
+                return;
+            }
+            $.each(res.pagos, function (_, p) {
+                var quien = p.nombre_socio ? (p.nombre_socio + (p.aviso_id_aviso ? ' · aviso #' + p.aviso_id_aviso : '')) : 'Inscripción';
+                cont.append(
+                    '<div class="px-5 py-3 flex items-center justify-between text-sm">' +
+                    '<div><p class="font-medium text-gray-800">' + quien + '</p>' +
+                    '<p class="text-xs text-gray-400">' + fhora(p.fecha_pago) + ' · ' + (p.nombre_metodo || '') + '</p></div>' +
+                    '<span class="font-mono font-semibold text-green-700">Bs. ' + fmt(p.monto_pagado) + '</span>' +
+                    '</div>'
+                );
+            });
+        });
+    }
+</script>
+}

@@ -233,55 +233,63 @@
                 @Html.ActionLink("Inicio", "Index", "Home",
                     new { area = "" },
                     new { @class = "nav-link" })
-
-                @if (tieneOperaciones)
+                @if (tieneAdmin)
                 {
-                    <p class="nav-section">Operaciones</p>
-                    if (TienePermiso("Gestionar Avisos"))
+                    <p class="nav-section">Administración</p>
+
+                    if (TienePermiso("Gestionar Usuarios"))
                     {
-                        @Html.ActionLink("Avisos y Cobros", "Aviso", "Aviso",
+                        @Html.ActionLink("Usuarios", "Usuario", "Usuario",
                             new { area = "" },
                             new { @class = "nav-link" })
                     }
-                    if (TienePermiso("Gestionar Lecturas"))
+
+                    if (TienePermiso("Gestionar Rol"))
                     {
-                        @Html.ActionLink("Lecturas", "Lectura", "Lectura",
+                        @Html.ActionLink("Roles", "Rol", "Rol",
                             new { area = "" },
                             new { @class = "nav-link" })
                     }
-                    if (TienePermiso("Gestionar Ruta"))
+                    if (TienePermiso("Gestionar Permiso"))
                     {
-                        @Html.ActionLink("Rutas", "Ruta", "Ruta",
+                        @Html.ActionLink("Permisos", "Permiso", "Permiso",
                             new { area = "" },
                             new { @class = "nav-link" })
                     }
-                    if (TienePermiso("Gestionar Cargo Extra"))
+                    if (TienePermiso("Gestionar Caja"))
                     {
-                        @Html.ActionLink("Cargos Extras", "CargoExtra", "CargoExtra",
+                        @Html.ActionLink("Cajas", "Caja", "Caja",
+                            new { area = "" },
+                            new { @class = "nav-link" })
+                    }
+                    if (TienePermiso("Visualizar Bitacora"))
+                    {
+                        @Html.ActionLink("Bitacora", "Bitacora", "Bitacora",
                             new { area = "" },
                             new { @class = "nav-link" })
                     }
 
                 }
-
-                @if (tienePortalSocio)
+                @if (tieneConfiguracion)
                 {
-                    <p class="nav-section">Portal de Socios</p>
-                    if (TienePermiso("Gestionar Cuenta Socio"))
+                    <p class="nav-section">Configuración</p>
+
+
+                    if (TienePermiso("Gestionar Tarifa"))
                     {
-                        @Html.ActionLink("Cuentas de Socio", "CuentaSocio", "CuentaSocio",
+                        @Html.ActionLink("Tarifas", "Tarifa", "Tarifa",
                             new { area = "" },
                             new { @class = "nav-link" })
                     }
-                    if (TienePermiso("Gestionar Notificaciones"))
+                    if (TienePermiso("Gestionar TipoCargo"))
                     {
-                        @Html.ActionLink("Notificaciones", "Notificacion", "Notificacion",
+                        @Html.ActionLink("Tipos de Cargo", "TipoCargo", "TipoCargo",
                             new { area = "" },
                             new { @class = "nav-link" })
                     }
-                    if (TienePermiso("Gestionar Metodo Pago"))
+                    if (TienePermiso("Gestionar Medidor"))
                     {
-                        @Html.ActionLink("Metodo de pago", "MetodoPago", "MetodoPago",
+                        @Html.ActionLink("Medidores", "Medidor", "Medidor",
                             new { area = "" },
                             new { @class = "nav-link" })
                     }
@@ -317,68 +325,64 @@
                     }
 
                 }
-                @if (tieneConfiguracion)
+                @if (tieneOperaciones)
                 {
-                    <p class="nav-section">Configuración</p>
-
-
-                    if (TienePermiso("Gestionar Tarifa"))
+                    <p class="nav-section">Operaciones</p>
+                    if (TienePermiso("Gestionar Lecturas"))
                     {
-                        @Html.ActionLink("Tarifas", "Tarifa", "Tarifa",
+                        @Html.ActionLink("Lecturas", "Lectura", "Lectura",
                             new { area = "" },
                             new { @class = "nav-link" })
                     }
-                    if (TienePermiso("Gestionar TipoCargo"))
+                    if (TienePermiso("Gestionar Avisos"))
                     {
-                        @Html.ActionLink("Tipos de Cargo", "TipoCargo", "TipoCargo",
+                        @Html.ActionLink("Avisos y Cobros", "Aviso", "Aviso",
                             new { area = "" },
                             new { @class = "nav-link" })
                     }
-                    if (TienePermiso("Gestionar Medidor"))
+                    if (TienePermiso("Gestionar Cargo Extra"))
                     {
-                        @Html.ActionLink("Medidores", "Medidor", "Medidor",
+                        @Html.ActionLink("Cargos Extras", "CargoExtra", "CargoExtra",
+                            new { area = "" },
+                            new { @class = "nav-link" })
+                    }
+                    if (TienePermiso("Gestionar Ruta"))
+                    {
+                        @Html.ActionLink("Rutas", "Ruta", "Ruta",
+                            new { area = "" },
+                            new { @class = "nav-link" })
+                    }
+
+
+                }
+
+                @if (tienePortalSocio)
+                {
+                    <p class="nav-section">Portal de Socios</p>
+                    if (TienePermiso("Gestionar Cuenta Socio"))
+                    {
+                        @Html.ActionLink("Cuentas de Socio", "CuentaSocio", "CuentaSocio",
+                            new { area = "" },
+                            new { @class = "nav-link" })
+                    }
+                    if (TienePermiso("Gestionar Notificaciones"))
+                    {
+                        @Html.ActionLink("Notificaciones", "Notificacion", "Notificacion",
+                            new { area = "" },
+                            new { @class = "nav-link" })
+                    }
+                    if (TienePermiso("Gestionar Metodo Pago"))
+                    {
+                        @Html.ActionLink("Metodo de pago", "MetodoPago", "MetodoPago",
                             new { area = "" },
                             new { @class = "nav-link" })
                     }
 
                 }
 
-                @if (tieneAdmin)
-                {
-                    <p class="nav-section">Administración</p>
-                    if (TienePermiso("Gestionar Caja"))
-                    {
-                        @Html.ActionLink("Cajas", "Caja", "Caja",
-                            new { area = "" },
-                            new { @class = "nav-link" })
-                    }
-                    if (TienePermiso("Gestionar Usuarios"))
-                    {
-                        @Html.ActionLink("Usuarios", "Usuario", "Usuario",
-                            new { area = "" },
-                            new { @class = "nav-link" })
-                    }
 
-                    if (TienePermiso("Gestionar Rol"))
-                    {
-                        @Html.ActionLink("Roles", "Rol", "Rol",
-                            new { area = "" },
-                            new { @class = "nav-link" })
-                    }
-                    if (TienePermiso("Gestionar Permiso"))
-                    {
-                        @Html.ActionLink("Permisos", "Permiso", "Permiso",
-                            new { area = "" },
-                            new { @class = "nav-link" })
-                    }
-                    if (TienePermiso("Visualizar Bitacora"))
-                    {
-                        @Html.ActionLink("Bitacora", "Bitacora", "Bitacora",
-                            new { area = "" },
-                            new { @class = "nav-link" })
-                    }
 
-                }
+
                 @if (tieneReporte)
                 {
                     <p class="nav-section">Reporte</p>

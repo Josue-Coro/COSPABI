@@ -1,11 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Web;
+﻿using CapaModelo;
+using CapaNegocio;
+using System;
 using System.Web.Mvc;
 
 namespace CapaPresentacionAdmin.Controllers
 {
+    [Authorize]
     public class HomeController : Controller
     {
         public ActionResult Index()
@@ -13,18 +13,31 @@ namespace CapaPresentacionAdmin.Controllers
             return View();
         }
 
-        public ActionResult About()
+        [HttpGet]
+        public JsonResult ObtenerEstadisticas()
         {
-            ViewBag.Message = "Your application description page.";
+            try
+            {
+                string periodo = DateTime.Today.Month.ToString("D2") + "/" + DateTime.Today.Year;
+                CM_Dashboard stats = new CN_Dashboard().ObtenerEstadisticas(periodo);
 
-            return View();
-        }
-
-        public ActionResult Contact()
-        {
-            ViewBag.Message = "Your contact page.";
-
-            return View();
+                return Json(new
+                {
+                    exito          = true,
+                    totalSocios    = stats.TotalSocios,
+                    totalClientes  = stats.TotalClientes,
+                    totalMedidores = stats.TotalMedidores,
+                    totalRutas     = stats.TotalRutas,
+                    totalUsuarios  = stats.TotalUsuarios,
+                    totalLecturas  = stats.TotalLecturas,
+                    totalAvisos    = stats.TotalAvisos,
+                    periodo        = stats.Periodo
+                }, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                return Json(new { exito = false, mensaje = ex.Message }, JsonRequestBehavior.AllowGet);
+            }
         }
     }
 }

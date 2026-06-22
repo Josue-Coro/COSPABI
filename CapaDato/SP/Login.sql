@@ -237,7 +237,7 @@ VALUES (
 --sp login
 USE [COSPABI]
 GO
-ALTER PROCEDURE dbo.sp_login_admin
+CREATE OR ALTER PROCEDURE dbo.sp_login_admin
 (
     @Usuario VARCHAR(255),
     @Contrasena VARCHAR(550)

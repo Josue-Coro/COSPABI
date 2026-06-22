@@ -39,6 +39,16 @@ namespace CapaNegocio
                 Mensaje = "El género es obligatorio.";
                 return false;
             }
+            if (string.IsNullOrWhiteSpace(obj.email))
+            {
+                Mensaje = "El email es obligatorio (requerido para pagos por QR).";
+                return false;
+            }
+            if (obj.email.IndexOf('@') <= 0 || obj.email.LastIndexOf('.') < obj.email.IndexOf('@'))
+            {
+                Mensaje = "El email no tiene un formato válido.";
+                return false;
+            }
             if (obj.fecha_nacimiento == DateTime.MinValue)
             {
                 Mensaje = "La fecha de nacimiento es obligatoria.";
@@ -75,6 +85,16 @@ namespace CapaNegocio
             if (string.IsNullOrWhiteSpace(obj.genero))
             {
                 Mensaje = "El género es obligatorio.";
+                return false;
+            }
+            if (string.IsNullOrWhiteSpace(obj.email))
+            {
+                Mensaje = "El email es obligatorio (requerido para pagos por QR).";
+                return false;
+            }
+            if (obj.email.IndexOf('@') <= 0 || obj.email.LastIndexOf('.') < obj.email.IndexOf('@'))
+            {
+                Mensaje = "El email no tiene un formato válido.";
                 return false;
             }
             if (obj.fecha_nacimiento == DateTime.MinValue)

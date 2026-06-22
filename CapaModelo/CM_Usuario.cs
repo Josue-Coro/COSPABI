@@ -27,7 +27,7 @@ namespace CapaModelo
         public string contraseña { get; set; } = string.Empty;
         public bool estado { get; set; }
         public DateTime fecha_creacion { get; set; }
-        public int rol_id_dol { get; set; }
+        public int rol_id_rol { get; set; }
         public CM_Rol rol { get; set; }
     }
 }

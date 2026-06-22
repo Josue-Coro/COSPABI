@@ -1,34 +1,244 @@
-﻿@{
-    ViewBag.Title = "Home Page";
+﻿@using CapaModelo
+@{
+    ViewBag.Title = "Inicio";
+    var nombre = Session["NombreUsuario"] as string ?? "Usuario";
+    var rol    = Session["RolUsuario"]    as string ?? "";
 }
 
-<main>
-    <section class="row" aria-labelledby="aspnetTitle">
-        <h1 id="title">ASP.NET</h1>
-        <p class="lead">ASP.NET is a free web framework for building great Web sites and Web applications using HTML, CSS and JavaScript.</p>
-        <p><a href="https://asp.net" class="btn btn-primary btn-md">Learn more &raquo;</a></p>
-    </section>
-
-    <div class="row">
-        <section class="col-md-4" aria-labelledby="gettingStartedTitle">
-            <h2 id="gettingStartedTitle">Getting started</h2>
-            <p>
-                ASP.NET MVC gives you a powerful, patterns-based way to build dynamic websites that
-                enables a clean separation of concerns and gives you full control over markup
-                for enjoyable, agile development.
-            </p>
-            <p><a class="btn btn-outline-dark" href="https://go.microsoft.com/fwlink/?LinkId=301865">Learn more &raquo;</a></p>
-        </section>
-        <section class="col-md-4" aria-labelledby="librariesTitle">
-            <h2 id="librariesTitle">Get more libraries</h2>
-            <p>NuGet is a free Visual Studio extension that makes it easy to add, remove, and update libraries and tools in Visual Studio projects.</p>
-            <p><a class="btn btn-outline-dark" href="https://go.microsoft.com/fwlink/?LinkId=301866">Learn more &raquo;</a></p>
-        </section>
-        <section class="col-md-4" aria-labelledby="hostingTitle">
-            <h2 id="hostingTitle">Web Hosting</h2>
-            <p>You can easily find a web hosting company that offers the right mix of features and price for your applications.</p>
-            <p><a class="btn btn-outline-dark" href="https://go.microsoft.com/fwlink/?LinkId=301867">Learn more &raquo;</a></p>
-        </section>
+<!-- Encabezado -->
+<div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+    <div>
+        <h1 class="text-xl font-bold text-gray-800">Panel de Control</h1>
+        <p class="text-sm text-gray-400 mt-0.5">COSPABI R.L. &mdash; Sistema Administrativo</p>
     </div>
-</main>
+    <span class="inline-flex items-center gap-1.5 bg-green-50 border border-green-200 text-green-700 text-xs font-semibold px-3 py-1.5 rounded-full">
+        <span class="w-1.5 h-1.5 bg-green-500 rounded-full" style="animation:blink 2s infinite"></span>
+        @nombre &mdash; @rol
+    </span>
+</div>
 
+<!-- Fila 1: 4 tarjetas -->
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+
+    <div class="stat-card">
+        <div class="stat-top">
+            <div>
+                <p class="stat-label">Socios</p>
+                <p class="stat-num" id="n-socios">...</p>
+            </div>
+            <div class="stat-icon" style="background:#dcfce7;color:#16a34a">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+                </svg>
+            </div>
+        </div>
+        <p class="stat-sub">Registrados en el sistema</p>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-top">
+            <div>
+                <p class="stat-label">Clientes</p>
+                <p class="stat-num" id="n-clientes">...</p>
+            </div>
+            <div class="stat-icon" style="background:#dbeafe;color:#2563eb">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                </svg>
+            </div>
+        </div>
+        <p class="stat-sub">Personas registradas</p>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-top">
+            <div>
+                <p class="stat-label">Medidores</p>
+                <p class="stat-num" id="n-medidores">...</p>
+            </div>
+            <div class="stat-icon" style="background:#fef9c3;color:#ca8a04">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                </svg>
+            </div>
+        </div>
+        <p class="stat-sub">Instalados en el sistema</p>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-top">
+            <div>
+                <p class="stat-label">Rutas</p>
+                <p class="stat-num" id="n-rutas">...</p>
+            </div>
+            <div class="stat-icon" style="background:#ede9fe;color:#7c3aed">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
+                </svg>
+            </div>
+        </div>
+        <p class="stat-sub">De distribución</p>
+    </div>
+
+</div>
+
+<!-- Fila 2: 3 tarjetas -->
+<div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-5">
+
+    <div class="stat-card">
+        <div class="stat-top">
+            <div>
+                <p class="stat-label">Usuarios</p>
+                <p class="stat-num" id="n-usuarios">...</p>
+            </div>
+            <div class="stat-icon" style="background:#fee2e2;color:#dc2626">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+                </svg>
+            </div>
+        </div>
+        <p class="stat-sub">Del sistema administrativo</p>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-top">
+            <div>
+                <p class="stat-label">Lecturas</p>
+                <p class="stat-num" id="n-lecturas">...</p>
+            </div>
+            <div class="stat-icon" style="background:#ccfbf1;color:#0d9488">
+                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2C8.5 7 5 10.5 5 14a7 7 0 0014 0c0-3.5-3.5-7-7-12z"/>
+                </svg>
+            </div>
+        </div>
+        <p class="stat-sub period-label">Período actual</p>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-top">
+            <div>
+                <p class="stat-label">Avisos</p>
+                <p class="stat-num" id="n-avisos">...</p>
+            </div>
+            <div class="stat-icon" style="background:#fce7f3;color:#be185d">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                </svg>
+            </div>
+        </div>
+        <p class="stat-sub period-label">Período actual</p>
+    </div>
+
+</div>
+
+<!-- Tarjeta resumen -->
+<div class="rounded-xl p-6 flex items-center justify-between shadow-lg"
+     style="background:linear-gradient(135deg,#16a34a,#059669)">
+    <div>
+        <p class="text-white/80 text-sm font-medium mb-1">Total Socios Registrados</p>
+        <p class="text-white font-bold" style="font-size:2.5rem;line-height:1" id="n-socios-big">---</p>
+        <p class="text-green-200 text-xs mt-1">Cooperativa COSPABI R.L.</p>
+    </div>
+    <div class="w-16 h-16 rounded-2xl flex items-center justify-center" style="background:rgba(255,255,255,.18)">
+        <svg class="w-9 h-9 text-white" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 2C8.5 7 5 10.5 5 14a7 7 0 0014 0c0-3.5-3.5-7-7-12z"/>
+        </svg>
+    </div>
+</div>
+
+<!-- Estilos -->
+<style>
+    .stat-card {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 14px;
+        padding: 18px;
+        box-shadow: 0 1px 4px rgba(0,0,0,.05);
+    }
+    .stat-top {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        margin-bottom: 10px;
+    }
+    .stat-icon {
+        width: 46px;
+        height: 46px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+    .stat-label {
+        font-size: 12px;
+        color: #9ca3af;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: .05em;
+        margin-bottom: 4px;
+    }
+    .stat-num {
+        font-size: 2rem;
+        font-weight: 800;
+        color: #111827;
+        line-height: 1;
+    }
+    .stat-sub {
+        font-size: 11px;
+        color: #6b7280;
+    }
+    @@keyframes blink {
+        0%, 100% { opacity: 1; }
+        50%       { opacity: .3; }
+    }
+</style>
+
+<!-- Scripts -->
+@section scripts {
+<script>
+    (function () {
+        function animateCount(el, target) {
+            var start = 0;
+            if (target === 0) { el.textContent = '0'; return; }
+            var step = Math.ceil(target / 40);
+            var timer = setInterval(function () {
+                start = Math.min(start + step, target);
+                el.textContent = start;
+                if (start >= target) clearInterval(timer);
+            }, 18);
+        }
+
+        $.getJSON('@Url.Action("ObtenerEstadisticas", "Home")', function (r) {
+            if (!r.exito) return;
+
+            animateCount(document.getElementById('n-socios'),    r.totalSocios);
+            animateCount(document.getElementById('n-clientes'),  r.totalClientes);
+            animateCount(document.getElementById('n-medidores'), r.totalMedidores);
+            animateCount(document.getElementById('n-rutas'),     r.totalRutas);
+            animateCount(document.getElementById('n-usuarios'),  r.totalUsuarios);
+            animateCount(document.getElementById('n-lecturas'),  r.totalLecturas);
+            animateCount(document.getElementById('n-avisos'),    r.totalAvisos);
+            animateCount(document.getElementById('n-socios-big'),r.totalSocios);
+
+            var periodLabels = document.querySelectorAll('.period-label');
+            for (var i = 0; i < periodLabels.length; i++) {
+                periodLabels[i].textContent = 'Per\u00EDodo: ' + r.periodo;
+            }
+        }).fail(function () {
+            var ids = ['n-socios','n-clientes','n-medidores','n-rutas',
+                       'n-usuarios','n-lecturas','n-avisos','n-socios-big'];
+            for (var i = 0; i < ids.length; i++) {
+                document.getElementById(ids[i]).textContent = '-';
+            }
+        });
+    })();
+</script>
+}

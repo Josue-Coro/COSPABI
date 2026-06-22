@@ -225,4 +225,89 @@ CapaPresentacionAdmin/
 
 ---
 
-*Última actualización: Mayo 2026 — Proyecto COSPABI*
+-----------------
+Cómo funciona Cargo Extra ahora mismo
+Flujo completo
+1. El admin registra un cargo extra
+
+Va a Cargo Extra → Registrar, llena:
+
+Período (MM/YYYY)
+Socio — búsqueda por nombre o código, sale una tabla y hace clic en el socio
+Tipo de Cargo — un catálogo (multa, reconexión, daño, etc.), al seleccionarlo auto-completa el monto y descripción
+Monto y Descripción (editables)
+Se guarda con estado = PENDIENTE.
+
+2. Validaciones del SP sp_registrar_cargo_extra
+
+El socio debe existir
+No puede haber un cargo del mismo tipo para el mismo socio y período si ya hay uno PENDIENTE (evita duplicados)
+Se inserta con estado PENDIENTE
+3. El cargo queda "flotando" hasta que se generan los avisos
+
+Cuando el admin genera avisos (sp_generar_avisos_periodo), el SP busca si ese socio tiene un cargo PENDIENTE en ese período y lo suma al aviso:
+
+
+total_aviso = total_consumo + cargo_extra - credito
+El cargo queda absorbido — el listado lo marca como "En aviso: Sí" (campo aplicado).
+
+4. Anulación
+
+Solo se puede anular si:
+
+Estado = PENDIENTE
+No está aplicado a ningún aviso (si ya está en un aviso, no se puede anular)
+Estado visual en el historial
+Campo	Qué muestra
+Estado	Badge PENDIENTE (amarillo) o ANULADO (rojo)
+En Aviso	"En aviso" (verde) o "Libre" (gris)
+Acción	Botón Anular solo si PENDIENTE + Libre
+Limitación actual importante
+Si el admin registra un cargo extra después de que ya se generaron los avisos del período, ese cargo queda en estado PENDIENTE pero no se aplica automáticamente al aviso existente — queda como "Libre" y no tiene efecto en el cobro de ese período.
+------------------------
+Flujo completo del sistema de Avisos
+1. Prerrequisitos (lo que debe existir antes)
+
+Socio → tiene Medidor → está en una Ruta → tiene Tarifa (por rol_socio)
+Período (MM/YYYY) → debe existir o se auto-crea
+2. Paso 1 — Registro de Lectura
+El admin va a Lectura → Registrar Lecturas, selecciona Período y Ruta. El sistema carga todos los medidores de esa ruta con:
+
+Lectura anterior (del período previo)
+Estado: si ya fue leído en este período (verde) o no
+El admin ingresa la lectura actual por medidor. El SP valida:
+
+lectura_actual >= lectura_anterior
+Que no exista ya una lectura para ese medidor/período
+Calcula: consumo_m3 = lectura_actual - lectura_anterior
+3. Paso 2 — Cargo Extra (opcional)
+Si un socio tiene un cargo adicional (multa, reconexión, etc.), el admin va a Cargo Extra → Registrar y asigna al socio en ese período. Queda en estado PENDIENTE.
+
+4. Paso 3 — Generar Avisos
+El admin va a Aviso → Generar y selecciona Período (y opcionalmente Ruta). El SP sp_generar_avisos_periodo hace:
+
+
+-- Para cada socio que tiene lectura en ese período y NO tiene aviso aún:
+total_consumo = MAX(consumo_minimo_tarifa, consumo_m3) × precio_m3_tarifa
+cargo_extra   = monto del cargo_extra PENDIENTE (si existe)
+credito       = monto del credito_inscripcion (si existe)
+total_aviso   = total_consumo + cargo_extra - credito
+vencimiento   = hoy + 30 días
+estado        = GENERADO
+El aviso creado "absorbe" el cargo_extra (lo marca como aplicado).
+
+5. Ciclo de vida del Aviso (estados)
+
+GENERADO → LECTURADO → IMPRESO → PAGADO
+GENERADO: Recién creado por el sistema
+LECTURADO: Verificado (confirma los datos)
+IMPRESO: Listo para entrega física al socio
+PAGADO: Solo desde el módulo de Pagos (bloqueado en AvisoController)
+El cambio de estado es solo ascendente — no se puede retroceder.
+
+6. Filtros del historial
+El listado de avisos permite filtrar por:
+
+Período, Estado, Ruta, Búsqueda (nombre/código socio)
+Paginación completa
+Avisos vencidos no pagados se resaltan en rojo

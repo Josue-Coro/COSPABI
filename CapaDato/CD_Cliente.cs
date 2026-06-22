@@ -47,6 +47,7 @@ namespace CapaDato
                                 telefono = dr["telefono"] == DBNull.Value
                                                        ? (int?)null
                                                        : Convert.ToInt32(dr["telefono"]),
+                                email = dr["email"] == DBNull.Value ? null : dr["email"].ToString(),
                                 fecha_nacimiento = Convert.ToDateTime(dr["fecha_nacimiento"]),
                                 fecha_registro = Convert.ToDateTime(dr["fecha_registro"]),
                                 estado = Convert.ToBoolean(dr["estado"])
@@ -91,6 +92,7 @@ namespace CapaDato
                             telefono = dr["telefono"] == DBNull.Value
                                                    ? (int?)null
                                                    : Convert.ToInt32(dr["telefono"]),
+                            email = dr["email"] == DBNull.Value ? null : dr["email"].ToString(),
                             fecha_nacimiento = Convert.ToDateTime(dr["fecha_nacimiento"]),
                             fecha_registro = Convert.ToDateTime(dr["fecha_registro"]),
                             estado = Convert.ToBoolean(dr["estado"])
@@ -123,6 +125,7 @@ namespace CapaDato
                     cmd.Parameters.AddWithValue("@CI", cliente.ci);
                     cmd.Parameters.AddWithValue("@Genero", cliente.genero);
                     cmd.Parameters.AddWithValue("@Telefono", (object)cliente.telefono ?? DBNull.Value);
+                    cmd.Parameters.AddWithValue("@Email", (object)cliente.email ?? DBNull.Value);
                     cmd.Parameters.AddWithValue("@FechaNacimiento", cliente.fecha_nacimiento);
                     cmd.Parameters.Add("@Resultado", SqlDbType.Int).Direction = ParameterDirection.Output;
                     cmd.Parameters.Add("@Mensaje", SqlDbType.VarChar, 500).Direction = ParameterDirection.Output;
@@ -159,6 +162,7 @@ namespace CapaDato
                     cmd.Parameters.AddWithValue("@CI", cliente.ci);
                     cmd.Parameters.AddWithValue("@Genero", cliente.genero);
                     cmd.Parameters.AddWithValue("@Telefono", (object)cliente.telefono ?? DBNull.Value);
+                    cmd.Parameters.AddWithValue("@Email", (object)cliente.email ?? DBNull.Value);
                     cmd.Parameters.AddWithValue("@FechaNacimiento", cliente.fecha_nacimiento);
                     cmd.Parameters.Add("@Resultado", SqlDbType.Int).Direction = ParameterDirection.Output;
                     cmd.Parameters.Add("@Mensaje", SqlDbType.VarChar, 500).Direction = ParameterDirection.Output;

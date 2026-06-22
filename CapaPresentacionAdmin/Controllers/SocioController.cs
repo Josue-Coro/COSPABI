@@ -106,13 +106,13 @@ namespace CapaPresentacionAdmin.Controllers
         [ValidarPermisos(NombrePermiso = "Gestionar Socio")]
         public JsonResult ListarMedidores(string busqueda = "", int pagina = 1, int tamanoPagina = 10)
         {
-            var (lista, total) = new CN_Medidor().ListarRegistrar(busqueda, pagina, tamanoPagina);
+            var resultado = new CN_Medidor().ListarRegistrar(busqueda, pagina, tamanoPagina);
             return Json(new
             {
-                data = lista,
-                totalRegistros = total,
-                totalPaginas = (int)Math.Ceiling((double)total / tamanoPagina),
-                paginaActual = pagina
+                data           = resultado.Medidores,
+                totalRegistros = resultado.TotalRegistros,
+                totalPaginas   = (int)Math.Ceiling((double)resultado.TotalRegistros / tamanoPagina),
+                paginaActual   = pagina
             }, JsonRequestBehavior.AllowGet);
         }
 
@@ -133,12 +133,35 @@ namespace CapaPresentacionAdmin.Controllers
             return View();
         }
 
+        [HttpGet]
+        [ValidarPermisos(NombrePermiso = "Registrar Socio")]
+        public JsonResult DatosInscripcion()
+        {
+            try
+            {
+                var oUsuario = (CM_Usuario_Activo)Session["Usuario"];
+                decimal costo = new CN_Credito().ObtenerCostoVigente();
+                var metodos = new CN_MetodoPago().Listar("", 1, 1000).Metodos;
+                bool cajaAbierta = new CN_Caja().ObtenerCajaAbierta(oUsuario.id_usuario_admin) != null;
+                return Json(new { exito = true, costo, metodos, cajaAbierta }, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                return Json(new { exito = false, mensaje = ex.Message }, JsonRequestBehavior.AllowGet);
+            }
+        }
+
         [HttpPost]
         [ValidarPermisos(NombrePermiso = "Registrar Socio")]
         public JsonResult Registrar(CM_Socio socio)
         {
-            int idUsuario = Convert.ToInt32(Session["id_usuario_admin"]);
-            int idGenerado = new CN_Socio().Registrar(socio, idUsuario, out string Mensaje);
+            var oUsuario = (CM_Usuario_Activo)Session["Usuario"];
+            var caja = new CN_Caja().ObtenerCajaAbierta(oUsuario.id_usuario_admin);
+            if (caja == null)
+                return Json(new { exito = false, mensaje = "Debe abrir su caja antes de registrar un socio (el pago de inscripción entra a caja)." });
+
+            string cajero  = (oUsuario.nombre + " " + oUsuario.apellido).Trim();
+            int idGenerado = new CN_Socio().Registrar(socio, oUsuario.id_usuario_admin, caja.id_caja, cajero, out string Mensaje);
             return Json(new { exito = idGenerado > 0, mensaje = Mensaje });
         }
 

@@ -1,6 +1,6 @@
 ﻿using CapaDato;
 using CapaModelo;
-using System.Collections.Generic;
+using static CapaModelo.CM_Medidor;
 
 namespace CapaNegocio
 {
@@ -9,14 +9,12 @@ namespace CapaNegocio
         private CD_Medidor cdmedidor = new CD_Medidor();
         private CN_Bitacora bitacora = new CN_Bitacora();
 
-        public (List<CM_Medidor> lista, int totalRegistros) Listar(
-            string busqueda, int pagina, int tamanoPagina)
+        public CM_MedidorListado Listar(string busqueda, int pagina, int tamanoPagina)
         {
             return cdmedidor.Listar(busqueda, pagina, tamanoPagina);
         }
 
-        public (List<CM_Medidor> lista, int totalRegistros) ListarRegistrar(
-            string busqueda, int pagina, int tamanoPagina)
+        public CM_MedidorListado ListarRegistrar(string busqueda, int pagina, int tamanoPagina)
         {
             return cdmedidor.ListarRegistrar(busqueda, pagina, tamanoPagina);
         }

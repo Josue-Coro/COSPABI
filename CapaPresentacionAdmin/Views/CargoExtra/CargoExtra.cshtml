@@ -1,8 +1,543 @@
-﻿
-@{
-    ViewBag.Title = "CargoExtra";
+﻿@{
+    ViewBag.Title = "Cargo Extra";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<h2>CargoExtra</h2>
+<style>
+    .btn-primary {
+        background-color: #2563eb;
+        color: #fff;
+    }
+    .btn-primary:hover:not(:disabled) {
+        background-color: #1d4ed8;
+    }
+    .btn-primary:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+</style>
 
+<div class="p-6">
+
+    <!-- Encabezado -->
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold text-gray-800">Cargos Extra</h1>
+        <p class="text-sm text-gray-500 mt-1">Registro y gestión de cargos adicionales por socio</p>
+    </div>
+
+    <!-- Tabs -->
+    <div class="border-b border-gray-200 mb-6">
+        <nav class="-mb-px flex gap-1">
+            <button id="tabRegistrar"
+                    onclick="cambiarTab('registrar')"
+                    class="tab-btn px-5 py-3 text-sm font-medium border-b-2 transition-colors">
+                Registrar Cargo
+            </button>
+            <button id="tabHistorial"
+                    onclick="cambiarTab('historial')"
+                    class="tab-btn px-5 py-3 text-sm font-medium border-b-2 transition-colors">
+                Historial
+            </button>
+        </nav>
+    </div>
+
+    <!-- ======== Panel: Registrar ======== -->
+    <div id="panelRegistrar">
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 max-w-2xl">
+            <h2 class="text-base font-semibold text-gray-800 mb-5">Datos del cargo</h2>
+
+            <!-- Período -->
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-1">
+                    Período <span class="text-red-500">*</span>
+                </label>
+                <select id="selPeriodo" onchange="verificarAvisoExistente()"
+                        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                    <option value="">Seleccionar...</option>
+                </select>
+            </div>
+
+            <!-- Buscar Socio -->
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-1">
+                    Socio <span class="text-red-500">*</span>
+                </label>
+                <div class="flex gap-2 mb-2">
+                    <input id="inputBuscarSocio" type="text"
+                           placeholder="Nombre o código del socio..."
+                           class="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                    <button onclick="buscarSocios()"
+                            class="btn-primary px-4 py-2 rounded-lg text-sm font-semibold">
+                        Buscar
+                    </button>
+                </div>
+                <!-- Resultados de búsqueda -->
+                <div id="resultadosSocios" class="hidden border border-gray-200 rounded-lg overflow-hidden mb-2">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="bg-gray-50 border-b border-gray-200">
+                                <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500">Cód</th>
+                                <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500">Nombre</th>
+                                <th class="px-3 py-2"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbodySocios"></tbody>
+                    </table>
+                </div>
+                <!-- Socio seleccionado -->
+                <div id="socioSeleccionado" class="hidden flex items-center gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div class="flex-1">
+                        <span class="text-sm font-semibold text-blue-800" id="socioNombre"></span>
+                        <span class="text-xs text-blue-600 ml-2" id="socioCodigo"></span>
+                    </div>
+                    <button onclick="limpiarSocio()" class="text-xs text-blue-500 hover:text-blue-700 underline">Cambiar</button>
+                </div>
+                <input type="hidden" id="idSocio" value="0" />
+            </div>
+
+            <!-- Advertencia: aviso ya generado -->
+            <div id="avisoWarning" class="hidden mb-4 p-4 bg-amber-50 border border-amber-200 rounded-xl">
+                <div class="flex gap-3 items-start">
+                    <svg class="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                    </svg>
+                    <div>
+                        <p class="text-sm font-semibold text-amber-800">Este socio ya tiene un aviso generado para este período</p>
+                        <p class="text-xs text-amber-700 mt-0.5">
+                            El cargo se registrará pero <strong>no se aplicará al aviso existente</strong>.
+                            Para aplicarlo: ve a <strong>Avisos → Historial</strong>, anula ese aviso y luego regenerá.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tipo de Cargo -->
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-1">
+                    Tipo de Cargo <span class="text-red-500">*</span>
+                </label>
+                <select id="selTipoCargo" onchange="alSeleccionarTipo()"
+                        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                    <option value="">Seleccionar...</option>
+                </select>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
+                <!-- Monto -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                        Monto (&#8353;) <span class="text-red-500">*</span>
+                    </label>
+                    <input id="inputMonto" type="number" step="0.01" min="0.01"
+                           placeholder="0.00"
+                           class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+                <!-- Descripción -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                        Descripción <span class="text-red-500">*</span>
+                    </label>
+                    <input id="inputDescripcion" type="text" maxlength="150"
+                           placeholder="Descripción del cargo..."
+                           class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+            </div>
+
+            <button id="btnRegistrar" onclick="registrarCargo()"
+                    class="btn-primary px-6 py-2.5 rounded-xl text-sm font-semibold transition-colors">
+                Registrar Cargo
+            </button>
+        </div>
+    </div>
+
+    <!-- ======== Panel: Historial ======== -->
+    <div id="panelHistorial" class="hidden">
+
+        <!-- Filtros -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-5">
+            <div class="flex flex-wrap gap-3 items-center">
+                <select id="selPeriodoFiltro" onchange="resetYCargar()"
+                        class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none min-w-[140px]">
+                    <option value="">Todos los períodos</option>
+                </select>
+                <select id="selRutaFiltro" onchange="resetYCargar()"
+                        class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                    <option value="">Todas las rutas</option>
+                </select>
+                <input id="inputBusqueda" type="text" placeholder="Buscar socio o código..."
+                       class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none min-w-[200px]">
+            </div>
+        </div>
+
+        <!-- Tabla -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="bg-gray-50 border-b border-gray-200 text-left">
+                            <th class="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Cód</th>
+                            <th class="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Socio</th>
+                            <th class="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Período</th>
+                            <th class="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Tipo Cargo</th>
+                            <th class="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide text-right">Monto</th>
+                            <th class="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Fecha</th>
+                            <th class="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Estado</th>
+                            <th class="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">En Aviso</th>
+                            <th class="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbodyCargos">
+                        <tr>
+                            <td colspan="9" class="px-4 py-10 text-center text-gray-400">
+                                Selecciona un período para ver los cargos.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="flex items-center justify-between px-4 py-3 border-t border-gray-100">
+                <span id="infoPaginacion" class="text-xs text-gray-500"></span>
+                <div id="paginacion" class="flex gap-1"></div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Toast -->
+<div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+@section scripts {
+<script>
+var tiposList  = [];
+var currentPage = 1;
+var pageSize    = 10;
+
+$(document).ready(function () {
+    cargarPeriodos();
+    cargarRutas();
+    cargarTipos();
+    cambiarTab('registrar');
+
+    $('#inputBuscarSocio').on('keypress', function (e) {
+        if (e.which === 13) buscarSocios();
+    });
+
+    var debounceTimer;
+    $('#inputBusqueda').on('input', function () {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(function () { resetYCargar(); }, 400);
+    });
+});
+
+// ---- Tabs ----
+function cambiarTab(tab) {
+    var esRegistrar = (tab === 'registrar');
+    $('#panelRegistrar').toggleClass('hidden', !esRegistrar);
+    $('#panelHistorial').toggleClass('hidden', esRegistrar);
+
+    $('#tabRegistrar')
+        .toggleClass('border-blue-600 text-blue-600 font-semibold', esRegistrar)
+        .toggleClass('border-transparent text-gray-500 hover:text-gray-700', !esRegistrar);
+    $('#tabHistorial')
+        .toggleClass('border-blue-600 text-blue-600 font-semibold', !esRegistrar)
+        .toggleClass('border-transparent text-gray-500 hover:text-gray-700', esRegistrar);
+
+    if (!esRegistrar) cargarCargos();
+}
+
+// ---- Carga inicial ----
+function cargarPeriodos() {
+    $.get('@Url.Action("ListarPeriodos", "CargoExtra")')
+        .done(function (res) {
+            if (!res || !res.data) return;
+            res.data.forEach(function (p) {
+                var opt = '<option value="' + p.id_periodo + '">' + p.periodo + '</option>';
+                $('#selPeriodo, #selPeriodoFiltro').append(opt);
+            });
+        });
+}
+
+function cargarRutas() {
+    $.get('@Url.Action("ListarRutas", "CargoExtra")')
+        .done(function (res) {
+            if (!res || !res.data) return;
+            res.data.forEach(function (r) {
+                var opt = '<option value="' + r.id_ruta + '">Ruta ' + r.ruta + '</option>';
+                $('#selRutaFiltro').append(opt);
+            });
+        });
+}
+
+function cargarTipos() {
+    $.get('@Url.Action("ListarTiposCargo", "CargoExtra")')
+        .done(function (res) {
+            if (!res || !res.data) return;
+            tiposList = res.data;
+            res.data.forEach(function (t) {
+                $('#selTipoCargo').append(
+                    '<option value="' + t.id_tipo + '" data-monto="' + t.monto + '" data-nombre="' + t.nombre + '">'
+                    + t.nombre + '</option>'
+                );
+            });
+        });
+}
+
+// ---- Buscar socio ----
+function buscarSocios() {
+    var q = $('#inputBuscarSocio').val().trim();
+    if (!q) return;
+    $.get('@Url.Action("BuscarSocios", "CargoExtra")', { busqueda: q })
+        .done(function (res) {
+            if (!res || !res.data) return;
+            if (res.data.length === 0) {
+                $('#tbodySocios').html('<tr><td colspan="3" class="px-3 py-4 text-center text-gray-400 text-xs">Sin resultados.</td></tr>');
+            } else {
+                var html = '';
+                res.data.forEach(function (s) {
+                    html += '<tr class="border-b border-gray-100 hover:bg-gray-50 cursor-pointer" onclick="seleccionarSocio(' +
+                        s.id_socio + ',\'' + s.nombre_socio.replace(/'/g, "\\'") + '\',' + s.codigo_fijo + ')">' +
+                        '<td class="px-3 py-2 font-mono text-xs text-gray-600">' + s.codigo_fijo + '</td>' +
+                        '<td class="px-3 py-2 text-sm text-gray-800">' + s.nombre_socio + '</td>' +
+                        '<td class="px-3 py-2 text-right"><span class="text-xs text-blue-600">Seleccionar</span></td>' +
+                        '</tr>';
+                });
+                $('#tbodySocios').html(html);
+            }
+            $('#resultadosSocios').removeClass('hidden');
+        });
+}
+
+function seleccionarSocio(id, nombre, codigo) {
+    $('#idSocio').val(id);
+    $('#socioNombre').text(nombre);
+    $('#socioCodigo').text('C\u00f3d: ' + codigo);
+    $('#socioSeleccionado').removeClass('hidden');
+    $('#resultadosSocios').addClass('hidden');
+    $('#inputBuscarSocio').val('');
+    verificarAvisoExistente();
+}
+
+function limpiarSocio() {
+    $('#idSocio').val(0);
+    $('#socioSeleccionado').addClass('hidden');
+    $('#avisoWarning').addClass('hidden');
+}
+
+function verificarAvisoExistente() {
+    var idSocio   = parseInt($('#idSocio').val());
+    var idPeriodo = $('#selPeriodo').val();
+    if (!idSocio || !idPeriodo) { $('#avisoWarning').addClass('hidden'); return; }
+    $.get('@Url.Action("VerificarAvisoExistente", "CargoExtra")', { idSocio: idSocio, idPeriodo: idPeriodo })
+        .done(function (res) {
+            $('#avisoWarning').toggleClass('hidden', !res.existe);
+        });
+}
+
+// ---- Al seleccionar tipo cargo ----
+function alSeleccionarTipo() {
+    var opt = $('#selTipoCargo option:selected');
+    var monto  = opt.data('monto');
+    var nombre = opt.data('nombre');
+    if (monto)  $('#inputMonto').val(parseFloat(monto).toFixed(2));
+    if (nombre) $('#inputDescripcion').val(nombre);
+}
+
+// ---- Registrar cargo ----
+function registrarCargo() {
+    var idPeriodo    = $('#selPeriodo').val();
+    var idSocio      = parseInt($('#idSocio').val());
+    var idTipoCargo  = $('#selTipoCargo').val();
+    var monto        = $('#inputMonto').val();
+    var descripcion  = $('#inputDescripcion').val().trim();
+
+    if (!idPeriodo)   { mostrarToast('Selecciona un per\u00edodo.', 'error'); return; }
+    if (!idSocio)     { mostrarToast('Selecciona un socio.', 'error'); return; }
+    if (!idTipoCargo) { mostrarToast('Selecciona el tipo de cargo.', 'error'); return; }
+    if (!monto || parseFloat(monto) <= 0) { mostrarToast('El monto debe ser mayor a 0.', 'error'); return; }
+    if (!descripcion) { mostrarToast('Ingresa una descripci\u00f3n.', 'error'); return; }
+
+    var btn = $('#btnRegistrar');
+    btn.prop('disabled', true).text('Registrando...');
+
+    $.ajax({
+        url:  '@Url.Action("RegistrarCargoExtra", "CargoExtra")',
+        type: 'POST',
+        data: {
+            idPeriodo:   idPeriodo,
+            idSocio:     idSocio,
+            idTipoCargo: idTipoCargo,
+            monto:       monto,
+            descripcion: descripcion
+        },
+        success: function (res) {
+            btn.prop('disabled', false).text('Registrar Cargo');
+            if (res.exito) {
+                mostrarToast(res.mensaje, 'success');
+                limpiarFormulario();
+            } else {
+                mostrarToast(res.mensaje || 'Error al registrar.', 'error');
+            }
+        },
+        error: function () {
+            btn.prop('disabled', false).text('Registrar Cargo');
+            mostrarToast('Error de conexi\u00f3n.', 'error');
+        }
+    });
+}
+
+function limpiarFormulario() {
+    $('#selPeriodo').val('');
+    $('#selTipoCargo').val('');
+    $('#inputMonto').val('');
+    $('#inputDescripcion').val('');
+    limpiarSocio();
+    $('#inputBuscarSocio').val('');
+    $('#resultadosSocios').addClass('hidden');
+}
+
+// ---- Historial ----
+function resetYCargar() {
+    currentPage = 1;
+    cargarCargos();
+}
+
+function cargarCargos() {
+    $('#tbodyCargos').html(
+        '<tr><td colspan="9" class="px-4 py-8 text-center text-gray-400">Cargando...</td></tr>'
+    );
+    $.ajax({
+        url:  '@Url.Action("ListarCargosExtra", "CargoExtra")',
+        type: 'GET',
+        data: {
+            idPeriodo:    $('#selPeriodoFiltro').val() || null,
+            idRuta:       $('#selRutaFiltro').val()    || null,
+            busqueda:     $('#inputBusqueda').val()    || '',
+            pagina:       currentPage,
+            tamanoPagina: pageSize
+        },
+        success: function (res) {
+            if (!res.exito) {
+                $('#tbodyCargos').html(
+                    '<tr><td colspan="9" class="px-4 py-8 text-center text-red-500">' +
+                    (res.mensaje || 'Error al cargar') + '</td></tr>'
+                );
+                return;
+            }
+            renderTabla(res.cargos);
+            renderPaginacion(res.totalRegistros);
+        }
+    });
+}
+
+function renderTabla(cargos) {
+    if (!cargos || cargos.length === 0) {
+        $('#tbodyCargos').html(
+            '<tr><td colspan="9" class="px-4 py-10 text-center text-gray-400">No hay cargos que mostrar.</td></tr>'
+        );
+        $('#infoPaginacion').text('');
+        $('#paginacion').html('');
+        return;
+    }
+    var html = '';
+    cargos.forEach(function (c) {
+        var badgeEstado  = c.estado === 'PENDIENTE'
+            ? '<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700">PENDIENTE</span>'
+            : '<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700">ANULADO</span>';
+        var badgeAplicado = c.aplicado
+            ? '<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">En aviso</span>'
+            : '<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600">Libre</span>';
+        var accion = (c.estado === 'PENDIENTE' && !c.aplicado)
+            ? '<button onclick="anularCargo(' + c.id_carga_extra + ')" ' +
+              'class="text-xs text-red-600 hover:text-red-800 font-medium underline">Anular</button>'
+            : '<span class="text-gray-300 text-xs">—</span>';
+
+        html +=
+            '<tr class="border-b border-gray-100 hover:bg-gray-50">' +
+            '<td class="px-4 py-3 font-mono text-sm font-medium text-gray-700">' + c.codigo_fijo + '</td>' +
+            '<td class="px-4 py-3 text-gray-800">' + c.nombre_socio + '</td>' +
+            '<td class="px-4 py-3 text-gray-600 text-sm">' + c.nombre_periodo + '</td>' +
+            '<td class="px-4 py-3 text-gray-600 text-sm">' + c.nombre_tipo_cargo + '</td>' +
+            '<td class="px-4 py-3 text-right font-mono font-semibold text-gray-800">' + fmtMonto(c.monto) + '</td>' +
+            '<td class="px-4 py-3 text-gray-500 text-sm">' + fmtFecha(c.fecha_registro) + '</td>' +
+            '<td class="px-4 py-3">' + badgeEstado + '</td>' +
+            '<td class="px-4 py-3">' + badgeAplicado + '</td>' +
+            '<td class="px-4 py-3">' + accion + '</td>' +
+            '</tr>';
+    });
+    $('#tbodyCargos').html(html);
+}
+
+function anularCargo(idCargo) {
+    if (!confirm('\u00bfAnular este cargo?')) return;
+    $.ajax({
+        url:  '@Url.Action("AnularCargoExtra", "CargoExtra")',
+        type: 'POST',
+        data: { idCargo: idCargo },
+        success: function (res) {
+            if (res.exito) {
+                mostrarToast(res.mensaje, 'success');
+                cargarCargos();
+            } else {
+                mostrarToast(res.mensaje, 'error');
+            }
+        }
+    });
+}
+
+// ---- Paginación ----
+function renderPaginacion(total) {
+    var totalPag = Math.ceil(total / pageSize) || 1;
+    $('#infoPaginacion').text(
+        'P\u00e1gina ' + currentPage + ' de ' + totalPag + ' \u2022 ' + total + ' registro(s)'
+    );
+    var html  = '';
+    var desde = Math.max(1, currentPage - 2);
+    var hasta = Math.min(totalPag, desde + 4);
+
+    if (currentPage > 1)
+        html += '<button onclick="irPagina(' + (currentPage - 1) + ')" class="px-3 py-1 rounded border border-gray-300 text-sm hover:bg-gray-100">&lsaquo;</button>';
+    for (var i = desde; i <= hasta; i++) {
+        var cls = i === currentPage ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-300 hover:bg-gray-100';
+        html += '<button onclick="irPagina(' + i + ')" class="px-3 py-1 rounded border text-sm ' + cls + '">' + i + '</button>';
+    }
+    if (currentPage < totalPag)
+        html += '<button onclick="irPagina(' + (currentPage + 1) + ')" class="px-3 py-1 rounded border border-gray-300 text-sm hover:bg-gray-100">&rsaquo;</button>';
+
+    $('#paginacion').html(html);
+}
+
+function irPagina(p) {
+    currentPage = p;
+    cargarCargos();
+}
+
+// ---- Helpers ----
+function parseFecha(val) {
+    if (!val) return new Date(0);
+    var ms = parseInt(val.replace('/Date(', '').replace(')/', ''));
+    return new Date(ms);
+}
+
+function fmtFecha(val) {
+    var d = parseFecha(val);
+    return d.getDate().toString().padStart(2, '0') + '/' +
+           (d.getMonth() + 1).toString().padStart(2, '0') + '/' +
+           d.getFullYear();
+}
+
+function fmtMonto(val) {
+    return parseFloat(val).toLocaleString('es-CR', {
+        minimumFractionDigits: 2, maximumFractionDigits: 2
+    });
+}
+
+function mostrarToast(msg, tipo) {
+    var color = tipo === 'success' ? 'bg-green-600' : 'bg-red-600';
+    var t = $('<div class="px-4 py-3 rounded-lg text-white text-sm font-medium shadow-lg pointer-events-auto ' + color + '">' + msg + '</div>');
+    $('#toastContainer').append(t);
+    setTimeout(function () { t.fadeOut(300, function () { $(this).remove(); }); }, 3500);
+}
+</script>
+}

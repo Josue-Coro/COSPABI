@@ -1,10 +1,615 @@
-﻿
-@{
-    ViewBag.Title = "Aviso";
+﻿@{
+    ViewBag.Title = "Avisos";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<h2>Aviso</h2>
+<style>
+    .btn-primary {
+        background-color: #2563eb;
+        color: #fff;
+    }
+    .btn-primary:hover:not(:disabled) {
+        background-color: #1d4ed8;
+    }
+    .btn-primary:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+</style>
 
+<div class="p-6">
 
+    <!-- Encabezado -->
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold text-gray-800">Avisos de Cobro</h1>
+        <p class="text-sm text-gray-500 mt-1">Generación y gestión de avisos por período</p>
+    </div>
 
+    <!-- Tabs -->
+    <div class="border-b border-gray-200 mb-6">
+        <nav class="-mb-px flex gap-1">
+            <button id="tabGenerar"
+                    onclick="cambiarTab('generar')"
+                    class="tab-btn px-5 py-3 text-sm font-medium border-b-2 transition-colors">
+                Generar Avisos
+            </button>
+            <button id="tabHistorial"
+                    onclick="cambiarTab('historial')"
+                    class="tab-btn px-5 py-3 text-sm font-medium border-b-2 transition-colors">
+                Historial
+            </button>
+        </nav>
+    </div>
+
+    <!-- ======== Panel: Generar ======== -->
+    <div id="panelGenerar">
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 max-w-2xl">
+            <h2 class="text-base font-semibold text-gray-800 mb-5">Parámetros</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                        Período <span class="text-red-500">*</span>
+                    </label>
+                    <select id="selPeriodoGen"
+                            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                        <option value="">Seleccionar...</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Ruta</label>
+                    <select id="selRutaGen"
+                            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                        <option value="">Todas las rutas</option>
+                    </select>
+                </div>
+            </div>
+            <button id="btnGenerar" onclick="generarAvisos()"
+                    class="btn-primary px-6 py-2.5 rounded-xl text-sm font-semibold transition-colors">
+                Generar Avisos
+            </button>
+        </div>
+
+        <div id="resultadoGen" class="mt-4 max-w-2xl hidden"></div>
+    </div>
+
+    <!-- ======== Panel: Historial ======== -->
+    <div id="panelHistorial" class="hidden">
+
+        <!-- Filtros -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-5">
+            <div class="flex flex-wrap gap-3 items-center">
+                <select id="selPeriodoFiltro" onchange="resetYCargar()"
+                        class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none min-w-[140px]">
+                    <option value="">Todos los períodos</option>
+                </select>
+                <select id="selEstadoFiltro" onchange="resetYCargar()"
+                        class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                    <option value="">Todos los estados</option>
+                </select>
+                <select id="selRutaFiltro" onchange="resetYCargar()"
+                        class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                    <option value="">Todas las rutas</option>
+                </select>
+                <input id="inputBusqueda" type="text" placeholder="Buscar socio o código..."
+                       class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none min-w-[200px]">
+            </div>
+        </div>
+
+        <!-- Tabla -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="bg-gray-50 border-b border-gray-200 text-left">
+                            <th class="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">#</th>
+                            <th class="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Cód</th>
+                            <th class="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Socio</th>
+                            <th class="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Período</th>
+                            <th class="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide text-right">Consumo</th>
+                            <th class="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide text-right">Total</th>
+                            <th class="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide text-right">Vencimiento</th>
+                            <th class="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Estado</th>
+                            <th class="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Acción</th>
+                            <th class="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbodyAvisos">
+                        <tr>
+                            <td colspan="10" class="px-4 py-10 text-center text-gray-400">
+                                Selecciona un período para cargar los avisos.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="flex items-center justify-between px-4 py-3 border-t border-gray-100">
+                <span id="infoPaginacion" class="text-xs text-gray-500"></span>
+                <div id="paginacion" class="flex gap-1"></div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Modal Detalle Aviso -->
+<div id="modalDetalle" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" onclick="cerrarModalDetalle()"></div>
+    <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <!-- Header -->
+        <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+            <h3 class="text-base font-bold text-gray-800" id="modalDetalleTitulo">Detalle del Aviso</h3>
+            <button onclick="cerrarModalDetalle()"
+                    class="text-gray-400 hover:text-gray-600 transition-colors text-xl leading-none">&times;</button>
+        </div>
+        <!-- Body -->
+        <div id="modalDetalleBody" class="px-6 py-5 space-y-5">
+            <div class="text-center py-8 text-gray-400">Cargando...</div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast -->
+<div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+@section scripts {
+<script>
+var estadosList = [];
+var currentPage = 1;
+var pageSize    = 10;
+
+$(document).ready(function () {
+    cargarEstados();
+    cargarPeriodos();
+    cargarRutas();
+    cambiarTab('generar');
+
+    var debounceTimer;
+    $('#inputBusqueda').on('input', function () {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(function () { resetYCargar(); }, 400);
+    });
+});
+
+// ---- Tabs ----
+function cambiarTab(tab) {
+    var esGenerar = (tab === 'generar');
+    $('#panelGenerar').toggleClass('hidden', !esGenerar);
+    $('#panelHistorial').toggleClass('hidden', esGenerar);
+
+    $('#tabGenerar')
+        .toggleClass('border-blue-600 text-blue-600 font-semibold', esGenerar)
+        .toggleClass('border-transparent text-gray-500 hover:text-gray-700', !esGenerar);
+    $('#tabHistorial')
+        .toggleClass('border-blue-600 text-blue-600 font-semibold', !esGenerar)
+        .toggleClass('border-transparent text-gray-500 hover:text-gray-700', esGenerar);
+
+    if (!esGenerar) cargarAvisos();
+}
+
+// ---- Carga inicial ----
+function cargarEstados() {
+    $.get('@Url.Action("ListarEstados", "Aviso")')
+        .done(function (res) {
+            console.log('[Aviso] ListarEstados res:', res);
+            if (!res || !res.data) { console.warn('[Aviso] ListarEstados: sin datos'); return; }
+            estadosList = res.data;
+            res.data.forEach(function (e) {
+                $('#selEstadoFiltro').append(
+                    '<option value="' + e.id_estado + '">' + e.estado + '</option>'
+                );
+            });
+        })
+        .fail(function (xhr) {
+            console.error('[Aviso] ListarEstados error HTTP', xhr.status, xhr.responseText.substring(0, 200));
+        });
+}
+
+function cargarPeriodos() {
+    $.get('@Url.Action("ListarPeriodos", "Aviso")')
+        .done(function (res) {
+            console.log('[Aviso] ListarPeriodos res:', res);
+            if (!res || !res.data) { console.warn('[Aviso] ListarPeriodos: sin datos'); return; }
+            res.data.forEach(function (p) {
+                var opt = '<option value="' + p.id_periodo + '">' + p.periodo + '</option>';
+                $('#selPeriodoGen, #selPeriodoFiltro').append(opt);
+            });
+        })
+        .fail(function (xhr) {
+            console.error('[Aviso] ListarPeriodos error HTTP', xhr.status, xhr.responseText.substring(0, 200));
+        });
+}
+
+function cargarRutas() {
+    $.get('@Url.Action("ListarRutas", "Aviso")')
+        .done(function (res) {
+            console.log('[Aviso] ListarRutas res:', res);
+            if (!res || !res.data) { console.warn('[Aviso] ListarRutas: sin datos'); return; }
+            res.data.forEach(function (r) {
+                var opt = '<option value="' + r.id_ruta + '">Ruta ' + r.ruta + '</option>';
+                $('#selRutaGen, #selRutaFiltro').append(opt);
+            });
+        })
+        .fail(function (xhr) {
+            console.error('[Aviso] ListarRutas error HTTP', xhr.status, xhr.responseText.substring(0, 200));
+        });
+}
+
+// ---- Generar avisos ----
+function generarAvisos() {
+    var idPeriodo = $('#selPeriodoGen').val();
+    if (!idPeriodo) {
+        mostrarToast('Selecciona un período.', 'error');
+        return;
+    }
+    var idRuta = $('#selRutaGen').val() || null;
+    var btn    = $('#btnGenerar');
+    btn.prop('disabled', true).text('Generando...');
+    $('#resultadoGen').addClass('hidden').html('');
+
+    $.ajax({
+        url:  '@Url.Action("GenerarAvisos", "Aviso")',
+        type: 'POST',
+        data: { idPeriodo: idPeriodo, idRuta: idRuta },
+        success: function (res) {
+            btn.prop('disabled', false).text('Generar Avisos');
+            if (res.generados > 0) {
+                $('#resultadoGen').html(
+                    '<div class="flex items-center gap-4 p-5 bg-green-50 border border-green-200 rounded-xl">' +
+                    '<div class="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center text-green-700 text-xl font-bold flex-shrink-0">' +
+                    res.generados +
+                    '</div>' +
+                    '<div><p class="font-semibold text-green-800">' + res.mensaje + '</p>' +
+                    '<p class="text-sm text-green-600 mt-0.5">Puedes verlos en la pesta\u00f1a <strong>Historial</strong>.</p></div>' +
+                    '</div>'
+                ).removeClass('hidden');
+            } else if (res.generados === 0) {
+                $('#resultadoGen').html(
+                    '<div class="p-4 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-sm">' +
+                    res.mensaje +
+                    '</div>'
+                ).removeClass('hidden');
+            } else {
+                mostrarToast(res.mensaje || 'Error al generar avisos.', 'error');
+            }
+        },
+        error: function () {
+            btn.prop('disabled', false).text('Generar Avisos');
+            mostrarToast('Error de conexión.', 'error');
+        }
+    });
+}
+
+// ---- Historial ----
+function resetYCargar() {
+    currentPage = 1;
+    cargarAvisos();
+}
+
+function cargarAvisos() {
+    $('#tbodyAvisos').html(
+        '<tr><td colspan="10" class="px-4 py-8 text-center text-gray-400">Cargando...</td></tr>'
+    );
+    $.ajax({
+        url:  '@Url.Action("ListarAvisos", "Aviso")',
+        type: 'GET',
+        data: {
+            idPeriodo:    $('#selPeriodoFiltro').val() || null,
+            idEstado:     $('#selEstadoFiltro').val()  || null,
+            idRuta:       $('#selRutaFiltro').val()    || null,
+            busqueda:     $('#inputBusqueda').val()    || '',
+            pagina:       currentPage,
+            tamanoPagina: pageSize
+        },
+        success: function (res) {
+            if (!res.exito) {
+                $('#tbodyAvisos').html(
+                    '<tr><td colspan="10" class="px-4 py-8 text-center text-red-500">' +
+                    (res.mensaje || 'Error al cargar') + '</td></tr>'
+                );
+                return;
+            }
+            renderTabla(res.avisos);
+            renderPaginacion(res.totalRegistros);
+        }
+    });
+}
+
+function renderTabla(avisos) {
+    if (!avisos || avisos.length === 0) {
+        $('#tbodyAvisos').html(
+            '<tr><td colspan="10" class="px-4 py-10 text-center text-gray-400">No hay avisos que mostrar.</td></tr>'
+        );
+        $('#infoPaginacion').text('');
+        $('#paginacion').html('');
+        return;
+    }
+    var html = '';
+    var hoy  = new Date();
+    avisos.forEach(function (a) {
+        var fVenc   = parseFecha(a.fecha_vencimiento);
+        var vencido = fVenc < hoy && a.estado !== 'PAGADO';
+        html +=
+            '<tr class="border-b border-gray-100 hover:bg-gray-50' + (vencido ? ' bg-red-50' : '') + '">' +
+            '<td class="px-4 py-3 text-gray-400 text-xs">' + a.id_aviso + '</td>' +
+            '<td class="px-4 py-3 font-mono text-sm font-medium text-gray-700">' + a.codigo_fijo + '</td>' +
+            '<td class="px-4 py-3 text-gray-800">' + a.nombre_socio + '</td>' +
+            '<td class="px-4 py-3 text-gray-600 text-sm">' + a.nombre_periodo + '</td>' +
+            '<td class="px-4 py-3 text-right font-mono text-sm text-gray-500">' + fmtMonto(a.total_consumo) + '</td>' +
+            '<td class="px-4 py-3 text-right font-mono font-semibold text-gray-800">' + fmtMonto(a.total_aviso) + '</td>' +
+            '<td class="px-4 py-3 text-right text-sm ' + (vencido ? 'text-red-600 font-semibold' : 'text-gray-600') + '">' +
+            fmtFecha(a.fecha_vencimiento) + '</td>' +
+            '<td class="px-4 py-3">' + estadoBadge(a.estado) + '</td>' +
+            '<td class="px-4 py-3">' + renderSelectEstado(a) + '</td>' +
+            '<td class="px-4 py-3">' +
+            '<div class="flex gap-1">' +
+            '<button onclick="verDetalle(' + a.id_aviso + ')" ' +
+            'class="text-xs px-3 py-1 rounded-lg border border-blue-200 text-blue-600 hover:bg-blue-50 transition-colors font-medium">' +
+            'Ver</button>' +
+            (a.estado !== 'PAGADO' && a.estado !== 'ANULADO'
+                ? '<button onclick="anularAviso(' + a.id_aviso + ')" ' +
+                  'class="text-xs px-3 py-1 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 transition-colors font-medium">' +
+                  'Anular</button>'
+                : '') +
+            '</div></td>' +
+            '</tr>';
+    });
+    $('#tbodyAvisos').html(html);
+}
+
+function estadoBadge(estado) {
+    var map = {
+        'GENERADO':  'bg-slate-100 text-slate-700',
+        'LECTURADO': 'bg-blue-100 text-blue-700',
+        'IMPRESO':   'bg-amber-100 text-amber-700',
+        'PAGADO':    'bg-green-100 text-green-700',
+        'ANULADO':   'bg-red-100 text-red-600'
+    };
+    var cls  = map[estado] || 'bg-gray-100 text-gray-600';
+    var text = estado === 'ANULADO' ? '<s>' + estado + '</s>' : estado;
+    return '<span class="px-2.5 py-1 rounded-full text-xs font-semibold ' + cls + '">' + text + '</span>';
+}
+
+function renderSelectEstado(a) {
+    if (a.estado === 'PAGADO' || a.estado === 'ANULADO')
+        return '<span class="text-gray-300 text-xs">—</span>';
+    var opciones = '';
+    estadosList.forEach(function (e) {
+        if (e.id_estado > a.estado_id_estado && e.estado !== 'PAGADO' && e.estado !== 'ANULADO')
+            opciones += '<option value="' + e.id_estado + '">' + e.estado + '</option>';
+    });
+    if (!opciones) return '<span class="text-gray-300 text-xs">—</span>';
+    return '<select onchange="cambiarEstado(' + a.id_aviso + ',this.value,this)"' +
+        ' class="text-xs border border-gray-300 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-400">' +
+        '<option value="">Cambiar...</option>' + opciones + '</select>';
+}
+
+function cambiarEstado(idAviso, idEstado, selectEl) {
+    if (!idEstado) return;
+    $(selectEl).prop('disabled', true);
+    $.ajax({
+        url:  '@Url.Action("CambiarEstado", "Aviso")',
+        type: 'POST',
+        data: { idAviso: idAviso, idEstado: idEstado },
+        success: function (res) {
+            if (res.exito) {
+                mostrarToast(res.mensaje, 'success');
+                cargarAvisos();
+            } else {
+                mostrarToast(res.mensaje, 'error');
+                $(selectEl).val('').prop('disabled', false);
+            }
+        }
+    });
+}
+
+// ---- Paginacion ----
+function renderPaginacion(total) {
+    var totalPag = Math.ceil(total / pageSize) || 1;
+    $('#infoPaginacion').text(
+        'Página ' + currentPage + ' de ' + totalPag + ' • ' + total + ' registro(s)'
+    );
+    var html  = '';
+    var desde = Math.max(1, currentPage - 2);
+    var hasta = Math.min(totalPag, desde + 4);
+
+    if (currentPage > 1)
+        html += '<button onclick="irPagina(' + (currentPage - 1) + ')" class="px-3 py-1 rounded border border-gray-300 text-sm hover:bg-gray-100">&lsaquo;</button>';
+    for (var i = desde; i <= hasta; i++) {
+        var cls = i === currentPage
+            ? 'bg-blue-600 text-white border-blue-600'
+            : 'border-gray-300 hover:bg-gray-100';
+        html += '<button onclick="irPagina(' + i + ')" class="px-3 py-1 rounded border text-sm ' + cls + '">' + i + '</button>';
+    }
+    if (currentPage < totalPag)
+        html += '<button onclick="irPagina(' + (currentPage + 1) + ')" class="px-3 py-1 rounded border border-gray-300 text-sm hover:bg-gray-100">&rsaquo;</button>';
+
+    $('#paginacion').html(html);
+}
+
+function irPagina(p) {
+    currentPage = p;
+    cargarAvisos();
+}
+
+// ---- Helpers ----
+function parseFecha(val) {
+    if (!val) return new Date(0);
+    var ms = parseInt(val.replace('/Date(', '').replace(')/', ''));
+    return new Date(ms);
+}
+
+function fmtFecha(val) {
+    var d = parseFecha(val);
+    return d.getDate().toString().padStart(2, '0') + '/' +
+           (d.getMonth() + 1).toString().padStart(2, '0') + '/' +
+           d.getFullYear();
+}
+
+function fmtMonto(val) {
+    return parseFloat(val).toLocaleString('es-CR', {
+        minimumFractionDigits: 2, maximumFractionDigits: 2
+    });
+}
+
+function mostrarToast(msg, tipo) {
+    var color = tipo === 'success' ? 'bg-green-600' : 'bg-red-600';
+    var t = $('<div class="px-4 py-3 rounded-lg text-white text-sm font-medium shadow-lg pointer-events-auto ' + color + '">' + msg + '</div>');
+    $('#toastContainer').append(t);
+    setTimeout(function () { t.fadeOut(300, function () { $(this).remove(); }); }, 3500);
+}
+
+// ---- Anular aviso ----
+function anularAviso(idAviso) {
+    if (!confirm('¿Anular el aviso #' + idAviso + '?\n\nEl aviso quedará registrado como ANULADO y podrá regenerarse para ese socio/período.')) return;
+    $.ajax({
+        url:  '@Url.Action("AnularAviso", "Aviso")',
+        type: 'POST',
+        data: { idAviso: idAviso },
+        success: function (res) {
+            if (res.exito) {
+                mostrarToast(res.mensaje, 'success');
+                cargarAvisos();
+            } else {
+                mostrarToast(res.mensaje, 'error');
+            }
+        },
+        error: function () { mostrarToast('Error de conexión.', 'error'); }
+    });
+}
+
+// ---- Detalle aviso ----
+function verDetalle(idAviso) {
+    $('#modalDetalleTitulo').text('Detalle del Aviso #' + idAviso);
+    $('#modalDetalleBody').html('<div class="text-center py-8 text-gray-400">Cargando...</div>');
+    $('#modalDetalle').removeClass('hidden');
+
+    $.get('@Url.Action("ObtenerDetalle", "Aviso")', { idAviso: idAviso })
+        .done(function (res) {
+            if (!res.exito) {
+                $('#modalDetalleBody').html(
+                    '<div class="text-red-500 py-4 text-center">' + res.mensaje + '</div>'
+                );
+                return;
+            }
+            var d = res.data;
+
+            // Calculo de excedente para mostrar
+            var excedente    = Math.max(0, d.consumo_m3 - d.consumo_minimo_m3);
+            var montoExcedente = excedente * d.precio_m3;
+
+            // Badge estado
+            var estadoMap = {
+                'GENERADO':  'bg-slate-100 text-slate-700',
+                'LECTURADO': 'bg-blue-100 text-blue-700',
+                'IMPRESO':   'bg-amber-100 text-amber-700',
+                'PAGADO':    'bg-green-100 text-green-700'
+            };
+            var estadoCls = estadoMap[d.nombre_estado] || 'bg-gray-100 text-gray-600';
+            var badgeEstado = '<span class="px-2.5 py-1 rounded-full text-xs font-semibold ' + estadoCls + '">' + d.nombre_estado + '</span>';
+
+            var html =
+                // Socio / Período
+                '<div class="grid grid-cols-2 gap-4">' +
+                    '<div class="bg-gray-50 rounded-xl p-4">' +
+                        '<p class="text-xs font-semibold text-gray-400 uppercase mb-2">Socio</p>' +
+                        '<p class="font-bold text-gray-800 text-sm">' + d.codigo_fijo + ' &mdash; ' + d.nombre_socio + '</p>' +
+                        '<p class="text-xs text-gray-500 mt-1">Ruta: ' + d.nombre_ruta + '</p>' +
+                        '<p class="text-xs text-gray-500">Medidor: ' + d.serie_medidor + '</p>' +
+                    '</div>' +
+                    '<div class="bg-gray-50 rounded-xl p-4">' +
+                        '<p class="text-xs font-semibold text-gray-400 uppercase mb-2">Período</p>' +
+                        '<p class="font-bold text-gray-800 text-sm">' + d.nombre_periodo + '</p>' +
+                        '<p class="text-xs text-gray-500 mt-1">Emisión: ' + fmtFecha(d.fecha_emision) + '</p>' +
+                        '<p class="text-xs text-gray-500">Vence: ' + fmtFecha(d.fecha_vencimiento) + '</p>' +
+                        '<div class="mt-2">' + badgeEstado + '</div>' +
+                    '</div>' +
+                '</div>' +
+
+                // Lectura
+                '<div class="border border-gray-100 rounded-xl overflow-hidden">' +
+                    '<div class="bg-gray-50 px-4 py-2 border-b border-gray-100">' +
+                        '<p class="text-xs font-semibold text-gray-500 uppercase">Lectura</p>' +
+                    '</div>' +
+                    '<div class="grid grid-cols-4 divide-x divide-gray-100 text-center">' +
+                        '<div class="px-3 py-3"><p class="text-xs text-gray-400">Anterior</p><p class="font-bold text-gray-800 mt-1">' + d.lectura_anterior + '</p></div>' +
+                        '<div class="px-3 py-3"><p class="text-xs text-gray-400">Actual</p><p class="font-bold text-gray-800 mt-1">' + d.lectura_actual + '</p></div>' +
+                        '<div class="px-3 py-3"><p class="text-xs text-gray-400">Consumo</p><p class="font-bold text-blue-700 mt-1">' + fmtMonto(d.consumo_m3) + ' m&sup3;</p></div>' +
+                        '<div class="px-3 py-3"><p class="text-xs text-gray-400">Días</p><p class="font-bold text-gray-800 mt-1">' + d.dias_lectura + '</p></div>' +
+                    '</div>' +
+                '</div>' +
+
+                // Tarifa
+                '<div class="border border-gray-100 rounded-xl overflow-hidden">' +
+                    '<div class="bg-gray-50 px-4 py-2 border-b border-gray-100">' +
+                        '<p class="text-xs font-semibold text-gray-500 uppercase">Tarifa &mdash; ' + d.nombre_rol + '</p>' +
+                    '</div>' +
+                    '<div class="px-4 py-3 space-y-1.5 text-sm">' +
+                        '<div class="flex justify-between text-gray-600">' +
+                            '<span>Mínimo (' + d.consumo_minimo_m3 + ' m&sup3;)</span>' +
+                            '<span class="font-mono">Bs. ' + fmtMonto(d.monto_minimo) + '</span>' +
+                        '</div>' +
+                        (excedente > 0
+                            ? '<div class="flex justify-between text-gray-600">' +
+                              '<span>Excedente ' + fmtMonto(excedente) + ' m&sup3; &times; Bs. ' + fmtMonto(d.precio_m3) + '</span>' +
+                              '<span class="font-mono">Bs. ' + fmtMonto(montoExcedente) + '</span>' +
+                              '</div>'
+                            : '') +
+                        '<div class="flex justify-between font-semibold text-gray-800 border-t border-gray-100 pt-1.5">' +
+                            '<span>Subtotal consumo</span>' +
+                            '<span class="font-mono">Bs. ' + fmtMonto(d.total_consumo) + '</span>' +
+                        '</div>' +
+                    '</div>' +
+                '</div>' +
+
+                // Cargos Extra (si hay, 1:N)
+                (d.cargos && d.cargos.length > 0
+                    ? '<div class="border border-amber-100 bg-amber-50 rounded-xl px-4 py-3">' +
+                      '<p class="text-xs font-semibold text-amber-600 uppercase mb-1.5">Cargos Extra</p>' +
+                      d.cargos.map(function (c) {
+                          return '<div class="flex justify-between text-sm py-0.5">' +
+                              '<div><p class="font-medium text-gray-800">' + (c.nombre_tipo_cargo || '') + '</p>' +
+                              '<p class="text-xs text-gray-500 mt-0.5">' + (c.descripcion || '') + '</p></div>' +
+                              '<span class="font-mono font-semibold text-amber-700">+ Bs. ' + fmtMonto(c.monto) + '</span>' +
+                          '</div>';
+                      }).join('') +
+                      '<div class="flex justify-between text-sm font-semibold text-amber-800 border-t border-amber-200 mt-1.5 pt-1.5">' +
+                          '<span>Subtotal cargos</span>' +
+                          '<span class="font-mono">+ Bs. ' + fmtMonto(d.total_cargos) + '</span>' +
+                      '</div>' +
+                      '</div>'
+                    : '') +
+
+                // Cuota de Inscripción (si aplica) — SUMA al total
+                (d.monto_credito != null
+                    ? '<div class="border border-indigo-100 bg-indigo-50 rounded-xl px-4 py-3">' +
+                      '<p class="text-xs font-semibold text-indigo-600 uppercase mb-1.5">Cuota de Inscripción</p>' +
+                      '<div class="flex justify-between text-sm">' +
+                          '<span class="text-gray-700">Cuota del período</span>' +
+                          '<span class="font-mono font-semibold text-indigo-700">+ Bs. ' + fmtMonto(d.monto_credito) + '</span>' +
+                      '</div>' +
+                      '</div>'
+                    : '') +
+
+                // Total
+                '<div class="bg-gray-800 rounded-xl px-5 py-4 flex items-center justify-between">' +
+                    '<div>' +
+                        '<p class="text-gray-400 text-xs uppercase font-semibold">Total Aviso</p>' +
+                        '<p class="text-gray-300 text-xs mt-0.5">Deuda actual: Bs. ' + fmtMonto(d.deuda_actual) + '</p>' +
+                    '</div>' +
+                    '<p class="text-2xl font-bold text-white font-mono">Bs. ' + fmtMonto(d.total_aviso) + '</p>' +
+                '</div>';
+
+            $('#modalDetalleBody').html(html);
+        })
+        .fail(function () {
+            $('#modalDetalleBody').html(
+                '<div class="text-red-500 py-4 text-center">Error de conexión.</div>'
+            );
+        });
+}
+
+function cerrarModalDetalle() {
+    $('#modalDetalle').addClass('hidden');
+}
+</script>
+}

@@ -62,6 +62,11 @@ namespace CapaModelo
         public DateTime fecha_registro { get; set; }
         public int codigo_fijo { get; set; }
 
+        // ── Inscripción (solo para el alta de socio; no son columnas de la tabla socio) ──
+        public decimal monto_inicial  { get; set; }
+        public int     num_cuotas     { get; set; }
+        public int     id_metodo_pago { get; set; }
+
         public class CM_SocioListado
         {
             public int TotalRegistros { get; set; }

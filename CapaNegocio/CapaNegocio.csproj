@@ -41,13 +41,21 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CN_Aviso.cs" />
     <Compile Include="CN_Bitacora.cs" />
+    <Compile Include="CN_Caja.cs" />
+    <Compile Include="CN_CargoExtra.cs" />
     <Compile Include="CN_Cliente.cs" />
+    <Compile Include="CN_Credito.cs" />
     <Compile Include="CN_CuentaSocio.cs" />
+    <Compile Include="CN_Dashboard.cs" />
+    <Compile Include="CN_Lectura.cs" />
     <Compile Include="CN_Login.cs" />
+    <Compile Include="CN_LoginSocio.cs" />
     <Compile Include="CN_Medidor.cs" />
     <Compile Include="CN_MetodoPago.cs" />
     <Compile Include="CN_Notificacion.cs" />
+    <Compile Include="CN_Pago.cs" />
     <Compile Include="CN_Permiso.cs" />
     <Compile Include="CN_Recursos.cs" />
     <Compile Include="CN_Rol.cs" />

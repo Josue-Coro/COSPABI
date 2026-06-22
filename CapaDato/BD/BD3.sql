@@ -1,3 +1,4 @@
+
 -- Generado por Oracle SQL Developer Data Modeler 23.1.0.087.0806
 --   en:        2026-05-12 23:36:04 BOT
 --   sitio:      SQL Server 2012
@@ -158,7 +159,6 @@ CREATE TABLE lectura
      lectura_actual INTEGER NOT NULL , 
      dias_lectura INTEGER NOT NULL , 
      observacion VARCHAR (255) NOT NULL , 
-     cliente_id_cliente INTEGER NOT NULL , 
      usuario_admin_id_usuario_admin INTEGER NOT NULL , 
      medidor_id_medidor INTEGER NOT NULL , 
      periodo_id_periodo INTEGER NOT NULL , 
@@ -608,18 +608,6 @@ ALTER TABLE cuenta_socio
     ON UPDATE NO ACTION 
 GO
 
-ALTER TABLE lectura 
-    ADD CONSTRAINT lectura_cliente_FK FOREIGN KEY 
-    ( 
-     cliente_id_cliente
-    ) 
-    REFERENCES cliente 
-    ( 
-     id_cliente 
-    ) 
-    ON DELETE NO ACTION 
-    ON UPDATE NO ACTION 
-GO
 
 ALTER TABLE lectura 
     ADD CONSTRAINT lectura_medidor_FK FOREIGN KEY 

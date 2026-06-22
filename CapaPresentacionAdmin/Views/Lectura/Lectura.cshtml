@@ -1,10 +1,507 @@
-﻿
-@{
-    ViewBag.Title = "Lectura";
+﻿@{
+    ViewBag.Title = "Lecturación";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<h2>Lectura</h2>
+<div class="mb-6">
+    <h1 class="text-xl font-semibold text-gray-800">Lecturación de Medidores</h1>
+    <p class="text-sm text-gray-400 mt-0.5">Registra las lecturas mensuales por ruta</p>
+</div>
 
+<!-- Tabs -->
+<div class="flex gap-1 mb-5 border-b border-gray-200">
+    <button id="tabRegistrar" onclick="cambiarTab('registrar')"
+            class="tab-btn px-5 py-2.5 text-sm font-semibold rounded-t-lg transition border-b-2 border-blue-600 text-blue-600">
+        Registrar Lecturas
+    </button>
+    <button id="tabHistorial" onclick="cambiarTab('historial')"
+            class="tab-btn px-5 py-2.5 text-sm font-semibold rounded-t-lg transition border-b-2 border-transparent text-gray-500 hover:text-gray-700">
+        Historial
+    </button>
+</div>
 
+<!-- ===== TAB: REGISTRAR ===== -->
+<div id="panelRegistrar">
+    <!-- Filtros -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-5 mb-5">
+        <div class="flex flex-col sm:flex-row items-end gap-4">
+            <div class="flex-1">
+                <label class="block text-xs font-semibold text-gray-500 mb-1">Período</label>
+                <select id="selPeriodo"
+                        class="w-full text-sm border border-gray-300 rounded-xl px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none">
+                    <option value="">-- Seleccione período --</option>
+                </select>
+            </div>
+            <div class="flex-1">
+                <label class="block text-xs font-semibold text-gray-500 mb-1">Ruta</label>
+                <select id="selRuta"
+                        class="w-full text-sm border border-gray-300 rounded-xl px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none">
+                    <option value="">-- Seleccione ruta --</option>
+                </select>
+            </div>
+            <button onclick="cargarMedidores()"
+                    class="btn-primary px-5 py-2 rounded-xl text-sm font-semibold text-white whitespace-nowrap">
+                Cargar Medidores
+            </button>
+        </div>
+    </div>
 
+    <!-- Tabla de medidores -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+            <span class="text-sm font-semibold text-gray-700">Medidores de la Ruta</span>
+            <span id="resumenLectura" class="text-xs text-gray-400"></span>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="bg-gray-50 text-left">
+                        <th class="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">#</th>
+                        <th class="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Cód. Fijo</th>
+                        <th class="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Nombre Socio</th>
+                        <th class="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Medidor</th>
+                        <th class="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Lect. Anterior</th>
+                        <th class="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Lect. Actual</th>
+                        <th class="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Consumo m&sup3;</th>
+                        <th class="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Observación</th>
+                        <th class="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide text-center">Estado</th>
+                    </tr>
+                </thead>
+                <tbody id="tbodyMedidores">
+                    <tr>
+                        <td colspan="9" class="px-6 py-12 text-center text-sm text-gray-400">
+                            Selecciona un período y una ruta, luego haz clic en <strong>Cargar Medidores</strong>.
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- ===== TAB: HISTORIAL ===== -->
+<div id="panelHistorial" class="hidden">
+    <!-- Filtros historial -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-5 mb-5">
+        <div class="flex flex-col sm:flex-row items-end gap-4">
+            <div class="flex-1">
+                <label class="block text-xs font-semibold text-gray-500 mb-1">Período</label>
+                <select id="selPeriodoHist"
+                        class="w-full text-sm border border-gray-300 rounded-xl px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none">
+                    <option value="">Todos los períodos</option>
+                </select>
+            </div>
+            <div class="flex-1">
+                <label class="block text-xs font-semibold text-gray-500 mb-1">Ruta</label>
+                <select id="selRutaHist"
+                        class="w-full text-sm border border-gray-300 rounded-xl px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none">
+                    <option value="">Todas las rutas</option>
+                </select>
+            </div>
+            <div class="flex-1">
+                <label class="block text-xs font-semibold text-gray-500 mb-1">Buscar</label>
+                <input type="text" id="txtBusquedaHist" placeholder="Socio, medidor, código..."
+                       class="w-full text-sm border border-gray-300 rounded-xl px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none">
+            </div>
+            <select id="selTamanoHist"
+                    class="text-sm border border-gray-300 rounded-xl px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none">
+                <option value="10">10 por página</option>
+                <option value="25">25 por página</option>
+                <option value="50">50 por página</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="bg-gray-50 text-left">
+                        <th class="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">#</th>
+                        <th class="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Fecha</th>
+                        <th class="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Cód. Fijo</th>
+                        <th class="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Nombre Socio</th>
+                        <th class="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Medidor</th>
+                        <th class="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Período</th>
+                        <th class="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Ruta</th>
+                        <th class="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide text-right">Lect. Ant.</th>
+                        <th class="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide text-right">Lect. Act.</th>
+                        <th class="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide text-right">Consumo m&sup3;</th>
+                        <th class="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Días</th>
+                        <th class="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Registrado por</th>
+                    </tr>
+                </thead>
+                <tbody id="tbodyHistorial">
+                    <tr>
+                        <td colspan="12" class="px-6 py-10 text-center text-sm text-gray-400">
+                            <svg class="animate-spin mx-auto mb-2" style="width:22px;height:22px;" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                            </svg>
+                            Cargando historial...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="px-6 py-3 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-2">
+            <span class="text-xs text-gray-400" id="infoPaginacionHist"></span>
+            <div id="controlesPaginacionHist" class="flex items-center gap-1"></div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .btn-primary {
+        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+        transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
+    }
+    .btn-primary:hover {
+        opacity: 0.92;
+        transform: translateY(-1px);
+        box-shadow: 0 8px 20px rgba(37,99,235,0.30);
+    }
+    .btn-guardar {
+        background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+        transition: opacity 0.2s, transform 0.15s;
+    }
+    .btn-guardar:hover { opacity: 0.88; transform: translateY(-1px); }
+    .btn-guardar:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+</style>
+
+@section scripts {
+<script>
+    var tabActual        = 'registrar';
+    var paginaHist       = 1;
+    var totalPaginasHist = 1;
+    var tamanoHist       = 10;
+    var timerHist;
+
+    $(function () {
+        cargarDropdowns();
+
+        $('#selPeriodoHist, #selRutaHist').on('change', function () {
+            paginaHist = 1; cargarHistorial();
+        });
+        $('#txtBusquedaHist').on('input', function () {
+            clearTimeout(timerHist);
+            timerHist = setTimeout(function () { paginaHist = 1; cargarHistorial(); }, 400);
+        });
+        $('#selTamanoHist').on('change', function () {
+            tamanoHist = parseInt($(this).val()); paginaHist = 1; cargarHistorial();
+        });
+    });
+
+    // ── Dropdowns ───────────────────────────────────────────────
+    function cargarDropdowns() {
+        $.ajax({
+            url: '@Url.Action("ListarPeriodos", "Lectura")', type: 'GET',
+            success: function (res) {
+                $.each(res.data, function (i, p) {
+                    var opt = '<option value="' + p.id_periodo + '">' + p.periodo + '</option>';
+                    $('#selPeriodo, #selPeriodoHist').append(opt);
+                });
+            }
+        });
+        $.ajax({
+            url: '@Url.Action("ListarRutas", "Lectura")', type: 'GET',
+            success: function (res) {
+                $.each(res.data, function (i, r) {
+                    var desc = r.descripcion ? ' - ' + r.descripcion : '';
+                    var opt  = '<option value="' + r.id_ruta + '">Ruta ' + r.ruta + desc + '</option>';
+                    $('#selRuta, #selRutaHist').append(opt);
+                });
+            }
+        });
+    }
+
+    // ── Tabs ─────────────────────────────────────────────────────
+    function cambiarTab(tab) {
+        tabActual = tab;
+        $('#panelRegistrar').toggleClass('hidden', tab !== 'registrar');
+        $('#panelHistorial').toggleClass('hidden', tab !== 'historial');
+
+        $('.tab-btn').removeClass('border-blue-600 text-blue-600')
+                    .addClass('border-transparent text-gray-500');
+        var id = tab === 'registrar' ? '#tabRegistrar' : '#tabHistorial';
+        $(id).removeClass('border-transparent text-gray-500')
+             .addClass('border-blue-600 text-blue-600');
+
+        if (tab === 'historial') cargarHistorial();
+    }
+
+    // ── Registrar Lecturas ───────────────────────────────────────
+    function cargarMedidores() {
+        var idPeriodo = $('#selPeriodo').val();
+        var idRuta    = $('#selRuta').val();
+
+        if (!idPeriodo || !idRuta) {
+            mostrarToast('Selecciona un período y una ruta.', 'error');
+            return;
+        }
+
+        $('#tbodyMedidores').html(
+            '<tr><td colspan="9" class="px-6 py-10 text-center text-sm text-gray-400">' +
+            '<svg class="animate-spin mx-auto mb-2" style="width:22px;height:22px;" fill="none" viewBox="0 0 24 24">' +
+            '<circle class="opacity-25" cx="12" cy="12" r="10" stroke="#2563eb" stroke-width="4"/>' +
+            '<path class="opacity-75" fill="#2563eb" d="M4 12a8 8 0 018-8v8H4z"/></svg>Cargando...</td></tr>'
+        );
+
+        $.ajax({
+            url:  '@Url.Action("ListarMedidoresParaLectura", "Lectura")',
+            type: 'GET',
+            data: { idRuta: idRuta, idPeriodo: idPeriodo },
+            success: function (res) {
+                if (!res.exito) { mostrarToast(res.mensaje, 'error'); return; }
+                renderTablaMedidores(res.medidores);
+            },
+            error: function () { mostrarToast('Error de conexión.', 'error'); }
+        });
+    }
+
+    function renderTablaMedidores(medidores) {
+        var tbody = $('#tbodyMedidores');
+        tbody.empty();
+
+        if (!medidores || medidores.length === 0) {
+            tbody.append('<tr><td colspan="9" class="px-6 py-10 text-center text-sm text-gray-400">No hay medidores registrados en esta ruta.</td></tr>');
+            $('#resumenLectura').text('');
+            return;
+        }
+
+        var leidos = 0;
+        $.each(medidores, function (i, m) { if (m.ya_leido) leidos++; });
+        $('#resumenLectura').text(leidos + ' de ' + medidores.length + ' medidores le\u00EDdos');
+
+        $.each(medidores, function (i, m) {
+            var fila;
+            if (m.ya_leido) {
+                fila =
+                    '<tr class="bg-green-50 border-l-4 border-green-400" id="fila_' + m.id_medidor + '">' +
+                    '<td class="px-4 py-3 text-gray-400 text-xs">' + (i + 1) + '</td>' +
+                    '<td class="px-4 py-3 font-mono font-semibold text-blue-700">' + m.codigo_fijo + '</td>' +
+                    '<td class="px-4 py-3 font-medium text-gray-800">' + m.nombre_socio + '</td>' +
+                    '<td class="px-4 py-3 font-mono text-xs text-gray-600">' + m.serie + '</td>' +
+                    '<td class="px-4 py-3 text-gray-600 text-right font-mono">' + m.lect_ant_registrada + '</td>' +
+                    '<td class="px-4 py-3 text-gray-800 text-right font-mono font-semibold">' + m.lect_act_registrada + '</td>' +
+                    '<td class="px-4 py-3 text-right font-mono text-green-700 font-semibold">' + parseFloat(m.consumo_registrado || 0).toFixed(2) + '</td>' +
+                    '<td class="px-4 py-3 text-gray-500 text-xs">' + (m.observacion_registrada || '&mdash;') + '</td>' +
+                    '<td class="px-4 py-3 text-center">' +
+                        '<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">&#10003; Registrada</span>' +
+                    '</td>' +
+                    '</tr>';
+            } else {
+                fila =
+                    '<tr class="hover:bg-gray-50 transition" id="fila_' + m.id_medidor + '">' +
+                    '<td class="px-4 py-3 text-gray-400 text-xs">' + (i + 1) + '</td>' +
+                    '<td class="px-4 py-3 font-mono font-semibold text-blue-700">' + m.codigo_fijo + '</td>' +
+                    '<td class="px-4 py-3 font-medium text-gray-800">' + m.nombre_socio + '</td>' +
+                    '<td class="px-4 py-3 font-mono text-xs text-gray-600">' + m.serie + '</td>' +
+                    '<td class="px-4 py-3 text-gray-600 text-right font-mono">' + m.lectura_anterior_valor + '</td>' +
+                    '<td class="px-4 py-3">' +
+                        '<input type="number" min="' + m.lectura_anterior_valor + '" step="1"' +
+                        '       id="lact_' + m.id_medidor + '"' +
+                        '       oninput="calcularConsumo(' + m.id_medidor + ',' + m.lectura_anterior_valor + ')"' +
+                        '       class="w-28 text-sm border border-gray-300 rounded-lg px-2 py-1.5 text-right font-mono focus:ring-2 focus:ring-blue-500 outline-none"' +
+                        '       placeholder="0">' +
+                    '</td>' +
+                    '<td class="px-4 py-3 text-right font-mono text-gray-500" id="cons_' + m.id_medidor + '">&mdash;</td>' +
+                    '<td class="px-4 py-3">' +
+                        '<input type="text" id="obs_' + m.id_medidor + '"' +
+                        '       class="w-36 text-sm border border-gray-300 rounded-lg px-2 py-1.5 focus:ring-2 focus:ring-blue-500 outline-none"' +
+                        '       value="sin observacion">' +
+                    '</td>' +
+                    '<td class="px-4 py-3 text-center">' +
+                        '<button id="btn_' + m.id_medidor + '"' +
+                        '        onclick="guardarLectura(' + m.id_medidor + ',' + m.lectura_anterior_valor + ')"' +
+                        '        class="btn-guardar px-3 py-1.5 rounded-lg text-xs font-semibold text-white">' +
+                        'Guardar' +
+                        '</button>' +
+                    '</td>' +
+                    '</tr>';
+            }
+            tbody.append(fila);
+        });
+    }
+
+    function calcularConsumo(idMedidor, lectAnt) {
+        var val     = $('#lact_' + idMedidor).val();
+        var lectAct = parseInt(val);
+        var celda   = $('#cons_' + idMedidor);
+
+        if (val === '' || isNaN(lectAct)) {
+            celda.html('&mdash;').removeClass('text-green-600 text-red-500').addClass('text-gray-500');
+        } else if (lectAct < lectAnt) {
+            celda.text((lectAct - lectAnt)).removeClass('text-green-600 text-gray-500').addClass('text-red-500');
+        } else {
+            celda.text((lectAct - lectAnt).toFixed(2)).removeClass('text-red-500 text-gray-500').addClass('text-green-600');
+        }
+    }
+
+    function guardarLectura(idMedidor, lectAnt) {
+        var val       = $('#lact_' + idMedidor).val();
+        var lectAct   = parseInt(val);
+        var obs       = $('#obs_' + idMedidor).val().trim() || 'sin observacion';
+        var idPeriodo = parseInt($('#selPeriodo').val());
+        var idRuta    = parseInt($('#selRuta').val());
+
+        if (val === '' || isNaN(lectAct)) {
+            mostrarToast('Ingresa la lectura actual.', 'error'); return;
+        }
+        if (lectAct < lectAnt) {
+            mostrarToast('La lectura actual no puede ser menor que la anterior (' + lectAnt + ').', 'error'); return;
+        }
+
+        var btn = $('#btn_' + idMedidor);
+        btn.prop('disabled', true).text('Guardando...');
+
+        $.ajax({
+            url:  '@Url.Action("Registrar", "Lectura")',
+            type: 'POST',
+            data: {
+                medidor_id_medidor: idMedidor,
+                lectura_anterior:   lectAnt,
+                lectura_actual:     lectAct,
+                observacion:        obs,
+                periodo_id_periodo: idPeriodo,
+                ruta_id_ruta:       idRuta
+            },
+            success: function (res) {
+                if (res.exito) {
+                    mostrarToast('Lectura registrada correctamente.', 'success');
+                    var fila = $('#fila_' + idMedidor);
+                    fila.addClass('bg-green-50 border-l-4 border-green-400').removeClass('hover:bg-gray-50');
+                    fila.find('td:nth-child(6)').html('<span class="font-mono font-semibold">' + lectAct + '</span>');
+                    fila.find('td:nth-child(7)').html('<span class="font-mono text-green-700 font-semibold">' + (lectAct - lectAnt).toFixed(2) + '</span>');
+                    fila.find('td:nth-child(8)').text(obs || '—');
+                    fila.find('td:nth-child(9)').html('<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">&#10003; Registrada</span>');
+                    actualizarResumen();
+                } else {
+                    btn.prop('disabled', false).text('Guardar');
+                    mostrarToast(res.mensaje, 'error');
+                }
+            },
+            error: function () {
+                btn.prop('disabled', false).text('Guardar');
+                mostrarToast('Error de conexión.', 'error');
+            }
+        });
+    }
+
+    function actualizarResumen() {
+        var total  = $('#tbodyMedidores tr').length;
+        var leidos = $('#tbodyMedidores .bg-green-50').length;
+        $('#resumenLectura').text(leidos + ' de ' + total + ' medidores le\u00EDdos');
+    }
+
+    // ── Historial ────────────────────────────────────────────────
+    function cargarHistorial() {
+        $('#tbodyHistorial').html(
+            '<tr><td colspan="12" class="px-6 py-10 text-center text-sm text-gray-400">' +
+            '<svg class="animate-spin mx-auto mb-2" style="width:22px;height:22px;" fill="none" viewBox="0 0 24 24">' +
+            '<circle class="opacity-25" cx="12" cy="12" r="10" stroke="#2563eb" stroke-width="4"/>' +
+            '<path class="opacity-75" fill="#2563eb" d="M4 12a8 8 0 018-8v8H4z"/></svg>Cargando...</td></tr>'
+        );
+        $.ajax({
+            url:  '@Url.Action("ListarHistorial", "Lectura")',
+            type: 'GET',
+            data: {
+                idPeriodo:    $('#selPeriodoHist').val() || null,
+                idRuta:       $('#selRutaHist').val()    || null,
+                busqueda:     $('#txtBusquedaHist').val().trim(),
+                pagina:       paginaHist,
+                tamanoPagina: tamanoHist
+            },
+            success: function (res) {
+                if (!res.exito) { mostrarToast(res.mensaje, 'error'); return; }
+                renderTablaHistorial(res.lecturas, res.totalRegistros);
+                totalPaginasHist = Math.ceil(res.totalRegistros / tamanoHist) || 1;
+                renderPaginacionHist(res.totalRegistros);
+            },
+            error: function () { mostrarToast('Error de conexión.', 'error'); }
+        });
+    }
+
+    function renderTablaHistorial(lecturas, total) {
+        var tbody = $('#tbodyHistorial');
+        tbody.empty();
+
+        if (!lecturas || lecturas.length === 0) {
+            tbody.append('<tr><td colspan="12" class="px-6 py-10 text-center text-sm text-gray-400">No hay lecturas registradas.</td></tr>');
+            return;
+        }
+
+        var inicio = (paginaHist - 1) * tamanoHist + 1;
+        $.each(lecturas, function (i, l) {
+            var fecha = parsearFechaNet(l.fecha_lectura);
+            tbody.append(
+                '<tr class="hover:bg-gray-50 transition">' +
+                '<td class="px-4 py-3 text-gray-400 text-xs">'                       + (inicio + i)                              + '</td>' +
+                '<td class="px-4 py-3 text-gray-600 text-xs">'                       + fecha                                     + '</td>' +
+                '<td class="px-4 py-3 font-mono font-semibold text-blue-700">'       + l.codigo_fijo                             + '</td>' +
+                '<td class="px-4 py-3 font-medium text-gray-800">'                   + l.nombre_socio                            + '</td>' +
+                '<td class="px-4 py-3 font-mono text-xs text-gray-600">'             + l.serie_medidor                           + '</td>' +
+                '<td class="px-4 py-3"><span class="px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">' + l.nombre_periodo + '</span></td>' +
+                '<td class="px-4 py-3 text-gray-600 text-xs">'                       + l.nombre_ruta                             + '</td>' +
+                '<td class="px-4 py-3 text-right font-mono text-gray-600">'          + l.lectura_anterior                        + '</td>' +
+                '<td class="px-4 py-3 text-right font-mono font-semibold text-gray-800">' + l.lectura_actual                    + '</td>' +
+                '<td class="px-4 py-3 text-right font-mono font-semibold text-green-700">' + parseFloat(l.consumo_m3).toFixed(2) + '</td>' +
+                '<td class="px-4 py-3 text-center text-gray-500 text-xs">'           + l.dias_lectura                            + '</td>' +
+                '<td class="px-4 py-3 text-gray-500 text-xs">'                       + l.nombre_usuario                          + '</td>' +
+                '</tr>'
+            );
+        });
+    }
+
+    function renderPaginacionHist(total) {
+        var inicio = total === 0 ? 0 : (paginaHist - 1) * tamanoHist + 1;
+        var fin    = Math.min(paginaHist * tamanoHist, total);
+        $('#infoPaginacionHist').text('Mostrando ' + inicio + ' a ' + fin + ' de ' + total + ' registros');
+
+        var ctrl = $('#controlesPaginacionHist');
+        ctrl.empty();
+        var base = 'px-3 py-1.5 text-xs rounded-lg border transition font-medium ';
+
+        ctrl.append('<button ' + (paginaHist === 1 ? 'disabled' : '') +
+            ' onclick="irPaginaHist(' + (paginaHist - 1) + ')" class="' + base +
+            (paginaHist === 1 ? 'opacity-40 cursor-not-allowed border-gray-200 text-gray-400' : 'border-gray-300 text-gray-600 hover:bg-gray-100') +
+            '">‹ Ant</button>');
+
+        var desde = Math.max(1, paginaHist - 2);
+        var hasta = Math.min(totalPaginasHist, paginaHist + 2);
+        for (var p = desde; p <= hasta; p++) {
+            ctrl.append('<button onclick="irPaginaHist(' + p + ')" class="' + base +
+                (p === paginaHist ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-300 text-gray-600 hover:bg-gray-100') +
+                '">' + p + '</button>');
+        }
+
+        ctrl.append('<button ' + (paginaHist === totalPaginasHist ? 'disabled' : '') +
+            ' onclick="irPaginaHist(' + (paginaHist + 1) + ')" class="' + base +
+            (paginaHist === totalPaginasHist ? 'opacity-40 cursor-not-allowed border-gray-200 text-gray-400' : 'border-gray-300 text-gray-600 hover:bg-gray-100') +
+            '">Sig ›</button>');
+    }
+
+    function irPaginaHist(p) {
+        if (p < 1 || p > totalPaginasHist) return;
+        paginaHist = p;
+        cargarHistorial();
+    }
+
+    // ── Utilidades ───────────────────────────────────────────────
+    function parsearFechaNet(val) {
+        if (!val) return '';
+        var m = /\/Date\((\d+)\)\//.exec(val);
+        if (m) return new Date(parseInt(m[1])).toISOString().substring(0, 10);
+        return typeof val === 'string' ? val.substring(0, 10) : '';
+    }
+
+    function mostrarToast(msg, tipo) {
+        var toast = $('<div>')
+            .addClass('fixed bottom-6 right-6 z-50 text-white text-sm font-medium px-5 py-3 rounded-xl shadow-lg ' +
+                       (tipo === 'success' ? 'bg-green-500' : 'bg-red-500'))
+            .text(msg);
+        $('body').append(toast);
+        setTimeout(function () { toast.fadeOut(400, function () { $(this).remove(); }); }, 3000);
+    }
+</script>
+}

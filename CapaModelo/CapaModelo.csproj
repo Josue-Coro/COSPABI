@@ -41,13 +41,20 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CM_Aviso.cs" />
     <Compile Include="CM_Bitacora.cs" />
+    <Compile Include="CM_Caja.cs" />
     <Compile Include="CM_CargoExtra.cs" />
     <Compile Include="CM_Cliente.cs" />
+    <Compile Include="CM_Credito.cs" />
     <Compile Include="CM_CuentaSocio.cs" />
+    <Compile Include="CM_CuentaSocio_Activo.cs" />
+    <Compile Include="CM_Dashboard.cs" />
+    <Compile Include="CM_Lectura.cs" />
     <Compile Include="CM_Medidor.cs" />
     <Compile Include="CM_MetodoPago.cs" />
     <Compile Include="CM_Notificacion.cs" />
+    <Compile Include="CM_Pago.cs" />
     <Compile Include="CM_Periodo.cs" />
     <Compile Include="CM_Permiso.cs" />
     <Compile Include="CM_Rol.cs" />

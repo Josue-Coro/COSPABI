@@ -13,6 +13,7 @@ namespace CapaModelo
         public string ci { get; set; }
         public string genero { get; set; }
         public int? telefono { get; set; }
+        public string email { get; set; }
         public DateTime fecha_nacimiento { get; set; }
         public DateTime fecha_registro { get; set; }
         public bool estado { get; set; }

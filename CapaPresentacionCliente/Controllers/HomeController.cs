@@ -1,30 +1,17 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Web;
+﻿using CapaModelo;
+using CapaNegocio;
 using System.Web.Mvc;
 
 namespace CapaPresentacionCliente.Controllers
 {
+    [Authorize]
     public class HomeController : Controller
     {
         public ActionResult Index()
         {
-            return View();
-        }
-
-        public ActionResult About()
-        {
-            ViewBag.Message = "Your application description page.";
-
-            return View();
-        }
-
-        public ActionResult Contact()
-        {
-            ViewBag.Message = "Your contact page.";
-
-            return View();
+            CM_CuentaSocio_Activo sesion = Session["Socio"] as CM_CuentaSocio_Activo;
+            CM_Aviso ultimoAviso = new CN_Aviso().ObtenerUltimoAviso(sesion.socio_id_socio);
+            return View(ultimoAviso);
         }
     }
 }
