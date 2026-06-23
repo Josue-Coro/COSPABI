@@ -345,11 +345,9 @@ function renderTabla(avisos) {
             '<button onclick="verDetalle(' + a.id_aviso + ')" ' +
             'class="text-xs px-3 py-1 rounded-lg border border-blue-200 text-blue-600 hover:bg-blue-50 transition-colors font-medium">' +
             'Ver</button>' +
-            (a.estado !== 'PAGADO' && a.estado !== 'ANULADO'
-                ? '<button onclick="anularAviso(' + a.id_aviso + ')" ' +
-                  'class="text-xs px-3 py-1 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 transition-colors font-medium">' +
-                  'Anular</button>'
-                : '') +
+            '<button onclick="imprimirAviso(' + a.id_aviso + ')" ' +
+            'class="text-xs px-3 py-1 rounded-lg border border-green-200 text-green-700 hover:bg-green-50 transition-colors font-medium">' +
+            'Imprimir</button>' +
             '</div></td>' +
             '</tr>';
     });
@@ -456,25 +454,6 @@ function mostrarToast(msg, tipo) {
     var t = $('<div class="px-4 py-3 rounded-lg text-white text-sm font-medium shadow-lg pointer-events-auto ' + color + '">' + msg + '</div>');
     $('#toastContainer').append(t);
     setTimeout(function () { t.fadeOut(300, function () { $(this).remove(); }); }, 3500);
-}
-
-// ---- Anular aviso ----
-function anularAviso(idAviso) {
-    if (!confirm('¿Anular el aviso #' + idAviso + '?\n\nEl aviso quedará registrado como ANULADO y podrá regenerarse para ese socio/período.')) return;
-    $.ajax({
-        url:  '@Url.Action("AnularAviso", "Aviso")',
-        type: 'POST',
-        data: { idAviso: idAviso },
-        success: function (res) {
-            if (res.exito) {
-                mostrarToast(res.mensaje, 'success');
-                cargarAvisos();
-            } else {
-                mostrarToast(res.mensaje, 'error');
-            }
-        },
-        error: function () { mostrarToast('Error de conexión.', 'error'); }
-    });
 }
 
 // ---- Detalle aviso ----
@@ -610,6 +589,11 @@ function verDetalle(idAviso) {
 
 function cerrarModalDetalle() {
     $('#modalDetalle').addClass('hidden');
+}
+
+// ---- Imprimir aviso (abre el recibo en otra pestaña y auto-imprime) ----
+function imprimirAviso(idAviso) {
+    window.open('@Url.Action("ImprimirAviso", "Aviso")?idAviso=' + idAviso, '_blank');
 }
 </script>
 }

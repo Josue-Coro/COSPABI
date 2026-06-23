@@ -42,6 +42,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CM_Aviso.cs" />
+    <Compile Include="CM_AvisoImpresion.cs" />
     <Compile Include="CM_Bitacora.cs" />
     <Compile Include="CM_Caja.cs" />
     <Compile Include="CM_CargoExtra.cs" />

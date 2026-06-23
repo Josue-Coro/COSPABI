@@ -248,6 +248,99 @@ namespace CapaDato
             return detalle;
         }
 
+        public CM_AvisoImpresion ObtenerParaImpresion(int idAviso)
+        {
+            CM_AvisoImpresion imp = null;
+            try
+            {
+                using (SqlConnection cn = new SqlConnection(CD_Conexion.cn))
+                {
+                    SqlCommand cmd = new SqlCommand("dbo.sp_imprimir_aviso", cn);
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.Parameters.AddWithValue("@id_aviso", idAviso);
+                    cn.Open();
+                    SqlDataReader dr = cmd.ExecuteReader();
+
+                    // 1) Cabecera
+                    if (dr.Read())
+                    {
+                        imp = new CM_AvisoImpresion
+                        {
+                            id_aviso               = Convert.ToInt32(dr["id_aviso"]),
+                            fecha_emision          = Convert.ToDateTime(dr["fecha_emision"]),
+                            fecha_vencimiento      = Convert.ToDateTime(dr["fecha_vencimiento"]),
+                            total_consumo          = Convert.ToDecimal(dr["total_consumo"]),
+                            total_aviso            = Convert.ToDecimal(dr["total_aviso"]),
+                            deuda_actual           = Convert.ToDecimal(dr["deuda_actual"]),
+                            estado                 = dr["estado"].ToString(),
+                            nombre_estado          = dr["nombre_estado"].ToString(),
+                            id_socio               = Convert.ToInt32(dr["id_socio"]),
+                            codigo_fijo            = Convert.ToInt32(dr["codigo_fijo"]),
+                            nombre_socio           = dr["nombre_socio"].ToString(),
+                            ubicacion              = dr["ubicacion"] is DBNull ? (int?)null : Convert.ToInt32(dr["ubicacion"]),
+                            num_casa               = dr["num_casa"] is DBNull ? (int?)null : Convert.ToInt32(dr["num_casa"]),
+                            categoria              = dr["categoria"].ToString(),
+                            actividad              = dr["actividad"].ToString(),
+                            nombre_ruta            = dr["nombre_ruta"].ToString(),
+                            nombre_periodo         = dr["nombre_periodo"].ToString(),
+                            serie_medidor          = dr["serie_medidor"].ToString(),
+                            lectura_anterior       = Convert.ToDecimal(dr["lectura_anterior"]),
+                            lectura_actual         = Convert.ToDecimal(dr["lectura_actual"]),
+                            consumo_m3             = Convert.ToDecimal(dr["consumo_m3"]),
+                            dias_lectura           = Convert.ToInt32(dr["dias_lectura"]),
+                            fecha_lectura_actual   = Convert.ToDateTime(dr["fecha_lectura_actual"]),
+                            fecha_lectura_anterior = dr["fecha_lectura_anterior"] is DBNull ? (DateTime?)null : Convert.ToDateTime(dr["fecha_lectura_anterior"]),
+                            nombre_rol             = dr["nombre_rol"].ToString(),
+                            monto_minimo           = Convert.ToDecimal(dr["monto_minimo"]),
+                            consumo_minimo_m3      = Convert.ToDecimal(dr["consumo_minimo_m3"]),
+                            precio_m3              = Convert.ToDecimal(dr["precio_m3"]),
+                            total_cargos           = Convert.ToDecimal(dr["total_cargos"]),
+                            monto_credito          = dr["monto_credito"] is DBNull ? (decimal?)null : Convert.ToDecimal(dr["monto_credito"]),
+                            cargos                 = new List<CM_CargoExtra>(),
+                            historico              = new List<CM_AvisoHistorico>()
+                        };
+                    }
+
+                    // 2) Cargos extra (Datos Facturados)
+                    if (imp != null && dr.NextResult())
+                    {
+                        while (dr.Read())
+                        {
+                            imp.cargos.Add(new CM_CargoExtra
+                            {
+                                id_carga_extra    = Convert.ToInt32(dr["id_carga_extra"]),
+                                monto             = Convert.ToDecimal(dr["monto"]),
+                                descripcion       = dr["descripcion"].ToString(),
+                                nombre_tipo_cargo = dr["nombre_tipo_cargo"].ToString()
+                            });
+                        }
+                    }
+
+                    // 3) Histórico
+                    if (imp != null && dr.NextResult())
+                    {
+                        while (dr.Read())
+                        {
+                            imp.historico.Add(new CM_AvisoHistorico
+                            {
+                                id_aviso          = Convert.ToInt32(dr["id_aviso"]),
+                                nombre_periodo    = dr["nombre_periodo"].ToString(),
+                                consumo_m3        = Convert.ToDecimal(dr["consumo_m3"]),
+                                total_aviso       = Convert.ToDecimal(dr["total_aviso"]),
+                                fecha_pago        = dr["fecha_pago"] is DBNull ? (DateTime?)null : Convert.ToDateTime(dr["fecha_pago"]),
+                                estado_pago_label = dr["estado_pago_label"].ToString(),
+                                estado            = dr["estado"].ToString()
+                            });
+                        }
+                    }
+
+                    dr.Close();
+                }
+            }
+            catch { imp = null; }
+            return imp;
+        }
+
         public List<CM_Estado> ListarEstados()
         {
             var lista = new List<CM_Estado>();

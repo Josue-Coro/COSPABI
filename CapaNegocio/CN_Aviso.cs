@@ -61,6 +61,11 @@ namespace CapaNegocio
             return cdAviso.ObtenerDetalle(idAviso);
         }
 
+        public CM_AvisoImpresion ObtenerParaImpresion(int idAviso)
+        {
+            return cdAviso.ObtenerParaImpresion(idAviso);
+        }
+
         public CM_Aviso ObtenerUltimoAviso(int idSocio)
         {
             return cdAviso.ObtenerUltimoAviso(idSocio);

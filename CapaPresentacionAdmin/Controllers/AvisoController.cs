@@ -17,7 +17,6 @@ namespace CapaPresentacionAdmin.Controllers
         {
             return View();
         }
-
         [HttpGet]
         [ValidarPermisos(NombrePermiso = "Gestionar Avisos")]
         public JsonResult ListarPeriodos()
@@ -93,8 +92,23 @@ namespace CapaPresentacionAdmin.Controllers
             }
         }
 
-        [HttpPost]
+        // Vista imprimible del aviso (se abre en otra pestaña y dispara window.print()).
         [ValidarPermisos(NombrePermiso = "Gestionar Avisos")]
+        public ActionResult ImprimirAviso(int idAviso)
+        {
+            var datos = cnAviso.ObtenerParaImpresion(idAviso);
+            if (datos == null)
+                return HttpNotFound("Aviso no encontrado.");
+            return View(datos);
+        }
+        [ValidarPermisos(NombrePermiso = "Anular Avisos")]
+        public ActionResult AnularAviso()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        [ValidarPermisos(NombrePermiso = "Anular Avisos")]
         public JsonResult AnularAviso(int idAviso)
         {
             try

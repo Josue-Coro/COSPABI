@@ -236,6 +236,8 @@
     <Content Include="Views\MetodoPago\MetodoPago.cshtml" />
     <Content Include="Views\CargoExtra\CargoExtra.cshtml" />
     <Content Include="Views\CuentaSocio\CuentaSocio.cshtml" />
+    <Content Include="Views\Aviso\AnularAviso.cshtml" />
+    <Content Include="Views\Aviso\ImprimirAviso.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\SQLServer\" />

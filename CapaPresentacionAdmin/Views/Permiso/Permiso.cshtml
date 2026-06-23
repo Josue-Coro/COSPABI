@@ -246,6 +246,7 @@
         $('#subtituloModal').text(nombreRol);
         $('#buscadorPermiso').val('');
         ocultarError();
+        setLoading(false);
         $('#listaPermisos').html(
             '<div class="flex items-center justify-center py-8 text-sm text-gray-400">' +
             '  <svg class="animate-spin mr-2" style="width:18px;height:18px;" fill="none" viewBox="0 0 24 24">' +
@@ -347,9 +348,13 @@
             data: $.param({ id_rol: rolActual.id }) +
                   (ids.length > 0 ? '&' + $.param({ permisos: ids }, true) : ''),
             success: function (res) {
-                if (res.resultado === true) {
+                // El controller devuelve "resultado" como entero (> 0 = éxito), no booleano.
+                if (res.resultado > 0) {
+                    // Capturar el nombre ANTES de cerrar: cerrarModal() resetea rolActual.
+                    var nombreRol = rolActual.nombre;
+                    setLoading(false);
                     cerrarModal();
-                    mostrarToast('Permisos de "' + rolActual.nombre + '" actualizados.');
+                    mostrarToast('Permisos de "' + nombreRol + '" actualizados.');
                 } else {
                     mostrarError(res.mensaje || 'No se pudieron guardar los permisos.');
                     setLoading(false);

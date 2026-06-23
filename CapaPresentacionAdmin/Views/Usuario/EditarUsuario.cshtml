@@ -155,7 +155,7 @@
                     $('#nombre').val(u.nombre);
                     $('#apellido').val(u.apellido);
                     $('#usuario').val(u.usuario);
-                    $('#rol').val(u.rol_id_dol);
+                    $('#rol').val(u.rol_id_rol);
                     $('#estado').val(u.estado.toString());
                 }
             });
@@ -198,7 +198,7 @@
                     usuario:          usuario,
                     contraseña:       contrasena,
                     estado:           estado,
-                    rol_id_dol:       rol
+                    rol_id_rol:       rol
                 },
                 success: function (res) {
                     if (res.resultado === true) {

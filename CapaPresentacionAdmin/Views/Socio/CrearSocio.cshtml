@@ -208,13 +208,24 @@
             </div>
             <div>
                 <label class="block text-xs font-medium text-gray-700 mb-1">Tipo Instalación</label>
-                <input type="text" id="txtTipoInstalacion" placeholder="Ej: Superficial"
-                       class="input-field w-full px-3 py-2 border border-gray-300 rounded-xl text-sm bg-gray-50 text-gray-800 placeholder-gray-400">
+                <select id="txtTipoInstalacion"
+                        class="input-field w-full px-3 py-2 border border-gray-300 rounded-xl text-sm bg-gray-50 text-gray-800">
+                    <option value="">-- Seleccionar --</option>
+                    <option value="PVC">PVC</option>
+                    <option value="CPVC">CPVC</option>
+                    <option value="Polipropileno">Polipropileno</option>
+                    <option value="Tubería negra">Tubería negra</option>
+                </select>
             </div>
             <div class="col-span-2">
                 <label class="block text-xs font-medium text-gray-700 mb-1">Dimensión Instalación</label>
-                <input type="text" id="txtDimInstalacion" placeholder='Ej: 1/2"'
-                       class="input-field w-full px-3 py-2 border border-gray-300 rounded-xl text-sm bg-gray-50 text-gray-800 placeholder-gray-400">
+                <select id="txtDimInstalacion"
+                        class="input-field w-full px-3 py-2 border border-gray-300 rounded-xl text-sm bg-gray-50 text-gray-800">
+                    <option value="">-- Seleccionar --</option>
+                    <option value="1/2 pulgada">1/2 pulgada</option>
+                    <option value="3/4 pulgada">3/4 pulgada</option>
+                    <option value="1 pulgada">1 pulgada</option>
+                </select>
             </div>
         </div>
     </div>

@@ -1,0 +1,342 @@
+@{
+    ViewBag.Title = "Anular Aviso";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="p-6">
+
+    <!-- Encabezado -->
+    <div class="mb-6 flex items-start justify-between flex-wrap gap-3">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-800">Anular Avisos</h1>
+            <p class="text-sm text-gray-500 mt-1">Anula avisos vigentes para poder regenerarlos en su período</p>
+        </div>
+        <a href="@Url.Action("Aviso", "Aviso")"
+           class="text-sm px-4 py-2 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors">
+            &larr; Volver a Avisos
+        </a>
+    </div>
+
+    <!-- Aviso informativo -->
+    <div class="mb-5 flex items-start gap-2.5 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 max-w-3xl">
+        <span class="text-amber-600 font-bold">!</span>
+        <p class="text-sm text-amber-800">
+            Solo se pueden anular avisos que <strong>no estén PAGADOS ni ANULADOS</strong>.
+            Al anular, el aviso queda registrado como <strong>ANULADO</strong> y se libera el socio/período
+            para volver a generar el aviso.
+        </p>
+    </div>
+
+    <!-- Filtros -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-5">
+        <div class="flex flex-wrap gap-3 items-center">
+            <select id="selPeriodoFiltro" onchange="resetYCargar()"
+                    class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none min-w-[140px]">
+                <option value="">Todos los períodos</option>
+            </select>
+            <select id="selEstadoFiltro" onchange="resetYCargar()"
+                    class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                <option value="">Todos los estados</option>
+            </select>
+            <select id="selRutaFiltro" onchange="resetYCargar()"
+                    class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                <option value="">Todas las rutas</option>
+            </select>
+            <input id="inputBusqueda" type="text" placeholder="Buscar socio o código..."
+                   class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none min-w-[200px]">
+        </div>
+    </div>
+
+    <!-- Tabla -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="bg-gray-50 border-b border-gray-200 text-left">
+                        <th class="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">#</th>
+                        <th class="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Cód</th>
+                        <th class="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Socio</th>
+                        <th class="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Período</th>
+                        <th class="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide text-right">Total</th>
+                        <th class="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide text-right">Vencimiento</th>
+                        <th class="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Estado</th>
+                        <th class="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide text-right">Acción</th>
+                    </tr>
+                </thead>
+                <tbody id="tbodyAvisos">
+                    <tr>
+                        <td colspan="8" class="px-4 py-10 text-center text-gray-400">Cargando avisos...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="flex items-center justify-between px-4 py-3 border-t border-gray-100">
+            <span id="infoPaginacion" class="text-xs text-gray-500"></span>
+            <div id="paginacion" class="flex gap-1"></div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Modal Confirmar Anulación -->
+<div id="modalAnular" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" onclick="cerrarModalAnular()"></div>
+    <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+        <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+            <h3 class="text-base font-bold text-gray-800">Anular aviso</h3>
+            <button onclick="cerrarModalAnular()"
+                    class="text-gray-400 hover:text-gray-600 transition-colors text-xl leading-none">&times;</button>
+        </div>
+        <div class="px-6 py-5">
+            <div class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center text-red-600 text-2xl font-bold mx-auto mb-4">!</div>
+            <p class="text-center text-sm text-gray-600 mb-4">
+                ¿Confirmas anular este aviso? Esta acción no se puede deshacer.
+            </p>
+            <div id="resumenAnular" class="bg-gray-50 rounded-xl px-4 py-3 text-sm space-y-1 mb-5"></div>
+            <div class="flex gap-2">
+                <button onclick="cerrarModalAnular()"
+                        class="flex-1 px-4 py-2.5 rounded-xl border border-gray-300 text-gray-600 text-sm font-semibold hover:bg-gray-100 transition-colors">
+                    Cancelar
+                </button>
+                <button id="btnConfirmarAnular" onclick="confirmarAnulacion()"
+                        class="flex-1 px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-semibold transition-colors">
+                    Sí, anular
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast -->
+<div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+@section scripts {
+<script>
+var currentPage = 1;
+var pageSize    = 10;
+var avisoSel    = null;
+
+$(document).ready(function () {
+    cargarEstados();
+    cargarPeriodos();
+    cargarRutas();
+    cargarAvisos();
+
+    var debounceTimer;
+    $('#inputBusqueda').on('input', function () {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(function () { resetYCargar(); }, 400);
+    });
+});
+
+// ---- Carga de combos ----
+function cargarEstados() {
+    $.get('@Url.Action("ListarEstados", "Aviso")').done(function (res) {
+        if (!res || !res.data) return;
+        res.data.forEach(function (e) {
+            $('#selEstadoFiltro').append('<option value="' + e.id_estado + '">' + e.estado + '</option>');
+        });
+    });
+}
+
+function cargarPeriodos() {
+    $.get('@Url.Action("ListarPeriodos", "Aviso")').done(function (res) {
+        if (!res || !res.data) return;
+        res.data.forEach(function (p) {
+            $('#selPeriodoFiltro').append('<option value="' + p.id_periodo + '">' + p.periodo + '</option>');
+        });
+    });
+}
+
+function cargarRutas() {
+    $.get('@Url.Action("ListarRutas", "Aviso")').done(function (res) {
+        if (!res || !res.data) return;
+        res.data.forEach(function (r) {
+            $('#selRutaFiltro').append('<option value="' + r.id_ruta + '">Ruta ' + r.ruta + '</option>');
+        });
+    });
+}
+
+// ---- Tabla ----
+function resetYCargar() {
+    currentPage = 1;
+    cargarAvisos();
+}
+
+function cargarAvisos() {
+    $('#tbodyAvisos').html('<tr><td colspan="8" class="px-4 py-8 text-center text-gray-400">Cargando...</td></tr>');
+    $.ajax({
+        url:  '@Url.Action("ListarAvisos", "Aviso")',
+        type: 'GET',
+        data: {
+            idPeriodo:    $('#selPeriodoFiltro').val() || null,
+            idEstado:     $('#selEstadoFiltro').val()  || null,
+            idRuta:       $('#selRutaFiltro').val()    || null,
+            busqueda:     $('#inputBusqueda').val()    || '',
+            pagina:       currentPage,
+            tamanoPagina: pageSize
+        },
+        success: function (res) {
+            if (!res.exito) {
+                $('#tbodyAvisos').html('<tr><td colspan="8" class="px-4 py-8 text-center text-red-500">' +
+                    (res.mensaje || 'Error al cargar') + '</td></tr>');
+                return;
+            }
+            renderTabla(res.avisos);
+            renderPaginacion(res.totalRegistros);
+        },
+        error: function () {
+            $('#tbodyAvisos').html('<tr><td colspan="8" class="px-4 py-8 text-center text-red-500">Error de conexión.</td></tr>');
+        }
+    });
+}
+
+function renderTabla(avisos) {
+    if (!avisos || avisos.length === 0) {
+        $('#tbodyAvisos').html('<tr><td colspan="8" class="px-4 py-10 text-center text-gray-400">No hay avisos que mostrar.</td></tr>');
+        $('#infoPaginacion').text('');
+        $('#paginacion').html('');
+        return;
+    }
+    var html = '';
+    var hoy  = new Date();
+    avisos.forEach(function (a) {
+        var fVenc     = parseFecha(a.fecha_vencimiento);
+        var vencido   = fVenc < hoy && a.estado !== 'PAGADO';
+        var anulable  = a.estado !== 'PAGADO' && a.estado !== 'ANULADO';
+        html +=
+            '<tr class="border-b border-gray-100 hover:bg-gray-50' + (vencido ? ' bg-red-50' : '') + '">' +
+            '<td class="px-4 py-3 text-gray-400 text-xs">' + a.id_aviso + '</td>' +
+            '<td class="px-4 py-3 font-mono text-sm font-medium text-gray-700">' + a.codigo_fijo + '</td>' +
+            '<td class="px-4 py-3 text-gray-800">' + a.nombre_socio + '</td>' +
+            '<td class="px-4 py-3 text-gray-600 text-sm">' + a.nombre_periodo + '</td>' +
+            '<td class="px-4 py-3 text-right font-mono font-semibold text-gray-800">' + fmtMonto(a.total_aviso) + '</td>' +
+            '<td class="px-4 py-3 text-right text-sm ' + (vencido ? 'text-red-600 font-semibold' : 'text-gray-600') + '">' +
+            fmtFecha(a.fecha_vencimiento) + '</td>' +
+            '<td class="px-4 py-3">' + estadoBadge(a.estado) + '</td>' +
+            '<td class="px-4 py-3 text-right">' +
+            (anulable
+                ? '<button onclick="abrirModalAnular(' + a.id_aviso + ')" ' +
+                  'class="text-xs px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white transition-colors font-semibold">Anular</button>'
+                : '<span class="text-gray-300 text-xs">No anulable</span>') +
+            '</td>' +
+            '</tr>';
+    });
+    $('#tbodyAvisos').html(html);
+}
+
+function estadoBadge(estado) {
+    var map = {
+        'GENERADO':  'bg-slate-100 text-slate-700',
+        'LECTURADO': 'bg-blue-100 text-blue-700',
+        'IMPRESO':   'bg-amber-100 text-amber-700',
+        'PAGADO':    'bg-green-100 text-green-700',
+        'ANULADO':   'bg-red-100 text-red-600'
+    };
+    var cls  = map[estado] || 'bg-gray-100 text-gray-600';
+    var text = estado === 'ANULADO' ? '<s>' + estado + '</s>' : estado;
+    return '<span class="px-2.5 py-1 rounded-full text-xs font-semibold ' + cls + '">' + text + '</span>';
+}
+
+// ---- Modal de anulación ----
+function abrirModalAnular(idAviso) {
+    var fila = $('#tbodyAvisos tr').filter(function () {
+        return $(this).find('td:first').text() == idAviso;
+    });
+    var cod    = fila.find('td:eq(1)').text();
+    var socio  = fila.find('td:eq(2)').text();
+    var per    = fila.find('td:eq(3)').text();
+    var total  = fila.find('td:eq(4)').text();
+
+    avisoSel = idAviso;
+    $('#resumenAnular').html(
+        '<div class="flex justify-between"><span class="text-gray-500">Aviso</span><span class="font-semibold text-gray-800">#' + idAviso + '</span></div>' +
+        '<div class="flex justify-between"><span class="text-gray-500">Código</span><span class="font-mono text-gray-800">' + cod + '</span></div>' +
+        '<div class="flex justify-between"><span class="text-gray-500">Socio</span><span class="text-gray-800">' + socio + '</span></div>' +
+        '<div class="flex justify-between"><span class="text-gray-500">Período</span><span class="text-gray-800">' + per + '</span></div>' +
+        '<div class="flex justify-between"><span class="text-gray-500">Total</span><span class="font-mono font-semibold text-gray-800">Bs. ' + total + '</span></div>'
+    );
+    $('#modalAnular').removeClass('hidden');
+}
+
+function cerrarModalAnular() {
+    $('#modalAnular').addClass('hidden');
+    avisoSel = null;
+}
+
+function confirmarAnulacion() {
+    if (!avisoSel) return;
+    var btn = $('#btnConfirmarAnular');
+    btn.prop('disabled', true).text('Anulando...');
+    $.ajax({
+        url:  '@Url.Action("AnularAviso", "Aviso")',
+        type: 'POST',
+        data: { idAviso: avisoSel },
+        success: function (res) {
+            btn.prop('disabled', false).text('Sí, anular');
+            cerrarModalAnular();
+            if (res.exito) {
+                mostrarToast(res.mensaje, 'success');
+                cargarAvisos();
+            } else {
+                mostrarToast(res.mensaje || 'No se pudo anular.', 'error');
+            }
+        },
+        error: function () {
+            btn.prop('disabled', false).text('Sí, anular');
+            mostrarToast('Error de conexión.', 'error');
+        }
+    });
+}
+
+// ---- Paginación ----
+function renderPaginacion(total) {
+    var totalPag = Math.ceil(total / pageSize) || 1;
+    $('#infoPaginacion').text('Página ' + currentPage + ' de ' + totalPag + ' • ' + total + ' registro(s)');
+    var html  = '';
+    var desde = Math.max(1, currentPage - 2);
+    var hasta = Math.min(totalPag, desde + 4);
+
+    if (currentPage > 1)
+        html += '<button onclick="irPagina(' + (currentPage - 1) + ')" class="px-3 py-1 rounded border border-gray-300 text-sm hover:bg-gray-100">&lsaquo;</button>';
+    for (var i = desde; i <= hasta; i++) {
+        var cls = i === currentPage ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-300 hover:bg-gray-100';
+        html += '<button onclick="irPagina(' + i + ')" class="px-3 py-1 rounded border text-sm ' + cls + '">' + i + '</button>';
+    }
+    if (currentPage < totalPag)
+        html += '<button onclick="irPagina(' + (currentPage + 1) + ')" class="px-3 py-1 rounded border border-gray-300 text-sm hover:bg-gray-100">&rsaquo;</button>';
+
+    $('#paginacion').html(html);
+}
+
+function irPagina(p) {
+    currentPage = p;
+    cargarAvisos();
+}
+
+// ---- Helpers ----
+function parseFecha(val) {
+    if (!val) return new Date(0);
+    var ms = parseInt(val.replace('/Date(', '').replace(')/', ''));
+    return new Date(ms);
+}
+
+function fmtFecha(val) {
+    var d = parseFecha(val);
+    return d.getDate().toString().padStart(2, '0') + '/' +
+           (d.getMonth() + 1).toString().padStart(2, '0') + '/' +
+           d.getFullYear();
+}
+
+function fmtMonto(val) {
+    return parseFloat(val).toLocaleString('es-BO', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function mostrarToast(msg, tipo) {
+    var color = tipo === 'success' ? 'bg-green-600' : 'bg-red-600';
+    var t = $('<div class="px-4 py-3 rounded-lg text-white text-sm font-medium shadow-lg pointer-events-auto ' + color + '">' + msg + '</div>');
+    $('#toastContainer').append(t);
+    setTimeout(function () { t.fadeOut(300, function () { $(this).remove(); }); }, 3500);
+}
+</script>
+}

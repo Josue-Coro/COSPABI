@@ -17,6 +17,7 @@
     bool tieneOperaciones =
         TienePermiso("Gestionar Ruta") ||
         TienePermiso("Gestionar Avisos") ||
+        TienePermiso("Anular Avisos") ||
         TienePermiso("Gestionar Cargo Extra") ||
         TienePermiso("Gestionar Lecturas");
 
@@ -337,6 +338,12 @@
                     if (TienePermiso("Gestionar Avisos"))
                     {
                         @Html.ActionLink("Avisos y Cobros", "Aviso", "Aviso",
+                            new { area = "" },
+                            new { @class = "nav-link" })
+                    }
+                    if (TienePermiso("Anular Avisos"))
+                    {
+                        @Html.ActionLink("Anular Avisos", "AnularAviso", "Aviso",
                             new { area = "" },
                             new { @class = "nav-link" })
                     }
