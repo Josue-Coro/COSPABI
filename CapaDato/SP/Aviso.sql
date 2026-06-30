@@ -42,9 +42,6 @@ BEGIN
         RETURN;
     END
 
-    -- Mapa de avisos recien creados, para estampar sus cargos / cuota
-    DECLARE @nuevos TABLE (id_aviso INT, socio_id INT, periodo_id INT);
-
     BEGIN TRY
         BEGIN TRAN;
 
@@ -52,19 +49,16 @@ BEGIN
         INSERT INTO aviso (
             fecha_emision, fecha_vencimiento,
             total_consumo, total_aviso, deuda_actual,
-            estado, estado_id_estado,
+            estado_id_estado,
             socio_id_socio, periodo_id_periodo,
             lectura_id_lectura
         )
-        OUTPUT inserted.id_aviso, inserted.socio_id_socio, inserted.periodo_id_periodo
-            INTO @nuevos (id_aviso, socio_id, periodo_id)
         SELECT
             CAST(GETDATE() AS DATE),
             CAST(DATEADD(DAY, 30, GETDATE()) AS DATE),
             calc.total_consumo,
             calc.total_consumo + calc.sum_cargos + calc.cuota_credito,   -- total_aviso
             calc.total_consumo + calc.sum_cargos + calc.cuota_credito,   -- deuda_actual
-            'GENERADO',
             @id_estado_gen,
             s.id_socio,
             l.periodo_id_periodo,
@@ -90,7 +84,6 @@ BEGIN
                     FROM cargo_extra ce
                     WHERE ce.socio_id_socio     = s.id_socio
                       AND ce.periodo_id_periodo = l.periodo_id_periodo
-                      AND ce.aviso_id_aviso     IS NULL
                       AND ce.estado             = 'PENDIENTE'), 0),
                 -- cuota de credito de inscripcion del periodo (0..1). SUMA, no resta.
                 cuota_credito = ISNULL((
@@ -98,7 +91,6 @@ BEGIN
                     FROM credito_inscripcion ci
                     WHERE ci.socio_id_socio     = s.id_socio
                       AND ci.periodo_id_periodo = l.periodo_id_periodo
-                      AND ci.aviso_id_aviso     IS NULL
                       AND ci.estado             = 'PENDIENTE'), 0)
         ) calc
         WHERE l.periodo_id_periodo = @id_periodo
@@ -108,30 +100,10 @@ BEGIN
               SELECT 1 FROM aviso a
               WHERE a.socio_id_socio     = s.id_socio
                 AND a.periodo_id_periodo = @id_periodo
-                AND a.estado             != 'ANULADO'
+                AND a.estado_id_estado <> (SELECT id_estado FROM estado WHERE estado = 'ANULADO')
           );
 
         SET @Generados = @@ROWCOUNT;
-
-        -- 2) Estampar TODOS los cargos pendientes en el aviso de su socio (1:N)
-        UPDATE ce
-        SET ce.aviso_id_aviso = n.id_aviso
-        FROM cargo_extra ce
-        INNER JOIN @nuevos n
-            ON n.socio_id   = ce.socio_id_socio
-           AND n.periodo_id = ce.periodo_id_periodo
-        WHERE ce.aviso_id_aviso IS NULL
-          AND ce.estado         = 'PENDIENTE';
-
-        -- 3) Estampar la cuota de credito de inscripcion (0..1). Estado sigue PENDIENTE.
-        UPDATE ci
-        SET ci.aviso_id_aviso = n.id_aviso
-        FROM credito_inscripcion ci
-        INNER JOIN @nuevos n
-            ON n.socio_id   = ci.socio_id_socio
-           AND n.periodo_id = ci.periodo_id_periodo
-        WHERE ci.aviso_id_aviso IS NULL
-          AND ci.estado         = 'PENDIENTE';
 
         COMMIT;
 
@@ -173,17 +145,21 @@ BEGIN
         a.total_consumo,
         a.total_aviso,
         a.deuda_actual,
-        a.estado,
+        e.estado                                                                  AS estado,
         a.estado_id_estado,
         e.estado                                                                  AS nombre_estado,
         s.nombre_socio,
         s.codigo_fijo,
         p.periodo                                                                 AS nombre_periodo,
         r.ruta                                                                    AS nombre_ruta,
-        CASE WHEN EXISTS (SELECT 1 FROM cargo_extra ce WHERE ce.aviso_id_aviso = a.id_aviso)
-             THEN 1 ELSE 0 END                                                    AS tiene_cargo_extra,
-        CASE WHEN EXISTS (SELECT 1 FROM credito_inscripcion ci WHERE ci.aviso_id_aviso = a.id_aviso)
-             THEN 1 ELSE 0 END                                                    AS tiene_credito
+        CASE WHEN EXISTS (
+            SELECT 1 FROM cargo_extra ce 
+            WHERE ce.socio_id_socio = a.socio_id_socio AND ce.periodo_id_periodo = a.periodo_id_periodo
+        ) THEN 1 ELSE 0 END                                                       AS tiene_cargo_extra,
+        CASE WHEN EXISTS (
+            SELECT 1 FROM credito_inscripcion ci 
+            WHERE ci.socio_id_socio = a.socio_id_socio AND ci.periodo_id_periodo = a.periodo_id_periodo
+        ) THEN 1 ELSE 0 END                                                       AS tiene_credito
     FROM aviso    a
     INNER JOIN socio   s ON s.id_socio   = a.socio_id_socio
     INNER JOIN ruta    r ON r.id_ruta    = s.ruta_id_ruta
@@ -262,8 +238,7 @@ BEGIN
         SELECT @nombre_estado = estado FROM estado WHERE id_estado = @id_estado;
 
         UPDATE aviso
-        SET estado_id_estado = @id_estado,
-            estado           = @nombre_estado
+        SET estado_id_estado = @id_estado
         WHERE id_aviso = @id_aviso;
 
         SET @Resultado = 1;
@@ -293,7 +268,7 @@ BEGIN
         a.total_consumo,
         a.total_aviso,
         a.deuda_actual,
-        a.estado,
+        e.estado  AS estado,
         a.estado_id_estado,
         e.estado  AS nombre_estado,
         p.periodo AS nombre_periodo
@@ -322,7 +297,10 @@ BEGIN
 
     BEGIN TRY
         DECLARE @estado_actual VARCHAR(150);
-        SELECT @estado_actual = estado FROM aviso WHERE id_aviso = @id_aviso;
+        SELECT @estado_actual = e.estado 
+        FROM aviso a
+        INNER JOIN estado e ON e.id_estado = a.estado_id_estado
+        WHERE a.id_aviso = @id_aviso;
 
         IF @estado_actual IS NULL
         BEGIN
@@ -346,8 +324,7 @@ BEGIN
         SELECT @id_estado_anulado = id_estado FROM estado WHERE estado = 'ANULADO';
 
         UPDATE aviso
-        SET estado           = 'ANULADO',
-            estado_id_estado = @id_estado_anulado
+        SET estado_id_estado = @id_estado_anulado
         WHERE id_aviso = @id_aviso;
 
         SET @Resultado = 1;
@@ -379,7 +356,7 @@ BEGIN
         a.total_consumo,
         a.total_aviso,
         a.deuda_actual,
-        a.estado,
+        e.estado        AS estado,
         -- Socio
         s.nombre_socio,
         s.codigo_fijo,
@@ -398,9 +375,10 @@ BEGIN
         t.monto_minimo,
         t.consumo_minimo_m3,
         t.precio_m3,
-        -- Suma de cargos extra estampados en este aviso (1:N)
+        -- Suma de cargos extra del socio en el periodo (1:N)
         ISNULL((SELECT SUM(ce.monto) FROM cargo_extra ce
-                WHERE ce.aviso_id_aviso = a.id_aviso), 0) AS total_cargos,
+                WHERE ce.socio_id_socio = a.socio_id_socio
+                  AND ce.periodo_id_periodo = a.periodo_id_periodo), 0) AS total_cargos,
         -- Cuota de credito de inscripcion (0..1)
         ci.monto_pago   AS monto_credito
     FROM aviso a
@@ -412,20 +390,26 @@ BEGIN
     INNER JOIN medidor   m  ON m.id_medidor             = l.medidor_id_medidor
     INNER JOIN rol_socio rs ON rs.id_rol_socio          = s.rol_socio_id_rol_socio
     INNER JOIN tarifa    t  ON t.rol_socio_id_rol_socio = s.rol_socio_id_rol_socio
-    LEFT  JOIN credito_inscripcion ci ON ci.aviso_id_aviso = a.id_aviso
+    LEFT  JOIN credito_inscripcion ci 
+        ON ci.socio_id_socio = a.socio_id_socio
+       AND ci.periodo_id_periodo = a.periodo_id_periodo
     WHERE a.id_aviso = @id_aviso;
 
     -- 2) Lista de cargos extra del aviso (N filas)
+    DECLARE @socio_id INT, @periodo_id INT;
+    SELECT @socio_id = socio_id_socio, @periodo_id = periodo_id_periodo FROM aviso WHERE id_aviso = @id_aviso;
+
     SELECT
-        ce.id_carga_extra,
+        ce.id_cargo_extra,
         ce.monto,
         ce.descripcion,
         ce.fecha_registro,
         tc.nombre AS nombre_tipo_cargo
     FROM cargo_extra ce
     INNER JOIN tipo_cargo tc ON tc.id_tipo = ce.tipo_cargo_id_tipo
-    WHERE ce.aviso_id_aviso = @id_aviso
-    ORDER BY ce.id_carga_extra;
+    WHERE ce.socio_id_socio = @socio_id
+      AND ce.periodo_id_periodo = @periodo_id
+    ORDER BY ce.id_cargo_extra;
 END
 GO
 

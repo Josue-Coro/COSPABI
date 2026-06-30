@@ -18,6 +18,13 @@ namespace CapaPresentacionAdmin.Controllers
         {
             return View();
         }
+        [ValidarPermisos(NombrePermiso = "Gestionar Pago")]
+        public ActionResult ImprimirRecibo(int idPago)
+        {
+            var recibo = cnPago.ObtenerReciboPago(idPago);
+            if (recibo == null) return RedirectToAction("Pago");
+            return View(recibo);
+        }
 
         // Caja abierta del cajero + metodos de pago
         [HttpGet]
@@ -67,8 +74,8 @@ namespace CapaPresentacionAdmin.Controllers
 
                 string cajero = (u.nombre + " " + u.apellido).Trim();
                 bool ok = cnPago.RegistrarPago(idAviso, caja.id_caja, idMetodoPago, montoRecibido,
-                                               u.id_usuario_admin, cajero, out string Mensaje);
-                return Json(new { exito = ok, mensaje = Mensaje });
+                                               u.id_usuario_admin, cajero, out int idPago, out string Mensaje);
+                return Json(new { exito = ok, mensaje = Mensaje, idPago = idPago });
             }
             catch (Exception ex)
             {

@@ -1,3 +1,4 @@
+USE [COSPABIRL1]
 IF NOT EXISTS (SELECT 1 FROM estado WHERE estado = 'GENERADO')
     INSERT INTO estado (estado) VALUES ('GENERADO');   -- id 1
 IF NOT EXISTS (SELECT 1 FROM estado WHERE estado = 'LECTURADO')

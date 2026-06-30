@@ -1,3 +1,6 @@
+USE [COSPABIRL1]
+GO
+    
 CREATE PROCEDURE [dbo].[sp_listar_medidores]
 (
     @Busqueda     VARCHAR(250) = '',

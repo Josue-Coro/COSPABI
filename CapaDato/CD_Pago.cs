@@ -47,9 +47,10 @@ namespace CapaDato
         }
 
         public bool RegistrarPago(int idAviso, int idCaja, int idMetodoPago, decimal? montoRecibido,
-                                  string cajero, out string Mensaje)
+                                  string cajero, out int idPago, out string Mensaje)
         {
             bool ok = false;
+            idPago = 0;
             Mensaje = string.Empty;
             try
             {
@@ -66,11 +67,12 @@ namespace CapaDato
                     cmd.Parameters.Add("@Mensaje",   SqlDbType.NVarChar, 500).Direction = ParameterDirection.Output;
                     cn.Open();
                     cmd.ExecuteNonQuery();
-                    ok      = Convert.ToInt32(cmd.Parameters["@Resultado"].Value) == 1;
+                    idPago  = Convert.ToInt32(cmd.Parameters["@Resultado"].Value);
+                    ok      = idPago > 0;
                     Mensaje = cmd.Parameters["@Mensaje"].Value.ToString();
                 }
             }
-            catch (Exception ex) { ok = false; Mensaje = ex.Message; }
+            catch (Exception ex) { ok = false; idPago = 0; Mensaje = ex.Message; }
             return ok;
         }
 
@@ -106,6 +108,60 @@ namespace CapaDato
             }
             catch { lista = null; }
             return lista;
+        }
+
+        public CM_ReciboPago ObtenerReciboPago(int idPago)
+        {
+            CM_ReciboPago recibo = null;
+            try
+            {
+                using (SqlConnection cn = new SqlConnection(CD_Conexion.cn))
+                {
+                    SqlCommand cmd = new SqlCommand("dbo.sp_recibo_pago_aviso", cn);
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.Parameters.AddWithValue("@id_pago", idPago);
+                    cn.Open();
+                    
+                    using (SqlDataReader dr = cmd.ExecuteReader())
+                    {
+                        if (dr.Read())
+                        {
+                            recibo = new CM_ReciboPago
+                            {
+                                id_pago = Convert.ToInt32(dr["id_pago"]),
+                                fecha_pago = Convert.ToDateTime(dr["fecha_pago"]),
+                                nombre_socio = dr["nombre_socio"].ToString(),
+                                codigo_fijo = dr["codigo_fijo"] == DBNull.Value ? (int?)null : Convert.ToInt32(dr["codigo_fijo"]),
+                                nombre_periodo = dr["nombre_periodo"].ToString(),
+                                consumo = dr["consumo"] == DBNull.Value ? (decimal?)null : Convert.ToDecimal(dr["consumo"]),
+                                total_consumo = Convert.ToDecimal(dr["total_consumo"]),
+                                total_pagado = Convert.ToDecimal(dr["total_pagado"]),
+                                vuelto = dr["vuelto"] == DBNull.Value ? (decimal?)null : Convert.ToDecimal(dr["vuelto"]),
+                                cajero = dr["cajero"].ToString(),
+                                metodo_pago = dr["metodo_pago"].ToString(),
+                                categoria = dr["categoria"].ToString(),
+                                nombre_ruta = dr["nombre_ruta"].ToString(),
+                                ubicacion = dr["ubicacion"].ToString(),
+                                Detalles = new List<CM_ReciboPagoDetalle>()
+                            };
+                        }
+                        
+                        if (recibo != null && dr.NextResult())
+                        {
+                            while (dr.Read())
+                            {
+                                recibo.Detalles.Add(new CM_ReciboPagoDetalle
+                                {
+                                    concepto = dr["concepto"].ToString(),
+                                    subtotal = Convert.ToDecimal(dr["subtotal"])
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+            catch { recibo = null; }
+            return recibo;
         }
     }
 }

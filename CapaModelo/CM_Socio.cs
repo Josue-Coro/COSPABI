@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -42,7 +42,7 @@ namespace CapaModelo
         public string NombreRolSocio { get; set; }
 
         // FK Medidor
-        public int medidor_id_medidor { get; set; }
+        public int? medidor_id_medidor { get; set; }
         public CM_Medidor medidor { get; set; }
         public string num_serie_medidor { get; set; }
 
@@ -61,6 +61,7 @@ namespace CapaModelo
         public string categoria { get; set; }
         public DateTime fecha_registro { get; set; }
         public int codigo_fijo { get; set; }
+        public bool estado { get; set; }
 
         // ── Inscripción (solo para el alta de socio; no son columnas de la tabla socio) ──
         public decimal monto_inicial  { get; set; }

@@ -95,7 +95,7 @@ CREATE OR ALTER PROCEDURE dbo.sp_registrar_lectura
     @usuario_admin_id_usuario_admin INT,
     @medidor_id_medidor             INT,
     @periodo_id_periodo             INT,
-    @ruta_id_ruta                   INT,
+    @ruta_id_ruta                   INT          = NULL, -- Se mantiene en firma por compatibilidad C#
     @Resultado                      INT          OUTPUT,
     @Mensaje                        VARCHAR(500) OUTPUT
 AS
@@ -143,13 +143,13 @@ BEGIN
             fecha_lectura, lectura_anterior, lectura_actual,
             dias_lectura, observacion, consumo_m3,
             usuario_admin_id_usuario_admin,
-            medidor_id_medidor, periodo_id_periodo, ruta_id_ruta
+            medidor_id_medidor, periodo_id_periodo
         )
         VALUES (
             @fecha_lectura, @lectura_anterior, @lectura_actual,
             @dias_lectura, @observacion, @consumo_m3,
             @usuario_admin_id_usuario_admin,
-            @medidor_id_medidor, @periodo_id_periodo, @ruta_id_ruta
+            @medidor_id_medidor, @periodo_id_periodo
         );
 
         SET @Resultado = SCOPE_IDENTITY();
@@ -197,11 +197,11 @@ BEGIN
     INNER JOIN medidor       m ON m.id_medidor        = l.medidor_id_medidor
     INNER JOIN socio         s ON s.medidor_id_medidor = m.id_medidor
     INNER JOIN periodo       p ON p.id_periodo        = l.periodo_id_periodo
-    INNER JOIN ruta          r ON r.id_ruta           = l.ruta_id_ruta
+    INNER JOIN ruta          r ON r.id_ruta           = s.ruta_id_ruta
     INNER JOIN usuario_admin u ON u.id_usuario_admin  = l.usuario_admin_id_usuario_admin
     WHERE
         (@id_periodo IS NULL OR l.periodo_id_periodo = @id_periodo)
-        AND (@id_ruta IS NULL OR l.ruta_id_ruta = @id_ruta)
+        AND (@id_ruta IS NULL OR s.ruta_id_ruta = @id_ruta)
         AND (
             @Busqueda = ''
             OR s.nombre_socio LIKE '%' + @Busqueda + '%'
@@ -218,7 +218,7 @@ BEGIN
     INNER JOIN socio   s ON s.medidor_id_medidor = m.id_medidor
     WHERE
         (@id_periodo IS NULL OR l.periodo_id_periodo = @id_periodo)
-        AND (@id_ruta IS NULL OR l.ruta_id_ruta = @id_ruta)
+        AND (@id_ruta IS NULL OR s.ruta_id_ruta = @id_ruta)
         AND (
             @Busqueda = ''
             OR s.nombre_socio LIKE '%' + @Busqueda + '%'

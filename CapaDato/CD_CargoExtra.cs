@@ -61,7 +61,7 @@ namespace CapaDato
                     {
                         resultado.Cargos.Add(new CM_CargoExtra
                         {
-                            id_carga_extra     = Convert.ToInt32(dr["id_carga_extra"]),
+                            id_cargo_extra     = Convert.ToInt32(dr["id_cargo_extra"]),
                             monto              = Convert.ToDecimal(dr["monto"]),
                             descripcion        = dr["descripcion"].ToString(),
                             fecha_registro     = Convert.ToDateTime(dr["fecha_registro"]),
@@ -126,7 +126,7 @@ namespace CapaDato
                 {
                     SqlCommand cmd = new SqlCommand("dbo.sp_anular_cargo_extra", cn);
                     cmd.CommandType = CommandType.StoredProcedure;
-                    cmd.Parameters.AddWithValue("@id_carga_extra", idCargo);
+                    cmd.Parameters.AddWithValue("@id_cargo_extra", idCargo);
                     cmd.Parameters.Add("@Resultado", SqlDbType.Int).Direction          = ParameterDirection.Output;
                     cmd.Parameters.Add("@Mensaje",   SqlDbType.VarChar, 500).Direction = ParameterDirection.Output;
                     cn.Open();

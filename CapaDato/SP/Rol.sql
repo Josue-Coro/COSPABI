@@ -1,4 +1,5 @@
-USE [COSPABI]
+
+USE [COSPABIRL1]
 GO
 
 SELECT [id_rol]

@@ -1,7 +1,9 @@
+USE [COSPABIRL1]
+GO
 -- =============================================
 -- SP_Socio_Listar (con paginación y búsqueda)
 -- =============================================
-CREATE PROCEDURE sp_listar_socio
+CREATE OR ALTER PROCEDURE sp_listar_socio
     @Busqueda     NVARCHAR(255) = '',
     @Pagina       INT           = 1,
     @TamanoPagina INT           = 10
@@ -31,11 +33,12 @@ BEGIN
         s.actividad,
         s.categoria,
         s.fecha_registro,
-        s.codigo_fijo
+        s.codigo_fijo,
+        s.estado
     FROM socio s
     INNER JOIN cliente      c  ON c.id_cliente      = s.cliente_id_cliente
     INNER JOIN rol_socio    rs ON rs.id_rol_socio   = s.rol_socio_id_rol_socio
-    INNER JOIN medidor      m  ON m.id_medidor      = s.medidor_id_medidor
+    LEFT JOIN  medidor      m  ON m.id_medidor      = s.medidor_id_medidor
     INNER JOIN ruta         r  ON r.id_ruta         = s.ruta_id_ruta
     WHERE
         s.nombre_socio     LIKE '%' + @Busqueda + '%'
@@ -50,7 +53,7 @@ BEGIN
     SELECT COUNT(*) AS TotalRegistros
     FROM socio s
     INNER JOIN cliente c ON c.id_cliente = s.cliente_id_cliente
-    INNER JOIN medidor  m ON m.id_medidor  = s.medidor_id_medidor
+    LEFT JOIN  medidor  m ON m.id_medidor  = s.medidor_id_medidor
     WHERE
         s.nombre_socio       LIKE '%' + @Busqueda + '%'
         OR c.nombre_completo LIKE '%' + @Busqueda + '%'
@@ -63,12 +66,12 @@ GO
 -- =============================================
 -- SP_Socio_Registrar
 -- =============================================
-CREATE PROCEDURE sp_registrar_socio
+CREATE OR ALTER PROCEDURE sp_registrar_socio
     @nombre_socio            VARCHAR(255),
     @cliente_id_cliente      INT,
     @rol_socio_id_rol_socio  INT,
     @ubicacion               INT           = NULL,
-    @medidor_id_medidor      INT,
+    @medidor_id_medidor      INT           = NULL,
     @num_casa                INT           = NULL,
     @num_ocupantes           INT           = NULL,
     @tipo_instalacion        VARCHAR(255)  = NULL,
@@ -78,6 +81,7 @@ CREATE PROCEDURE sp_registrar_socio
     @fecha_registro          DATE,
     @ruta_id_ruta            INT,
     @codigo_fijo             INT,
+    @estado                  BIT           = 1,
     @Resultado               INT OUTPUT,
     @Mensaje                 NVARCHAR(500) OUTPUT
 AS
@@ -92,8 +96,8 @@ BEGIN
             RETURN;
         END
 
-        -- Validar que el medidor no esté ya asignado a otro socio
-        IF EXISTS (SELECT 1 FROM socio WHERE medidor_id_medidor = @medidor_id_medidor)
+        -- Validar que el medidor no esté ya asignado a otro socio (solo si no es NULL)
+        IF @medidor_id_medidor IS NOT NULL AND EXISTS (SELECT 1 FROM socio WHERE medidor_id_medidor = @medidor_id_medidor)
         BEGIN
             SET @Resultado = 0;
             SET @Mensaje = 'El medidor seleccionado ya está asignado a otro socio.';
@@ -112,13 +116,13 @@ BEGIN
             nombre_socio, cliente_id_cliente, rol_socio_id_rol_socio,
             ubicacion, medidor_id_medidor, num_casa, num_ocupantes,
             tipo_instalacion, dim_instalacion, actividad, categoria,
-            fecha_registro, ruta_id_ruta, codigo_fijo
+            fecha_registro, ruta_id_ruta, codigo_fijo, estado
         )
         VALUES (
             @nombre_socio, @cliente_id_cliente, @rol_socio_id_rol_socio,
             @ubicacion, @medidor_id_medidor, @num_casa, @num_ocupantes,
             @tipo_instalacion, @dim_instalacion, @actividad, @categoria,
-            @fecha_registro, @ruta_id_ruta, @codigo_fijo
+            @fecha_registro, @ruta_id_ruta, @codigo_fijo, @estado
         );
 
         SET @Resultado = SCOPE_IDENTITY();
@@ -134,13 +138,13 @@ GO
 -- =============================================
 -- SP_Socio_Editar
 -- =============================================
-CREATE PROCEDURE sp_editar_socio
+CREATE OR ALTER PROCEDURE sp_editar_socio
     @id_socio                INT,
     @nombre_socio            VARCHAR(255),
     @cliente_id_cliente      INT,
     @rol_socio_id_rol_socio  INT,
     @ubicacion               INT           = NULL,
-    @medidor_id_medidor      INT,
+    @medidor_id_medidor      INT           = NULL,
     @num_casa                INT           = NULL,
     @num_ocupantes           INT           = NULL,
     @tipo_instalacion        VARCHAR(255)  = NULL,
@@ -150,6 +154,7 @@ CREATE PROCEDURE sp_editar_socio
     @fecha_registro          DATE,
     @ruta_id_ruta            INT,
     @codigo_fijo             INT,
+    @estado                  BIT           = 1,
     @Resultado               INT OUTPUT,
     @Mensaje                 NVARCHAR(500) OUTPUT
 AS
@@ -163,8 +168,8 @@ BEGIN
             RETURN;
         END
 
-        -- Validar medidor no asignado a OTRO socio
-        IF EXISTS (
+        -- Validar medidor no asignado a OTRO socio (solo si no es NULL)
+        IF @medidor_id_medidor IS NOT NULL AND EXISTS (
             SELECT 1 FROM socio 
             WHERE medidor_id_medidor = @medidor_id_medidor 
               AND id_socio <> @id_socio
@@ -201,7 +206,8 @@ BEGIN
             categoria              = @categoria,
             fecha_registro         = @fecha_registro,
             ruta_id_ruta           = @ruta_id_ruta,
-            codigo_fijo            = @codigo_fijo
+            codigo_fijo            = @codigo_fijo,
+            estado                 = @estado
         WHERE id_socio = @id_socio;
 
         SET @Resultado = 1;
@@ -217,7 +223,7 @@ GO
 -- =============================================
 -- SP_Socio_Eliminar
 -- =============================================
-CREATE PROCEDURE SP_Socio_Eliminar
+CREATE OR ALTER PROCEDURE SP_Socio_Eliminar
     @id_socio  INT,
     @Resultado INT OUTPUT,
     @Mensaje   NVARCHAR(500) OUTPUT
@@ -256,7 +262,7 @@ GO
 -- =============================================
 -- SP_Socio_ObtenerPorId
 -- =============================================
-CREATE PROCEDURE SP_Socio_ObtenerPorId
+CREATE OR ALTER PROCEDURE SP_Socio_ObtenerPorId
     @id_socio INT
 AS
 BEGIN
@@ -281,11 +287,12 @@ BEGIN
         s.actividad,
         s.categoria,
         s.fecha_registro,
-        s.codigo_fijo
+        s.codigo_fijo,
+        s.estado
     FROM socio s
     INNER JOIN cliente      c  ON c.id_cliente      = s.cliente_id_cliente
     INNER JOIN rol_socio    rs ON rs.id_rol_socio   = s.rol_socio_id_rol_socio
-    INNER JOIN medidor      m  ON m.id_medidor      = s.medidor_id_medidor
+    LEFT JOIN  medidor      m  ON m.id_medidor      = s.medidor_id_medidor
     INNER JOIN ruta         r  ON r.id_ruta         = s.ruta_id_ruta
     WHERE s.id_socio = @id_socio;
 END

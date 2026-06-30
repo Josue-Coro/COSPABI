@@ -1,0 +1,248 @@
+@using CapaModelo
+@{
+    Layout = null;
+    var arqueo = (CM_CajaArqueo)ViewBag.Arqueo;
+    var pagos = (List<CM_Pago>)ViewBag.Pagos;
+    var usuario = (CM_Usuario_Activo)Session["Usuario"];
+}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Reporte de Caja #@arqueo.id_caja - COSPABI R.L.</title>
+    
+    <!-- Tailwind CSS compilado localmente -->
+    <link href="@Url.Content("~/Content/app.css")" rel="stylesheet" />
+    
+    <!-- Google Font: Outfit para un estilo premium -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Outfit', sans-serif;
+        }
+        .font-mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        @@media print {
+            body {
+                background: white;
+                color: black;
+                font-size: 12px;
+                padding: 0;
+                margin: 0;
+            }
+            .no-print {
+                display: none !important;
+            }
+            .print-border {
+                border-width: 1px !important;
+                border-color: #d1d5db !important;
+            }
+            .page-break {
+                page-break-after: always;
+            }
+            /* Ocultar encabezados y pies de página por defecto del navegador */
+            @@page {
+                size: portrait;
+                margin: 1.5cm;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 antialiased min-h-screen">
+    
+    <!-- Barra de acciones flotante (solo en pantalla) -->
+    <div class="no-print bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between sticky top-0 z-50 shadow-sm">
+        <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-blue-600 animate-pulse"></span>
+            <span class="text-sm font-semibold text-gray-700">Vista de impresión de Reporte</span>
+        </div>
+        <div class="flex items-center gap-3">
+            <button onclick="window.close()" class="px-4 py-2 border border-gray-300 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 transition">
+                Cerrar Pestaña
+            </button>
+            <button onclick="window.print()" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold shadow-sm transition">
+                Imprimir / Guardar PDF
+            </button>
+        </div>
+    </div>
+
+    <!-- Contenedor del Reporte (Centrado en pantalla, ancho completo al imprimir) -->
+    <div class="max-w-4xl mx-auto p-8 my-6 bg-white rounded-2xl border border-gray-200 shadow-sm print:border-0 print:shadow-none print:my-0 print:p-0">
+        
+        <!-- CABECERA -->
+        <div class="flex justify-between items-start border-b border-gray-200 pb-6 mb-6">
+            <div>
+                <h1 class="text-3xl font-extrabold tracking-tight text-blue-900">COSPABI R.L.</h1>
+                <p class="text-xs uppercase tracking-widest text-gray-400 font-bold mt-1">Cooperativa de Agua y Alcantarillado</p>
+                <p class="text-xs text-gray-500 mt-1">Santa Cruz - Bolivia</p>
+            </div>
+            <div class="text-right">
+                <span class="inline-block px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-semibold uppercase tracking-wider mb-2">
+                    Reporte de Caja
+                </span>
+                <p class="text-xl font-bold text-gray-800">Nº @arqueo.id_caja</p>
+                <p class="text-xs text-gray-500 mt-1">Cajero: @(usuario != null ? $"{usuario.nombre} {usuario.apellido}" : "Sistema")</p>
+            </div>
+        </div>
+
+        <!-- METADATOS DE CAJA -->
+        <div class="grid grid-cols-2 gap-4 mb-6 bg-gray-50 p-4 rounded-xl print:bg-transparent print:border print:border-gray-200">
+            <div>
+                <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider block">Fecha Apertura</span>
+                <span class="text-sm font-medium text-gray-700">@arqueo.hora_apertura.ToString("dd/MM/yyyy HH:mm")</span>
+            </div>
+            <div>
+                <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider block">Fecha Cierre</span>
+                <span class="text-sm font-medium text-gray-700">
+                    @(arqueo.hora_cierre.HasValue ? arqueo.hora_cierre.Value.ToString("dd/MM/yyyy HH:mm") : "Caja Abierta (Arqueo Parcial)")
+                </span>
+            </div>
+            <div>
+                <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider block">Usuario Responsable</span>
+                <span class="text-sm font-medium text-gray-700">@(usuario != null ? $"{usuario.nombre} {usuario.apellido}" : "-") (@(usuario != null ? usuario.nombre_rol : "-"))</span>
+            </div>
+            <div>
+                <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider block">Estado de Caja</span>
+                <span class="text-sm font-semibold @(arqueo.estado ? "text-green-600" : "text-gray-600")">
+                    @(arqueo.estado ? "ABIERTA / ACTIVA" : "CERRADA")
+                </span>
+            </div>
+        </div>
+
+        <!-- BALANCE FINANCIERO -->
+        <div class="grid grid-cols-3 gap-4 mb-6">
+            <div class="border border-gray-200 p-4 rounded-xl text-center print:border-gray-300">
+                <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider block mb-1">Fondo de Apertura</span>
+                <span class="text-xl font-bold font-mono text-gray-800">Bs. @arqueo.monto_apertura.ToString("N2")</span>
+            </div>
+            <div class="border border-green-200 bg-green-50/20 p-4 rounded-xl text-center print:border-gray-300 print:bg-transparent">
+                <span class="text-xs font-semibold text-green-700 uppercase tracking-wider block mb-1 print:text-gray-400">Total Recaudado</span>
+                <span class="text-xl font-bold font-mono text-green-700 print:text-gray-800">Bs. @arqueo.total_cobrado.ToString("N2")</span>
+            </div>
+            <div class="border border-blue-200 bg-blue-50/20 p-4 rounded-xl text-center print:border-gray-300 print:bg-transparent">
+                <span class="text-xs font-semibold text-blue-700 uppercase tracking-wider block mb-1 print:text-gray-400">Efectivo en Cajón</span>
+                <span class="text-xl font-bold font-mono text-blue-700 print:text-gray-800">
+                    Bs. @((arqueo.monto_apertura + arqueo.efectivo_cobrado).ToString("N2"))
+                </span>
+            </div>
+        </div>
+
+        <!-- RECAUDACION POR MEDIO DE PAGO -->
+        <div class="mb-6">
+            <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-2">Resumen por Método de Pago</h2>
+            <div class="border border-gray-200 rounded-xl overflow-hidden print:border-gray-300">
+                <table class="w-full text-sm">
+                    <thead class="bg-gray-50 border-b border-gray-200 print:bg-transparent">
+                        <tr>
+                            <th class="px-4 py-2 text-left font-semibold text-gray-600">Método de Pago</th>
+                            <th class="px-4 py-2 text-center font-semibold text-gray-600">Transacciones</th>
+                            <th class="px-4 py-2 text-right font-semibold text-gray-600">Total Recaudado</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200">
+                        @if (arqueo.porMetodo != null && arqueo.porMetodo.Count > 0)
+                        {
+                            foreach (var m in arqueo.porMetodo)
+                            {
+                                <tr>
+                                    <td class="px-4 py-2 text-gray-700 font-medium">@m.metodo</td>
+                                    <td class="px-4 py-2 text-center text-gray-600 font-mono">@m.cantidad</td>
+                                    <td class="px-4 py-2 text-right font-mono font-medium text-gray-800">Bs. @m.total.ToString("N2")</td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="3" class="px-4 py-3 text-center text-gray-400">No se registraron transacciones en esta caja.</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- DETALLE DE TRANSACCIONES -->
+        <div class="mb-8">
+            <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-2">Libro Diario de Caja (Transacciones)</h2>
+            <div class="border border-gray-200 rounded-xl overflow-hidden print:border-gray-300">
+                <table class="w-full text-xs">
+                    <thead class="bg-gray-50 border-b border-gray-200 print:bg-transparent">
+                        <tr>
+                            <th class="px-3 py-2 text-left font-semibold text-gray-600">ID</th>
+                            <th class="px-3 py-2 text-left font-semibold text-gray-600">Hora</th>
+                            <th class="px-3 py-2 text-left font-semibold text-gray-600">Socio</th>
+                            <th class="px-3 py-2 text-center font-semibold text-gray-600">Cod. Fijo</th>
+                            <th class="px-3 py-2 text-left font-semibold text-gray-600">Concepto</th>
+                            <th class="px-3 py-2 text-left font-semibold text-gray-600">Método</th>
+                            <th class="px-3 py-2 text-right font-semibold text-gray-600">Monto</th>
+                            <th class="px-3 py-2 text-right font-semibold text-gray-600">Vuelto</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200">
+                        @if (pagos != null && pagos.Count > 0)
+                        {
+                            foreach (var p in pagos)
+                            {
+                                <tr>
+                                    <td class="px-3 py-2 text-gray-400 font-mono">@p.id_pago</td>
+                                    <td class="px-3 py-2 text-gray-600 font-mono">@p.fecha_pago.ToString("HH:mm")</td>
+                                    <td class="px-3 py-2 text-gray-700 font-medium max-w-[150px] truncate">
+                                        @(string.IsNullOrEmpty(p.nombre_socio) ? "Registro Socio Nuevo" : p.nombre_socio)
+                                    </td>
+                                    <td class="px-3 py-2 text-center text-gray-600 font-mono">@(p.codigo_fijo.HasValue ? p.codigo_fijo.Value.ToString() : "-")</td>
+                                    <td class="px-3 py-2 text-gray-500 font-medium">
+                                        @(p.aviso_id_aviso.HasValue ? $"Aviso #{p.aviso_id_aviso.Value}" : "Inscripción")
+                                    </td>
+                                    <td class="px-3 py-2 text-gray-600">@p.nombre_metodo</td>
+                                    <td class="px-3 py-2 text-right font-mono font-medium text-gray-800">Bs. @p.monto_pagado.ToString("N2")</td>
+                                    <td class="px-3 py-2 text-right font-mono text-gray-500">
+                                        @(p.vuelto.HasValue && p.vuelto.Value > 0 ? "Bs. " + p.vuelto.Value.ToString("N2") : "-")
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="8" class="px-3 py-4 text-center text-gray-400">Sin movimientos.</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- SECCION FIRMAS (solo al imprimir) -->
+        <div class="mt-16 pt-8 border-t border-dashed border-gray-300 grid grid-cols-2 gap-16 text-center">
+            <div class="flex flex-col items-center">
+                <div class="w-48 border-b border-gray-400 mb-2"></div>
+                <span class="text-xs font-semibold text-gray-700">Firma del Cajero</span>
+                <span class="text-[10px] text-gray-400">@(usuario != null ? $"{usuario.nombre} {usuario.apellido}" : "Responsable")</span>
+            </div>
+            <div class="flex flex-col items-center">
+                <div class="w-48 border-b border-gray-400 mb-2"></div>
+                <span class="text-xs font-semibold text-gray-700">Firma Supervisor</span>
+                <span class="text-[10px] text-gray-400">Administración de Caja</span>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Script para auto-activar la impresion -->
+    <script>
+        window.onload = function () {
+            // Un pequeño delay para permitir que las fuentes y estilos carguen bien
+            setTimeout(function () {
+                window.print();
+            }, 300);
+        };
+    </script>
+</body>
+</html>

@@ -1,4 +1,4 @@
-﻿using CapaDato;
+using CapaDato;
 using CapaModelo;
 using System;
 using System.Collections.Generic;
@@ -38,10 +38,9 @@ namespace CapaNegocio
                 Mensaje = "Debe seleccionar un cliente.";
                 return 0;
             }
-            if (socio.medidor_id_medidor <= 0)
+            if (socio.medidor_id_medidor.HasValue && socio.medidor_id_medidor.Value <= 0)
             {
-                Mensaje = "Debe seleccionar un medidor.";
-                return 0;
+                socio.medidor_id_medidor = null;
             }
             if (socio.ruta_id_ruta <= 0)
             {
@@ -102,10 +101,9 @@ namespace CapaNegocio
                 Mensaje = "El nombre del socio es obligatorio.";
                 return false;
             }
-            if (socio.medidor_id_medidor <= 0)
+            if (socio.medidor_id_medidor.HasValue && socio.medidor_id_medidor.Value <= 0)
             {
-                Mensaje = "Debe seleccionar un medidor.";
-                return false;
+                socio.medidor_id_medidor = null;
             }
             if (socio.ruta_id_ruta <= 0)
             {

@@ -5,7 +5,7 @@ namespace CapaModelo
 {
     public class CM_CargoExtra
     {
-        public int      id_carga_extra      { get; set; }
+        public int      id_cargo_extra      { get; set; }
         public decimal  monto               { get; set; }
         public string   descripcion         { get; set; }
         public DateTime fecha_registro      { get; set; }

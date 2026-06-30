@@ -1,3 +1,4 @@
+USE [COSPABIRL1]
 -- Listar rutas
 CREATE PROCEDURE [dbo].[sp_listar_rutas]
 AS

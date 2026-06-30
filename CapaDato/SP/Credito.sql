@@ -18,7 +18,7 @@ CREATE OR ALTER PROCEDURE dbo.sp_registrar_socio_con_inscripcion
     @cliente_id_cliente      INT,
     @rol_socio_id_rol_socio  INT,
     @ubicacion               INT           = NULL,
-    @medidor_id_medidor      INT,
+    @medidor_id_medidor      INT           = NULL,
     @num_casa                INT           = NULL,
     @num_ocupantes           INT           = NULL,
     @tipo_instalacion        VARCHAR(255)  = NULL,
@@ -51,7 +51,7 @@ BEGIN
         IF NOT EXISTS (SELECT 1 FROM cliente WHERE id_cliente = @cliente_id_cliente)
         BEGIN SET @Mensaje = 'El cliente seleccionado no existe.'; RETURN; END
 
-        IF EXISTS (SELECT 1 FROM socio WHERE medidor_id_medidor = @medidor_id_medidor)
+        IF @medidor_id_medidor IS NOT NULL AND EXISTS (SELECT 1 FROM socio WHERE medidor_id_medidor = @medidor_id_medidor)
         BEGIN SET @Mensaje = 'El medidor seleccionado ya está asignado a otro socio.'; RETURN; END
 
         IF EXISTS (SELECT 1 FROM socio WHERE codigo_fijo = @codigo_fijo)
@@ -108,19 +108,19 @@ BEGIN
             nombre_socio, cliente_id_cliente, rol_socio_id_rol_socio,
             ubicacion, medidor_id_medidor, num_casa, num_ocupantes,
             tipo_instalacion, dim_instalacion, actividad, categoria,
-            fecha_registro, ruta_id_ruta, codigo_fijo
+            fecha_registro, ruta_id_ruta, codigo_fijo, estado
         )
         VALUES (
             @nombre_socio, @cliente_id_cliente, @rol_socio_id_rol_socio,
             @ubicacion, @medidor_id_medidor, @num_casa, @num_ocupantes,
             @tipo_instalacion, @dim_instalacion, @actividad, @categoria,
-            @fecha_registro, @ruta_id_ruta, @codigo_fijo
+            @fecha_registro, @ruta_id_ruta, @codigo_fijo, 1
         );
         DECLARE @id_socio INT = SCOPE_IDENTITY();
 
         -- 2) Cuota inicial: CANCELADO, en el periodo de registro
-        INSERT INTO credito_inscripcion (monto_pago, estado, num_cuota, socio_id_socio, periodo_id_periodo, aviso_id_aviso)
-        VALUES (@monto_inicial, 'CANCELADO', 1, @id_socio, @id_periodo_reg, NULL);
+        INSERT INTO credito_inscripcion (monto_pago, estado, num_cuota, socio_id_socio, periodo_id_periodo)
+        VALUES (@monto_inicial, 'CANCELADO', 1, @id_socio, @id_periodo_reg);
 
         -- 3) Registrar el pago inicial (sin aviso, en la caja abierta). Efectivo -> APROBADO.
         INSERT INTO pago (fecha_pago, monto_pagado, cajero, estado_pago, aviso_id_aviso, metodo_pago_id_metodo_pago, vuelto, caja_id_caja)
@@ -147,8 +147,8 @@ BEGIN
                 SET @montoCuota = @base;
                 IF @i = @num_cuotas SET @montoCuota = @base + @resto;   -- la ultima absorbe el resto
 
-                INSERT INTO credito_inscripcion (monto_pago, estado, num_cuota, socio_id_socio, periodo_id_periodo, aviso_id_aviso)
-                VALUES (@montoCuota, 'PENDIENTE', @i, @id_socio, @idPer, NULL);
+                INSERT INTO credito_inscripcion (monto_pago, estado, num_cuota, socio_id_socio, periodo_id_periodo)
+                VALUES (@montoCuota, 'PENDIENTE', @i, @id_socio, @idPer);
 
                 SET @i = @i + 1;
             END
@@ -237,10 +237,17 @@ BEGIN
         p.periodo                                                AS nombre_periodo,
         ci.monto_pago,
         ci.estado,
-        CASE WHEN ci.aviso_id_aviso IS NOT NULL THEN 1 ELSE 0 END AS en_aviso,
-        ci.aviso_id_aviso
+        CASE WHEN av.id_aviso IS NOT NULL THEN 1 ELSE 0 END      AS en_aviso,
+        av.id_aviso                                              AS aviso_id_aviso
     FROM credito_inscripcion ci
     INNER JOIN periodo p ON p.id_periodo = ci.periodo_id_periodo
+    OUTER APPLY (
+        SELECT TOP 1 a.id_aviso
+        FROM aviso a
+        WHERE a.socio_id_socio = ci.socio_id_socio
+          AND a.periodo_id_periodo = ci.periodo_id_periodo
+          AND a.estado_id_estado <> (SELECT id_estado FROM estado WHERE estado = 'ANULADO')
+    ) av
     WHERE ci.socio_id_socio = @id_socio
     ORDER BY ci.num_cuota;
 END

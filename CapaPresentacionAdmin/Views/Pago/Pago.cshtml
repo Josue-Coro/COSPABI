@@ -81,6 +81,23 @@
     </div>
 </div>
 
+<!-- Modal Detalle Aviso -->
+<div id="modalDetalle" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" onclick="cerrarModalDetalle()"></div>
+    <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <!-- Header -->
+        <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+            <h3 class="text-base font-bold text-gray-800" id="modalDetalleTitulo">Detalle del Aviso</h3>
+            <button onclick="cerrarModalDetalle()"
+                    class="text-gray-400 hover:text-gray-600 transition-colors text-xl leading-none">&times;</button>
+        </div>
+        <!-- Body -->
+        <div id="modalDetalleBody" class="px-6 py-5 space-y-5">
+            <div class="text-center py-8 text-gray-400">Cargando...</div>
+        </div>
+    </div>
+</div>
+
 @section scripts {
 <script>
     var pagina = 1, total = 0, tam = 10, timer;
@@ -145,7 +162,8 @@
                     '<td class="px-4 py-3 text-gray-600">' + a.nombre_periodo + '</td>' +
                     '<td class="px-4 py-3 text-gray-600">' + ffecha(a.fecha_vencimiento) + '</td>' +
                     '<td class="px-4 py-3 text-right font-mono font-semibold text-gray-800">Bs. ' + fmt(a.total_aviso) + '</td>' +
-                    '<td class="px-4 py-3 text-right"><button onclick="abrirCobro(' + a.id_aviso + ',' + a.total_aviso + ',\'' + nom + ' — ' + a.nombre_periodo + '\')" class="bg-green-600 hover:bg-green-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg">Cobrar</button></td>' +
+                    '<td class="px-4 py-3 text-right"><div class="flex justify-end gap-1"><button onclick="verDetalle(' + a.id_aviso + ')" class="text-xs px-3 py-1.5 rounded-lg border border-blue-200 text-blue-600 hover:bg-blue-50 transition-colors font-medium">Ver</button>' +
+                    '<button onclick="abrirCobro(' + a.id_aviso + ',' + a.total_aviso + ',\'' + nom + ' — ' + a.nombre_periodo + '\')" class="bg-green-600 hover:bg-green-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg">Cobrar</button></div></td>' +
                     '</tr>'
                 );
             });
@@ -193,6 +211,7 @@
         $.post('@Url.Action("RegistrarPago", "Pago")', { idAviso: cobroAviso, idMetodoPago: parseInt(met), montoRecibido: rec }, function (res) {
             $('#btnCobrar').prop('disabled', false).text('Confirmar cobro');
             if (res.exito) {
+                window.open('@Url.Action("ImprimirRecibo", "Pago")?idPago=' + res.idPago, '_blank');
                 cerrarCobro();
                 cargarPorCobrar(); cargarPagos(); cargarMiCaja();
             } else {
@@ -220,11 +239,135 @@
                     '<div class="px-5 py-3 flex items-center justify-between text-sm">' +
                     '<div><p class="font-medium text-gray-800">' + quien + '</p>' +
                     '<p class="text-xs text-gray-400">' + fhora(p.fecha_pago) + ' · ' + (p.nombre_metodo || '') + '</p></div>' +
-                    '<span class="font-mono font-semibold text-green-700">Bs. ' + fmt(p.monto_pagado) + '</span>' +
-                    '</div>'
+                    '<div class="flex items-center gap-3"><span class="font-mono font-semibold text-green-700">Bs. ' + fmt(p.monto_pagado) + '</span>' +
+                    (p.aviso_id_aviso ? '<button onclick="verDetalle(' + p.aviso_id_aviso + ')" class="text-xs text-blue-600 hover:underline">Ver detalle</button>' : '') +
+                    '</div></div>'
                 );
             });
         });
+    }
+    
+
+    // ---- Detalle aviso ----
+    function verDetalle(idAviso) {
+        $('#modalDetalleTitulo').text('Detalle del Aviso #' + idAviso);
+        $('#modalDetalleBody').html('<div class="text-center py-8 text-gray-400">Cargando...</div>');
+        $('#modalDetalle').removeClass('hidden');
+
+        $.get('@Url.Action("ObtenerDetalle", "Aviso")', { idAviso: idAviso })
+            .done(function (res) {
+                if (!res.exito) {
+                    $('#modalDetalleBody').html(
+                        '<div class="text-red-500 py-4 text-center">' + res.mensaje + '</div>'
+                    );
+                    return;
+                }
+                var d = res.data;
+
+                var excedente    = Math.max(0, d.consumo_m3 - d.consumo_minimo_m3);
+                var montoExcedente = excedente * d.precio_m3;
+
+                var estadoMap = {
+                    'GENERADO':  'bg-slate-100 text-slate-700',
+                    'LECTURADO': 'bg-blue-100 text-blue-700',
+                    'IMPRESO':   'bg-amber-100 text-amber-700',
+                    'PAGADO':    'bg-green-100 text-green-700'
+                };
+                var estadoCls = estadoMap[d.nombre_estado] || 'bg-gray-100 text-gray-600';
+                var badgeEstado = '<span class="px-2.5 py-1 rounded-full text-xs font-semibold ' + estadoCls + '">' + d.nombre_estado + '</span>';
+
+                var html =
+                    '<div class="grid grid-cols-2 gap-4">' +
+                        '<div class="bg-gray-50 rounded-xl p-4">' +
+                            '<p class="text-xs font-semibold text-gray-400 uppercase mb-2">Socio</p>' +
+                            '<p class="font-bold text-gray-800 text-sm">' + d.codigo_fijo + ' &mdash; ' + d.nombre_socio + '</p>' +
+                            '<p class="text-xs text-gray-500 mt-1">Ruta: ' + d.nombre_ruta + '</p>' +
+                            '<p class="text-xs text-gray-500">Medidor: ' + d.serie_medidor + '</p>' +
+                        '</div>' +
+                        '<div class="bg-gray-50 rounded-xl p-4">' +
+                            '<p class="text-xs font-semibold text-gray-400 uppercase mb-2">Período</p>' +
+                            '<p class="font-bold text-gray-800 text-sm">' + d.nombre_periodo + '</p>' +
+                            '<p class="text-xs text-gray-500 mt-1">Emisión: ' + ffecha(d.fecha_emision) + '</p>' +
+                            '<p class="text-xs text-gray-500">Vence: ' + ffecha(d.fecha_vencimiento) + '</p>' +
+                            '<div class="mt-2">' + badgeEstado + '</div>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="border border-gray-100 rounded-xl overflow-hidden">' +
+                        '<div class="bg-gray-50 px-4 py-2 border-b border-gray-100">' +
+                            '<p class="text-xs font-semibold text-gray-500 uppercase">Lectura</p>' +
+                        '</div>' +
+                        '<div class="grid grid-cols-4 divide-x divide-gray-100 text-center">' +
+                            '<div class="px-3 py-3"><p class="text-xs text-gray-400">Anterior</p><p class="font-bold text-gray-800 mt-1">' + d.lectura_anterior + '</p></div>' +
+                            '<div class="px-3 py-3"><p class="text-xs text-gray-400">Actual</p><p class="font-bold text-gray-800 mt-1">' + d.lectura_actual + '</p></div>' +
+                            '<div class="px-3 py-3"><p class="text-xs text-gray-400">Consumo</p><p class="font-bold text-blue-700 mt-1">' + fmt(d.consumo_m3) + ' m&sup3;</p></div>' +
+                            '<div class="px-3 py-3"><p class="text-xs text-gray-400">Días</p><p class="font-bold text-gray-800 mt-1">' + d.dias_lectura + '</p></div>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="border border-gray-100 rounded-xl overflow-hidden">' +
+                        '<div class="bg-gray-50 px-4 py-2 border-b border-gray-100">' +
+                            '<p class="text-xs font-semibold text-gray-500 uppercase">Tarifa &mdash; ' + d.nombre_rol + '</p>' +
+                        '</div>' +
+                        '<div class="px-4 py-3 space-y-1.5 text-sm">' +
+                            '<div class="flex justify-between text-gray-600">' +
+                                '<span>Mínimo (' + d.consumo_minimo_m3 + ' m&sup3;)</span>' +
+                                '<span class="font-mono">Bs. ' + fmt(d.monto_minimo) + '</span>' +
+                            '</div>' +
+                            (excedente > 0
+                                ? '<div class="flex justify-between text-gray-600">' +
+                                  '<span>Excedente ' + fmt(excedente) + ' m&sup3; &times; Bs. ' + fmt(d.precio_m3) + '</span>' +
+                                  '<span class="font-mono">Bs. ' + fmt(montoExcedente) + '</span>' +
+                                  '</div>'
+                                : '') +
+                            '<div class="flex justify-between font-semibold text-gray-800 border-t border-gray-100 pt-1.5">' +
+                                '<span>Subtotal consumo</span>' +
+                                '<span class="font-mono">Bs. ' + fmt(d.total_consumo) + '</span>' +
+                            '</div>' +
+                        '</div>' +
+                    '</div>' +
+                    (d.cargos && d.cargos.length > 0
+                        ? '<div class="border border-amber-100 bg-amber-50 rounded-xl px-4 py-3">' +
+                          '<p class="text-xs font-semibold text-amber-600 uppercase mb-1.5">Cargos Extra</p>' +
+                          d.cargos.map(function (c) {
+                              return '<div class="flex justify-between text-sm py-0.5">' +
+                                  '<div><p class="font-medium text-gray-800">' + (c.nombre_tipo_cargo || '') + '</p>' +
+                                  '<p class="text-xs text-gray-500 mt-0.5">' + (c.descripcion || '') + '</p></div>' +
+                                  '<span class="font-mono font-semibold text-amber-700">+ Bs. ' + fmt(c.monto) + '</span>' +
+                              '</div>';
+                          }).join('') +
+                          '<div class="flex justify-between text-sm font-semibold text-amber-800 border-t border-amber-200 mt-1.5 pt-1.5">' +
+                              '<span>Subtotal cargos</span>' +
+                              '<span class="font-mono">+ Bs. ' + fmt(d.total_cargos) + '</span>' +
+                          '</div>' +
+                          '</div>'
+                        : '') +
+                    (d.monto_credito != null
+                        ? '<div class="border border-indigo-100 bg-indigo-50 rounded-xl px-4 py-3">' +
+                          '<p class="text-xs font-semibold text-indigo-600 uppercase mb-1.5">Cuota de Inscripción</p>' +
+                          '<div class="flex justify-between text-sm">' +
+                              '<span class="text-gray-700">Cuota del período</span>' +
+                              '<span class="font-mono font-semibold text-indigo-700">+ Bs. ' + fmt(d.monto_credito) + '</span>' +
+                          '</div>' +
+                          '</div>'
+                        : '') +
+                    '<div class="bg-gray-800 rounded-xl px-5 py-4 flex items-center justify-between">' +
+                        '<div>' +
+                            '<p class="text-gray-400 text-xs uppercase font-semibold">Total Aviso</p>' +
+                            '<p class="text-gray-300 text-xs mt-0.5">Deuda actual: Bs. ' + fmt(d.deuda_actual) + '</p>' +
+                        '</div>' +
+                        '<p class="text-2xl font-bold text-white font-mono">Bs. ' + fmt(d.total_aviso) + '</p>' +
+                    '</div>';
+
+                $('#modalDetalleBody').html(html);
+            })
+            .fail(function () {
+                $('#modalDetalleBody').html(
+                    '<div class="text-red-500 py-4 text-center">Error de conexión.</div>'
+                );
+            });
+    }
+
+    function cerrarModalDetalle() {
+        $('#modalDetalle').addClass('hidden');
     }
 </script>
 }

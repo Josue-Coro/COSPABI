@@ -36,4 +36,30 @@ namespace CapaModelo
         public string   nombre_socio   { get; set; }
         public int?     codigo_fijo    { get; set; }
     }
+
+    public class CM_ReciboPagoDetalle
+    {
+        public string  concepto { get; set; }
+        public decimal subtotal { get; set; }
+    }
+
+    public class CM_ReciboPago
+    {
+        public int      id_pago        { get; set; }
+        public DateTime fecha_pago     { get; set; }
+        public string   nombre_socio   { get; set; }
+        public int?     codigo_fijo    { get; set; }
+        public string   nombre_periodo { get; set; }
+        public decimal? consumo        { get; set; }
+        public decimal  total_consumo  { get; set; }
+        public decimal  total_pagado   { get; set; }
+        public decimal? vuelto         { get; set; }
+        public string   cajero         { get; set; }
+        public string   metodo_pago    { get; set; }
+        public string   categoria      { get; set; }
+        public string   nombre_ruta    { get; set; }
+        public string   ubicacion      { get; set; }
+        
+        public List<CM_ReciboPagoDetalle> Detalles { get; set; }
+    }
 }

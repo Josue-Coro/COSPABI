@@ -1,0 +1,100 @@
+@model CapaModelo.CM_ReciboPago
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Recibo Nro @Model.id_pago</title>
+    <style>
+        body { font-family: monospace; font-size: 12px; margin: 0; padding: 10px; width: 300px; }
+        .center { text-align: center; }
+        .right { text-align: right; }
+        .bold { font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { padding: 2px 0; }
+        .line { border-top: 1px dashed #000; margin: 5px 0; }
+        .line-double { border-top: 2px dashed #000; margin: 5px 0; }
+        @@media print {
+            body { width: 100%; margin: 0; padding: 0; }
+            .no-print { display: none; }
+        }
+    </style>
+</head>
+<body onload="window.print()">
+    <div class="no-print" style="margin-bottom: 20px;">
+        <button onclick="window.print()" style="padding: 5px 10px; cursor: pointer;">Imprimir</button>
+    </div>
+
+    <div class="center bold" style="font-size: 14px;">
+        COOPERATIVA DE SERVICIOS PUBLICOS<br>
+        "COSPABI" R.L.
+    </div>
+    <div class="center" style="font-size: 10px; margin-bottom: 10px;">
+        Calle s/n - Cel. 77399315 - 68763439<br>
+        El Bisito - Cotoca - Santa Cruz - Bolivia
+    </div>
+
+    <div style="display: flex; justify-content: space-between;">
+        <span class="bold">RECIBO Nro :</span>
+        <span class="bold">@Model.id_pago</span>
+    </div>
+    
+    <div class="line"></div>
+    
+    <table>
+        <tr>
+            <td>Mes: @Model.nombre_periodo</td>
+            <td class="right">Santa Cruz - El Bisito</td>
+        </tr>
+        <tr>
+            <td>CODIGO FIJO: @Model.codigo_fijo</td>
+            <td class="right">@Model.fecha_pago.ToString("dd/MM/yyyy")</td>
+        </tr>
+    </table>
+
+    <div style="margin-top: 5px;">Nombre : @Model.nombre_socio</div>
+    <div style="margin-top: 5px;">
+        Ubicacion: @Model.ubicacion 
+        <span style="float: right;">Cat : @Model.categoria</span>
+    </div>
+
+    <div class="line-double"></div>
+    
+    <div style="margin-top: 5px; margin-bottom: 5px;">
+        Consumo : @Model.consumo Cub
+    </div>
+
+    <table>
+        <tr>
+            <th class="bold" style="text-align: left;">Detalle</th>
+            <th class="bold" style="text-align: right;">Importe Bs.</th>
+        </tr>
+        @if (Model.Detalles != null)
+        {
+            foreach (var d in Model.Detalles)
+            {
+                <tr>
+                    <td>@d.concepto</td>
+                    <td class="right">@d.subtotal.ToString("0.00")</td>
+                </tr>
+            }
+        }
+    </table>
+
+    <div class="line-double"></div>
+
+    <div style="display: flex; justify-content: space-between; font-size: 14px; margin-top: 5px;">
+        <span class="bold">IMPORTE TOTAL :</span>
+        <span class="bold">@Model.total_pagado.ToString("0.00")</span>
+    </div>
+
+    <div style="margin-top: 15px;">
+        Cajero : @Model.cajero<br>
+        Hora : @Model.fecha_pago.ToString("HH:mm:ss dd/MM/yyyy")<br>
+        Entidad de Pago: COSPABI LTDA
+    </div>
+
+</body>
+</html>

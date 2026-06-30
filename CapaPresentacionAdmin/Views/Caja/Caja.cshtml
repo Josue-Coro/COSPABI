@@ -146,7 +146,12 @@
     function confirmarCierre(idCaja) {
         $.post('@Url.Action("CerrarCaja", "Caja")', { idCaja: idCaja }, function (res) {
             cerrarArqueo();
-            if (res.exito) { cargarEstado(); cargarHistorial(); }
+            if (res.exito) { 
+                cargarEstado(); 
+                cargarHistorial(); 
+                var url = '@Url.Action("Reporte", "Caja")?idCaja=' + idCaja;
+                window.open(url, '_blank');
+            }
             else { alert(res.mensaje || 'No se pudo cerrar.'); }
         });
     }
@@ -175,7 +180,10 @@
                     '<td class="px-4 py-3 text-right font-mono text-gray-600">Bs. ' + fmt(c.monto_apertura) + '</td>' +
                     '<td class="px-4 py-3 text-right font-mono text-gray-800">Bs. ' + fmt(c.monto_cobrado) + '</td>' +
                     '<td class="px-4 py-3 text-center">' + badge + '</td>' +
-                    '<td class="px-4 py-3 text-right"><button onclick="verArqueo(' + c.id_caja + ', false)" class="text-blue-600 hover:text-blue-800 text-xs font-semibold">Ver arqueo</button></td>' +
+                    '<td class="px-4 py-3 text-right whitespace-nowrap">' +
+                    '<button onclick="verArqueo(' + c.id_caja + ', false)" class="text-blue-600 hover:text-blue-800 text-xs font-semibold mr-3">Ver arqueo</button>' +
+                    '<a href="' + '@Url.Action("Reporte", "Caja")?idCaja=' + c.id_caja + '" target="_blank" class="text-green-600 hover:text-green-800 text-xs font-semibold">Imprimir</a>' +
+                    '</td>' +
                     '</tr>'
                 );
             });

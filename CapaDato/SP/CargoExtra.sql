@@ -68,7 +68,7 @@ BEGIN
     DECLARE @Offset INT = (@Pagina - 1) * @TamanoPagina;
 
     SELECT
-        ce.id_carga_extra,
+        ce.id_cargo_extra,
         ce.monto,
         ce.descripcion,
         ce.fecha_registro,
@@ -81,8 +81,12 @@ BEGIN
         p.periodo                                                                    AS nombre_periodo,
         t.nombre                                                                     AS nombre_tipo_cargo,
         r.ruta                                                                       AS nombre_ruta,
-        CASE WHEN ce.aviso_id_aviso IS NOT NULL
-             THEN 1 ELSE 0 END                                                       AS aplicado
+        CASE WHEN EXISTS (
+            SELECT 1 FROM aviso a
+            WHERE a.socio_id_socio = ce.socio_id_socio
+              AND a.periodo_id_periodo = ce.periodo_id_periodo
+              AND a.estado_id_estado <> (SELECT id_estado FROM estado WHERE estado = 'ANULADO')
+        ) THEN 1 ELSE 0 END                                                          AS aplicado
     FROM cargo_extra ce
     INNER JOIN socio    s ON s.id_socio   = ce.socio_id_socio
     INNER JOIN periodo  p ON p.id_periodo = ce.periodo_id_periodo
@@ -96,7 +100,7 @@ BEGIN
             OR s.nombre_socio LIKE '%' + @Busqueda + '%'
             OR CAST(s.codigo_fijo AS NVARCHAR) LIKE '%' + @Busqueda + '%'
         )
-    ORDER BY ce.id_carga_extra DESC
+    ORDER BY ce.id_cargo_extra DESC
     OFFSET @Offset ROWS FETCH NEXT @TamanoPagina ROWS ONLY;
 
     -- Total para paginacion
@@ -118,7 +122,7 @@ GO
 -- 3. sp_anular_cargo_extra
 -- =============================================
 CREATE OR ALTER PROCEDURE dbo.sp_anular_cargo_extra
-    @id_carga_extra INT,
+    @id_cargo_extra INT,
     @Resultado      INT          OUTPUT,
     @Mensaje        VARCHAR(500) OUTPUT
 AS
@@ -128,16 +132,18 @@ BEGIN
     SET @Mensaje   = '';
 
     BEGIN TRY
-        IF NOT EXISTS (SELECT 1 FROM cargo_extra WHERE id_carga_extra = @id_carga_extra)
+        IF NOT EXISTS (SELECT 1 FROM cargo_extra WHERE id_cargo_extra = @id_cargo_extra)
         BEGIN
             SET @Mensaje = 'El cargo no existe.';
             RETURN;
         END
 
+        -- El cargo está aplicado si existe un aviso no anulado para el mismo socio y periodo
         IF EXISTS (
-            SELECT 1 FROM cargo_extra
-            WHERE id_carga_extra = @id_carga_extra
-              AND aviso_id_aviso IS NOT NULL
+            SELECT 1 FROM aviso a
+            INNER JOIN cargo_extra ce ON ce.socio_id_socio = a.socio_id_socio AND ce.periodo_id_periodo = a.periodo_id_periodo
+            WHERE ce.id_cargo_extra = @id_cargo_extra
+              AND a.estado_id_estado <> (SELECT id_estado FROM estado WHERE estado = 'ANULADO')
         )
         BEGIN
             SET @Mensaje = 'El cargo ya fue aplicado a un aviso y no puede anularse.';
@@ -145,7 +151,7 @@ BEGIN
         END
 
         DECLARE @estadoActual VARCHAR(150);
-        SELECT @estadoActual = estado FROM cargo_extra WHERE id_carga_extra = @id_carga_extra;
+        SELECT @estadoActual = estado FROM cargo_extra WHERE id_cargo_extra = @id_cargo_extra;
 
         IF @estadoActual != 'PENDIENTE'
         BEGIN
@@ -153,7 +159,7 @@ BEGIN
             RETURN;
         END
 
-        UPDATE cargo_extra SET estado = 'ANULADO' WHERE id_carga_extra = @id_carga_extra;
+        UPDATE cargo_extra SET estado = 'ANULADO' WHERE id_cargo_extra = @id_cargo_extra;
 
         SET @Resultado = 1;
         SET @Mensaje   = 'Cargo anulado correctamente.';

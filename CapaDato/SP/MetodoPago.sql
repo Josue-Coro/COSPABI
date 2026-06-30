@@ -1,3 +1,5 @@
+USE [COSPABIRL1]
+GO
 
 -- ══════════════════════════════════════════
 -- LISTAR con paginación y búsqueda

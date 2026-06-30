@@ -15,14 +15,15 @@ namespace CapaNegocio
         }
 
         public bool RegistrarPago(int idAviso, int idCaja, int idMetodoPago, decimal? montoRecibido,
-                                  int idUsuario, string cajero, out string Mensaje)
+                                  int idUsuario, string cajero, out int idPago, out string Mensaje)
         {
             Mensaje = string.Empty;
+            idPago = 0;
 
             if (idAviso <= 0)      { Mensaje = "Debe seleccionar un aviso.";        return false; }
             if (idMetodoPago <= 0) { Mensaje = "Debe seleccionar un método de pago."; return false; }
 
-            bool ok = cdPago.RegistrarPago(idAviso, idCaja, idMetodoPago, montoRecibido, cajero, out Mensaje);
+            bool ok = cdPago.RegistrarPago(idAviso, idCaja, idMetodoPago, montoRecibido, cajero, out idPago, out Mensaje);
             if (ok)
                 cnBitacora.Registrar("Cobró el aviso #" + idAviso + " (caja #" + idCaja + ")", idUsuario);
             return ok;
@@ -31,6 +32,11 @@ namespace CapaNegocio
         public List<CM_Pago> ListarPagosCaja(int idCaja)
         {
             return cdPago.ListarPagosCaja(idCaja);
+        }
+
+        public CM_ReciboPago ObtenerReciboPago(int idPago)
+        {
+            return cdPago.ObtenerReciboPago(idPago);
         }
     }
 }

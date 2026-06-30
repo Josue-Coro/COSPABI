@@ -1,4 +1,4 @@
-USE [COSPABI]
+USE [COSPABIRL1]
 GO
 ----------------------------
 CREATE TABLE bitacora 
@@ -120,7 +120,10 @@ INSERT INTO permiso (accion, [descripcion]) VALUES
 ('Gestionar Medidor', 'Gestion de Medidores');
 
 go
+INSERT INTO permiso (accion, [descripcion]) VALUES
+('Anular Avisos', 'Anular Avisos con errores');
 
+go
 
 ----------------------
 INSERT INTO permiso (accion, [descripcion]) VALUES

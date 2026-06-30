@@ -1,3 +1,4 @@
+USE [COSPABIRL1]
 CREATE TABLE rol 
     (
      id_rol INTEGER NOT NULL IDENTITY(1,1), 

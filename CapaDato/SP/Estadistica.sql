@@ -1,3 +1,4 @@
+USE [COSPABIRL1]
 CREATE OR ALTER PROCEDURE dbo.sp_obtener_estadisticas_dashboard
     @periodo VARCHAR(50)
 AS

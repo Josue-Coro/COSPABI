@@ -238,6 +238,8 @@
     <Content Include="Views\CuentaSocio\CuentaSocio.cshtml" />
     <Content Include="Views\Aviso\AnularAviso.cshtml" />
     <Content Include="Views\Aviso\ImprimirAviso.cshtml" />
+    <Content Include="Views\Pago\ImprimirRecibo.cshtml" />
+    <Content Include="Views\Caja\Reporte.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\SQLServer\" />

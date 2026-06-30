@@ -31,7 +31,7 @@ BEGIN
         a.total_consumo,
         a.total_aviso,
         a.deuda_actual,
-        a.estado,
+        e.estado        AS estado,
         e.estado        AS nombre_estado,
         -- Socio
         s.id_socio,
@@ -57,9 +57,10 @@ BEGIN
         t.monto_minimo,
         t.consumo_minimo_m3,
         t.precio_m3,
-        -- Suma de cargos extra estampados (1:N)
+        -- Suma de cargos extra del socio en el periodo (1:N)
         ISNULL((SELECT SUM(ce.monto) FROM cargo_extra ce
-                WHERE ce.aviso_id_aviso = a.id_aviso), 0) AS total_cargos,
+                WHERE ce.socio_id_socio = a.socio_id_socio
+                  AND ce.periodo_id_periodo = a.periodo_id_periodo), 0) AS total_cargos,
         -- Cuota de crédito de inscripción (0..1)
         ci.monto_pago   AS monto_credito
     FROM aviso a
@@ -71,19 +72,25 @@ BEGIN
     INNER JOIN medidor   m  ON m.id_medidor             = l.medidor_id_medidor
     INNER JOIN rol_socio rs ON rs.id_rol_socio          = s.rol_socio_id_rol_socio
     INNER JOIN tarifa    t  ON t.rol_socio_id_rol_socio = s.rol_socio_id_rol_socio
-    LEFT  JOIN credito_inscripcion ci ON ci.aviso_id_aviso = a.id_aviso
+    LEFT  JOIN credito_inscripcion ci 
+        ON ci.socio_id_socio = a.socio_id_socio
+       AND ci.periodo_id_periodo = a.periodo_id_periodo
     WHERE a.id_aviso = @id_aviso;
 
     -- 2) CARGOS EXTRA (Datos Facturados) --------------------------------------
+    DECLARE @socio_id INT, @periodo_id INT;
+    SELECT @socio_id = socio_id_socio, @periodo_id = periodo_id_periodo FROM aviso WHERE id_aviso = @id_aviso;
+
     SELECT
-        ce.id_carga_extra,
+        ce.id_cargo_extra,
         ce.monto,
         ce.descripcion,
         tc.nombre AS nombre_tipo_cargo
     FROM cargo_extra ce
     INNER JOIN tipo_cargo tc ON tc.id_tipo = ce.tipo_cargo_id_tipo
-    WHERE ce.aviso_id_aviso = @id_aviso
-    ORDER BY ce.id_carga_extra;
+    WHERE ce.socio_id_socio = @socio_id
+      AND ce.periodo_id_periodo = @periodo_id
+    ORDER BY ce.id_cargo_extra;
 
     -- 3) HISTÓRICO (últimos 12 avisos del socio) ------------------------------
     SELECT TOP (12)
@@ -93,10 +100,11 @@ BEGIN
         av.total_aviso,
         pg.fecha_pago,
         CASE WHEN pg.id_pago IS NOT NULL THEN 'Pag.' ELSE 'Imp.' END AS estado_pago_label,
-        av.estado
+        e2.estado         AS estado
     FROM aviso av
     INNER JOIN periodo p2 ON p2.id_periodo = av.periodo_id_periodo
     INNER JOIN lectura l2 ON l2.id_lectura = av.lectura_id_lectura
+    INNER JOIN estado  e2 ON e2.id_estado  = av.estado_id_estado
     OUTER APPLY (
         SELECT TOP (1) pa.id_pago, pa.fecha_pago
         FROM pago pa
@@ -105,7 +113,10 @@ BEGIN
         ORDER BY pa.id_pago DESC
     ) pg
     WHERE av.socio_id_socio = @id_socio
-      AND av.estado <> 'ANULADO'
+      AND av.estado_id_estado <> (SELECT id_estado FROM estado WHERE estado = 'ANULADO')
     ORDER BY av.fecha_emision DESC, av.id_aviso DESC;
 END
 GO
+
+
+--EXEC dbo.sp_imprimir_aviso 30;   -- usá un id_aviso que exista

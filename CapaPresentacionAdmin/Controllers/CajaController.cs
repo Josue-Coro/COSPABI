@@ -17,6 +17,11 @@ namespace CapaPresentacionAdmin.Controllers
         {
             return View();
         }
+        [ValidarPermisos(NombrePermiso = "Gestionar Caja")]
+        public ActionResult Reporte()
+        {
+            return View();
+        }
 
         // Caja abierta del cajero logueado (o null)
         [HttpGet]
@@ -98,6 +103,25 @@ namespace CapaPresentacionAdmin.Controllers
             {
                 return Json(new { exito = false, mensaje = ex.Message }, JsonRequestBehavior.AllowGet);
             }
+        }
+
+        [HttpGet]
+        [ValidarPermisos(NombrePermiso = "Gestionar Caja")]
+        public ActionResult Reporte(int idCaja)
+        {
+            var arqueo = cnCaja.ObtenerArqueo(idCaja);
+            if (arqueo == null)
+            {
+                return HttpNotFound("La caja especificada no fue encontrada.");
+            }
+
+            var cnPago = new CN_Pago();
+            var pagos = cnPago.ListarPagosCaja(idCaja);
+
+            ViewBag.Arqueo = arqueo;
+            ViewBag.Pagos = pagos;
+
+            return View();
         }
     }
 }

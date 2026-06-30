@@ -1,4 +1,4 @@
-﻿using CapaModelo;
+using CapaModelo;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -44,7 +44,7 @@ namespace CapaDato
                             ci_cliente = dr["ci_cliente"].ToString(),
                             rol_socio_id_rol_socio = Convert.ToInt32(dr["rol_socio_id_rol_socio"]),
                             NombreRolSocio = dr["nombre_rol_socio"].ToString(),
-                            medidor_id_medidor = Convert.ToInt32(dr["medidor_id_medidor"]),
+                            medidor_id_medidor = dr["medidor_id_medidor"] == DBNull.Value ? (int?)null : Convert.ToInt32(dr["medidor_id_medidor"]),
                             num_serie_medidor = dr["serie_medidor"].ToString(),
                             ruta_id_ruta = Convert.ToInt32(dr["ruta_id_ruta"]),
                             nombre_ruta = dr["nombre_ruta"].ToString(),
@@ -56,7 +56,8 @@ namespace CapaDato
                             actividad = dr["actividad"].ToString(),
                             categoria = dr["categoria"].ToString(),
                             fecha_registro = Convert.ToDateTime(dr["fecha_registro"]),
-                            codigo_fijo = Convert.ToInt32(dr["codigo_fijo"])
+                            codigo_fijo = Convert.ToInt32(dr["codigo_fijo"]),
+                            estado = Convert.ToBoolean(dr["estado"])
                         });
                     }
 
@@ -100,7 +101,7 @@ namespace CapaDato
                             ci_cliente = dr["ci_cliente"].ToString(),
                             rol_socio_id_rol_socio = Convert.ToInt32(dr["rol_socio_id_rol_socio"]),
                             NombreRolSocio = dr["nombre_rol_socio"].ToString(),
-                            medidor_id_medidor = Convert.ToInt32(dr["medidor_id_medidor"]),
+                            medidor_id_medidor = dr["medidor_id_medidor"] == DBNull.Value ? (int?)null : Convert.ToInt32(dr["medidor_id_medidor"]),
                             num_serie_medidor = dr["serie_medidor"].ToString(),
                             ruta_id_ruta = Convert.ToInt32(dr["ruta_id_ruta"]),
                             nombre_ruta = dr["nombre_ruta"].ToString(),
@@ -112,7 +113,8 @@ namespace CapaDato
                             actividad = dr["actividad"].ToString(),
                             categoria = dr["categoria"].ToString(),
                             fecha_registro = Convert.ToDateTime(dr["fecha_registro"]),
-                            codigo_fijo = Convert.ToInt32(dr["codigo_fijo"])
+                            codigo_fijo = Convert.ToInt32(dr["codigo_fijo"]),
+                            estado = Convert.ToBoolean(dr["estado"])
                         };
                     }
 
@@ -142,7 +144,7 @@ namespace CapaDato
                     cmd.Parameters.AddWithValue("@cliente_id_cliente", socio.cliente_id_cliente);
                     cmd.Parameters.AddWithValue("@rol_socio_id_rol_socio", socio.rol_socio_id_rol_socio);
                     cmd.Parameters.AddWithValue("@ubicacion", socio.ubicacion);
-                    cmd.Parameters.AddWithValue("@medidor_id_medidor", socio.medidor_id_medidor);
+                    cmd.Parameters.AddWithValue("@medidor_id_medidor", (object)socio.medidor_id_medidor ?? DBNull.Value);
                     cmd.Parameters.AddWithValue("@num_casa", socio.num_casa);
                     cmd.Parameters.AddWithValue("@num_ocupantes", socio.num_ocupantes);
                     cmd.Parameters.AddWithValue("@tipo_instalacion", (object)socio.tipo_instalacion ?? DBNull.Value);
@@ -193,7 +195,7 @@ namespace CapaDato
                     cmd.Parameters.AddWithValue("@cliente_id_cliente", socio.cliente_id_cliente);
                     cmd.Parameters.AddWithValue("@rol_socio_id_rol_socio", socio.rol_socio_id_rol_socio);
                     cmd.Parameters.AddWithValue("@ubicacion", socio.ubicacion);
-                    cmd.Parameters.AddWithValue("@medidor_id_medidor", socio.medidor_id_medidor);
+                    cmd.Parameters.AddWithValue("@medidor_id_medidor", (object)socio.medidor_id_medidor ?? DBNull.Value);
                     cmd.Parameters.AddWithValue("@num_casa", socio.num_casa);
                     cmd.Parameters.AddWithValue("@num_ocupantes", socio.num_ocupantes);
                     cmd.Parameters.AddWithValue("@tipo_instalacion", (object)socio.tipo_instalacion ?? DBNull.Value);
@@ -203,6 +205,7 @@ namespace CapaDato
                     cmd.Parameters.AddWithValue("@fecha_registro", socio.fecha_registro);
                     cmd.Parameters.AddWithValue("@ruta_id_ruta", socio.ruta_id_ruta);
                     cmd.Parameters.AddWithValue("@codigo_fijo", socio.codigo_fijo);
+                    cmd.Parameters.AddWithValue("@estado", socio.estado);
                     cmd.Parameters.Add("@Resultado", SqlDbType.Int).Direction = ParameterDirection.Output;
                     cmd.Parameters.Add("@Mensaje", SqlDbType.VarChar, 500).Direction = ParameterDirection.Output;
 

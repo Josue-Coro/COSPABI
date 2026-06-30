@@ -151,7 +151,7 @@ namespace CapaDato
                 using (SqlConnection cn = new SqlConnection(CD_Conexion.cn))
                 {
                     SqlCommand cmd = new SqlCommand(
-                        "SELECT 1 FROM aviso WHERE socio_id_socio = @idSocio AND periodo_id_periodo = @idPeriodo AND estado != 'ANULADO'", cn);
+                        "SELECT 1 FROM aviso WHERE socio_id_socio = @idSocio AND periodo_id_periodo = @idPeriodo AND estado_id_estado <> (SELECT id_estado FROM estado WHERE estado = 'ANULADO')", cn);
                     cmd.Parameters.AddWithValue("@idSocio",   idSocio);
                     cmd.Parameters.AddWithValue("@idPeriodo", idPeriodo);
                     cn.Open();
@@ -233,7 +233,7 @@ namespace CapaDato
                         {
                             detalle.cargos.Add(new CM_CargoExtra
                             {
-                                id_carga_extra    = Convert.ToInt32(dr["id_carga_extra"]),
+                                id_cargo_extra    = Convert.ToInt32(dr["id_cargo_extra"]),
                                 monto             = Convert.ToDecimal(dr["monto"]),
                                 descripcion       = dr["descripcion"].ToString(),
                                 fecha_registro    = Convert.ToDateTime(dr["fecha_registro"]),
@@ -308,7 +308,7 @@ namespace CapaDato
                         {
                             imp.cargos.Add(new CM_CargoExtra
                             {
-                                id_carga_extra    = Convert.ToInt32(dr["id_carga_extra"]),
+                                id_cargo_extra    = Convert.ToInt32(dr["id_cargo_extra"]),
                                 monto             = Convert.ToDecimal(dr["monto"]),
                                 descripcion       = dr["descripcion"].ToString(),
                                 nombre_tipo_cargo = dr["nombre_tipo_cargo"].ToString()

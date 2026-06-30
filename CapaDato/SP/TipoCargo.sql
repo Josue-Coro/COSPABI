@@ -1,3 +1,4 @@
+USE [COSPABIRL1]
 -- Listar
 CREATE PROCEDURE [dbo].[sp_listar_tipo_cargo]
 AS
