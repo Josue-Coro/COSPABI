@@ -150,8 +150,8 @@ namespace CapaDato
             {
                 using (SqlConnection cn = new SqlConnection(CD_Conexion.cn))
                 {
-                    SqlCommand cmd = new SqlCommand(
-                        "SELECT 1 FROM aviso WHERE socio_id_socio = @idSocio AND periodo_id_periodo = @idPeriodo AND estado_id_estado <> (SELECT id_estado FROM estado WHERE estado = 'ANULADO')", cn);
+                    SqlCommand cmd = new SqlCommand("dbo.sp_existe_aviso_activo", cn);
+                    cmd.CommandType = CommandType.StoredProcedure;
                     cmd.Parameters.AddWithValue("@idSocio",   idSocio);
                     cmd.Parameters.AddWithValue("@idPeriodo", idPeriodo);
                     cn.Open();
@@ -348,8 +348,8 @@ namespace CapaDato
             {
                 using (SqlConnection cn = new SqlConnection(CD_Conexion.cn))
                 {
-                    SqlCommand cmd = new SqlCommand(
-                        "SELECT id_estado, estado FROM estado ORDER BY id_estado", cn);
+                    SqlCommand cmd = new SqlCommand("dbo.sp_listar_estados", cn);
+                    cmd.CommandType = CommandType.StoredProcedure;
                     cn.Open();
                     SqlDataReader dr = cmd.ExecuteReader();
                     while (dr.Read())

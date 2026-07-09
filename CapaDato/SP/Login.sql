@@ -237,68 +237,141 @@ VALUES (
 
 
 
---sp login
-USE [COSPABI]
+--sp login (con bloqueo por intentos fallidos)
+USE [COSPABIRL1]
 GO
 CREATE OR ALTER PROCEDURE dbo.sp_login_admin
 (
-    @Usuario VARCHAR(255),
-    @Contrasena VARCHAR(550)
+    @Usuario    VARCHAR(255),
+    @Contrasena VARCHAR(550),
+    @Resultado  INT          OUTPUT,   -- 1 = OK, 0 = credenciales inválidas, -1 = cuenta bloqueada
+    @Mensaje    VARCHAR(500) OUTPUT
 )
 AS
 BEGIN
     SET NOCOUNT ON;
+    SET @Resultado = 0;
+    SET @Mensaje   = '';
 
+    DECLARE @MAX_INTENTOS INT = 5;    -- intentos permitidos antes de bloquear
+    DECLARE @MIN_BLOQUEO  INT = 15;   -- minutos de bloqueo
+
+    DECLARE @id        INT,
+            @hash      VARCHAR(550),
+            @intentos  INT,
+            @bloqueado DATETIME,
+            @estadoU   BIT,
+            @estadoR   BIT,
+            @idRol     INT;
+
+    SELECT
+        @id        = U.id_usuario_admin,
+        @hash      = U.contraseña,
+        @intentos  = U.intentos_fallidos,
+        @bloqueado = U.bloqueado_hasta,
+        @estadoU   = U.estado,
+        @estadoR   = R.estado,
+        @idRol     = R.id_rol
+    FROM usuario_admin U
+    INNER JOIN rol R ON U.rol_id_rol = R.id_rol
+    WHERE U.usuario = @Usuario;
+
+    -- Usuario inexistente o inactivo: mismo mensaje genérico (no revelar si la cuenta existe)
+    IF @id IS NULL OR @estadoU = 0 OR @estadoR = 0
+    BEGIN
+        SET @Mensaje = 'Usuario o contraseña incorrectos, o el usuario/rol no está activo.';
+        SELECT NULL AS id_usuario_admin, NULL AS nombre, NULL AS apellido,
+               NULL AS usuario, NULL AS EstadoUsuario, NULL AS id_rol, NULL AS NombreRol
+        WHERE 1 = 0;
+        SELECT NULL AS id_permiso, NULL AS accion WHERE 1 = 0;
+        RETURN;
+    END
+
+    -- Cuenta bloqueada por intentos fallidos
+    IF @bloqueado IS NOT NULL AND @bloqueado > GETDATE()
+    BEGIN
+        SET @Resultado = -1;
+        SET @Mensaje   = 'Cuenta bloqueada por intentos fallidos. Intenta nuevamente en '
+                       + CAST(DATEDIFF(MINUTE, GETDATE(), @bloqueado) + 1 AS VARCHAR)
+                       + ' minuto(s).';
+        SELECT NULL AS id_usuario_admin, NULL AS nombre, NULL AS apellido,
+               NULL AS usuario, NULL AS EstadoUsuario, NULL AS id_rol, NULL AS NombreRol
+        WHERE 1 = 0;
+        SELECT NULL AS id_permiso, NULL AS accion WHERE 1 = 0;
+        RETURN;
+    END
+
+    -- Contraseña incorrecta: acumular intento y bloquear si llegó al límite
+    IF @hash <> @Contrasena
+    BEGIN
+        SET @intentos = @intentos + 1;
+
+        IF @intentos >= @MAX_INTENTOS
+        BEGIN
+            UPDATE usuario_admin
+            SET intentos_fallidos = 0,
+                bloqueado_hasta   = DATEADD(MINUTE, @MIN_BLOQUEO, GETDATE())
+            WHERE id_usuario_admin = @id;
+
+            DECLARE @accBloqueo VARCHAR(255) =
+                'Cuenta bloqueada por ' + CAST(@MIN_BLOQUEO AS VARCHAR) + ' minutos tras '
+                + CAST(@MAX_INTENTOS AS VARCHAR) + ' intentos fallidos de inicio de sesión';
+            EXEC dbo.sp_registrar_bitacora @accBloqueo, @id;
+
+            SET @Resultado = -1;
+            SET @Mensaje   = 'Cuenta bloqueada por ' + CAST(@MIN_BLOQUEO AS VARCHAR)
+                           + ' minutos tras ' + CAST(@MAX_INTENTOS AS VARCHAR)
+                           + ' intentos fallidos.';
+        END
+        ELSE
+        BEGIN
+            UPDATE usuario_admin
+            SET intentos_fallidos = @intentos
+            WHERE id_usuario_admin = @id;
+
+            DECLARE @accFallo VARCHAR(255) =
+                'Intento de inicio de sesión fallido (' + CAST(@intentos AS VARCHAR)
+                + ' de ' + CAST(@MAX_INTENTOS AS VARCHAR) + ')';
+            EXEC dbo.sp_registrar_bitacora @accFallo, @id;
+
+            SET @Mensaje = 'Usuario o contraseña incorrectos, o el usuario/rol no está activo.';
+        END
+
+        SELECT NULL AS id_usuario_admin, NULL AS nombre, NULL AS apellido,
+               NULL AS usuario, NULL AS EstadoUsuario, NULL AS id_rol, NULL AS NombreRol
+        WHERE 1 = 0;
+        SELECT NULL AS id_permiso, NULL AS accion WHERE 1 = 0;
+        RETURN;
+    END
+
+    -- Login exitoso: resetear contador y bloqueo
+    UPDATE usuario_admin
+    SET intentos_fallidos = 0,
+        bloqueado_hasta   = NULL
+    WHERE id_usuario_admin = @id;
+
+    SET @Resultado = 1;
+    SET @Mensaje   = 'Acceso concedido.';
+
+    -- Primer ResultSet: datos del usuario
     SELECT
         U.id_usuario_admin,
         U.nombre,
         U.apellido,
         U.usuario,
         U.estado AS EstadoUsuario,
-        U.fecha_creacion,
         R.id_rol,
-        R.nombre AS NombreRol,
-        R.estado AS EstadoRol
-    INTO #LoginData
+        R.nombre AS NombreRol
     FROM usuario_admin U
     INNER JOIN rol R ON U.rol_id_rol = R.id_rol
-    WHERE U.usuario = @Usuario
-      AND U.contraseña = @Contrasena
-      AND U.estado = 1
-      AND R.estado = 1;
+    WHERE U.id_usuario_admin = @id;
 
-    IF EXISTS (SELECT 1 FROM #LoginData)
-    BEGIN
-        -- Primer ResultSet: datos del usuario
-        SELECT
-            id_usuario_admin,
-            nombre,
-            apellido,
-            usuario,
-            EstadoUsuario,
-            id_rol,
-            NombreRol
-        FROM #LoginData;
-
-        -- Segundo ResultSet: permisos del rol
-        SELECT
-            P.id_permiso,
-            P.accion
-        FROM rol_permiso RP
-        INNER JOIN permiso P ON RP.permiso_id_permiso = P.id_permiso
-        WHERE RP.rol_id_rol = (SELECT id_rol FROM #LoginData);
-    END
-    ELSE
-    BEGIN
-        SELECT
-            NULL AS id_usuario_admin, NULL AS nombre, NULL AS apellido,
-            NULL AS usuario, NULL AS EstadoUsuario, NULL AS id_rol, NULL AS NombreRol
-        WHERE 1 = 0;
-
-        SELECT NULL AS id_permiso, NULL AS accion WHERE 1 = 0;
-    END
-
-    IF OBJECT_ID('tempdb..#LoginData') IS NOT NULL
-        DROP TABLE #LoginData;
+    -- Segundo ResultSet: permisos del rol
+    SELECT
+        P.id_permiso,
+        P.accion
+    FROM rol_permiso RP
+    INNER JOIN permiso P ON RP.permiso_id_permiso = P.id_permiso
+    WHERE RP.rol_id_rol = @idRol;
 END
 GO

@@ -27,6 +27,11 @@ namespace CapaNegocio
                 Mensaje = "La serie del medidor es obligatoria.";
                 return 0;
             }
+            if (!CN_Recursos.EsSerieValida(obj.serie))
+            {
+                Mensaje = "La serie solo puede contener letras, números y guiones (sin espacios).";
+                return 0;
+            }
             if (obj.numero <= 0)
             {
                 Mensaje = "El número del medidor debe ser mayor a cero.";
@@ -48,6 +53,11 @@ namespace CapaNegocio
             if (string.IsNullOrWhiteSpace(obj.serie))
             {
                 Mensaje = "La serie del medidor es obligatoria.";
+                return false;
+            }
+            if (!CN_Recursos.EsSerieValida(obj.serie))
+            {
+                Mensaje = "La serie solo puede contener letras, números y guiones (sin espacios).";
                 return false;
             }
             if (obj.numero <= 0)

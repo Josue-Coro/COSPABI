@@ -24,14 +24,29 @@ namespace CapaNegocio
                 Mensaje = "El nombre del usuario es obligatorio.";
                 return 0;
             }
+            if (!CN_Recursos.EsNombreValido(obj.nombre))
+            {
+                Mensaje = "El nombre solo puede contener letras y espacios (sin números).";
+                return 0;
+            }
             if (string.IsNullOrWhiteSpace(obj.apellido))
             {
                 Mensaje = "El apellido del usuario es obligatorio.";
                 return 0;
             }
+            if (!CN_Recursos.EsNombreValido(obj.apellido))
+            {
+                Mensaje = "El apellido solo puede contener letras y espacios (sin números).";
+                return 0;
+            }
             if (string.IsNullOrWhiteSpace(obj.usuario))
             {
                 Mensaje = "El nombre de usuario es obligatorio.";
+                return 0;
+            }
+            if (!CN_Recursos.EsUsuarioValido(obj.usuario))
+            {
+                Mensaje = "El nombre de usuario debe tener de 3 a 30 caracteres, sin espacios (solo letras, números, punto, guion y guion bajo).";
                 return 0;
             }
             if (string.IsNullOrWhiteSpace(obj.contraseña))
@@ -69,14 +84,29 @@ namespace CapaNegocio
                 Mensaje = "El nombre del usuario es obligatorio.";
                 return false;
             }
+            if (!CN_Recursos.EsNombreValido(obj.nombre))
+            {
+                Mensaje = "El nombre solo puede contener letras y espacios (sin números).";
+                return false;
+            }
             if (string.IsNullOrWhiteSpace(obj.apellido))
             {
                 Mensaje = "El apellido del usuario es obligatorio.";
                 return false;
             }
+            if (!CN_Recursos.EsNombreValido(obj.apellido))
+            {
+                Mensaje = "El apellido solo puede contener letras y espacios (sin números).";
+                return false;
+            }
             if (string.IsNullOrWhiteSpace(obj.usuario))
             {
                 Mensaje = "El nombre de usuario es obligatorio.";
+                return false;
+            }
+            if (!CN_Recursos.EsUsuarioValido(obj.usuario))
+            {
+                Mensaje = "El nombre de usuario debe tener de 3 a 30 caracteres, sin espacios (solo letras, números, punto, guion y guion bajo).";
                 return false;
             }
             // Contraseña es opcional al editar — solo valida longitud si viene con valor

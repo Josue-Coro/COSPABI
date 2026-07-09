@@ -1,5 +1,5 @@
 USE [COSPABIRL1]
-
+GO
 
 -- ══════════════════════════════════════════
 -- LISTAR con paginación y búsqueda
@@ -92,6 +92,14 @@ BEGIN
         RETURN;
     END
 
+    -- Email único (se usa como referencia para pagos QR)
+    IF EXISTS (SELECT 1 FROM cliente WHERE LTRIM(RTRIM(email)) = LTRIM(RTRIM(@Email)))
+    BEGIN
+        SET @Resultado = 0;
+        SET @Mensaje   = 'El email ya está registrado en otro cliente.';
+        RETURN;
+    END
+
     INSERT INTO cliente (
         nombre_completo,
         ci,
@@ -141,6 +149,16 @@ BEGIN
     BEGIN
         SET @Resultado = 0;
         SET @Mensaje   = 'El CI ya está registrado en otro cliente.';
+        RETURN;
+    END
+
+    -- Email único en OTRO cliente (se usa como referencia para pagos QR)
+    IF EXISTS (SELECT 1 FROM cliente
+               WHERE LTRIM(RTRIM(email)) = LTRIM(RTRIM(@Email))
+                 AND id_cliente <> @IdCliente)
+    BEGIN
+        SET @Resultado = 0;
+        SET @Mensaje   = 'El email ya está registrado en otro cliente.';
         RETURN;
     END
 

@@ -14,11 +14,20 @@ namespace CapaNegocio
         private CD_Login objLogin = new CD_Login();
         private CN_Recursos Recursos = new CN_Recursos();
         private CN_Bitacora bitacora = new CN_Bitacora();
-        public CM_Usuario_Activo Login(string usuario, string contraseñaPlana)
+        public CM_Usuario_Activo Login(string usuario, string contraseñaPlana, out string Mensaje)
         {
+            Mensaje = string.Empty;
+
+            if (string.IsNullOrWhiteSpace(usuario) || string.IsNullOrWhiteSpace(contraseñaPlana))
+            {
+                Mensaje = "Ingresa usuario y contraseña.";
+                return null;
+            }
+
             string contraseñaEncriptada = Recursos.ConvertirSha256(contraseñaPlana);
 
-            CM_Usuario_Activo Usuario = objLogin.Login(usuario, contraseñaEncriptada);
+            // Los intentos fallidos y bloqueos los registra el SP en la bitácora
+            CM_Usuario_Activo Usuario = objLogin.Login(usuario, contraseñaEncriptada, out Mensaje);
 
             if (Usuario != null)
             {

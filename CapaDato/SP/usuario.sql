@@ -37,7 +37,7 @@ GO
 -- =============================================
 -- LISTAR USUARIOS
 -- =============================================
-CREATE PROCEDURE [dbo].[sp_listar_usuarios]
+CREATE OR ALTER PROCEDURE [dbo].[sp_listar_usuarios]
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -58,7 +58,7 @@ GO
 -- =============================================
 -- CREAR USUARIO
 -- =============================================
-CREATE PROCEDURE [dbo].[sp_crear_usuario]
+CREATE OR ALTER PROCEDURE [dbo].[sp_crear_usuario]
     @nombre      VARCHAR(255),
     @apellido    VARCHAR(255),
     @usuario     VARCHAR(255),
@@ -79,13 +79,22 @@ BEGIN
         RETURN;
     END
 
+    -- No permitir registrar dos veces a la misma persona (nombre + apellido)
+    IF EXISTS (SELECT 1 FROM [dbo].[usuario_admin]
+               WHERE LTRIM(RTRIM(nombre))   = LTRIM(RTRIM(@nombre))
+                 AND LTRIM(RTRIM(apellido)) = LTRIM(RTRIM(@apellido)))
+    BEGIN
+        SET @Mensaje = 'Ya existe un usuario registrado con ese nombre y apellido.';
+        RETURN;
+    END
+
     IF NOT EXISTS (SELECT 1 FROM [dbo].[rol] WHERE id_rol = @rol_id_rol AND estado = 1)
     BEGIN
         SET @Mensaje = 'El rol seleccionado no existe o está inactivo.';
         RETURN;
     END
 
-    INSERT INTO [dbo].[usuario_admin] 
+    INSERT INTO [dbo].[usuario_admin]
         (nombre, apellido, usuario, contraseña, estado, fecha_creacion, rol_id_rol)
     VALUES 
         (@nombre, @apellido, @usuario, @contrasena, @estado, GETDATE(), @rol_id_rol);
@@ -98,7 +107,7 @@ GO
 -- =============================================
 -- EDITAR USUARIO
 -- =============================================
-CREATE PROCEDURE [dbo].[sp_editar_usuario]
+CREATE OR ALTER PROCEDURE [dbo].[sp_editar_usuario]
     @id_usuario_admin INT,
     @nombre           VARCHAR(255),
     @apellido         VARCHAR(255),
@@ -120,10 +129,20 @@ BEGIN
         RETURN;
     END
 
-    IF EXISTS (SELECT 1 FROM [dbo].[usuario_admin] 
+    IF EXISTS (SELECT 1 FROM [dbo].[usuario_admin]
                WHERE usuario = @usuario AND id_usuario_admin <> @id_usuario_admin)
     BEGIN
         SET @Mensaje = 'Ya existe otro usuario con ese nombre de usuario.';
+        RETURN;
+    END
+
+    -- No permitir que otro usuario tenga el mismo nombre + apellido
+    IF EXISTS (SELECT 1 FROM [dbo].[usuario_admin]
+               WHERE LTRIM(RTRIM(nombre))   = LTRIM(RTRIM(@nombre))
+                 AND LTRIM(RTRIM(apellido)) = LTRIM(RTRIM(@apellido))
+                 AND id_usuario_admin <> @id_usuario_admin)
+    BEGIN
+        SET @Mensaje = 'Ya existe otro usuario registrado con ese nombre y apellido.';
         RETURN;
     END
 
@@ -155,7 +174,7 @@ GO
 -- =============================================
 -- ELIMINAR (DESACTIVAR) USUARIO
 -- =============================================
-CREATE PROCEDURE [dbo].[sp_eliminar_usuario]
+CREATE OR ALTER PROCEDURE [dbo].[sp_eliminar_usuario]
     @id_usuario_admin INT,
     @Resultado        INT OUTPUT,
     @Mensaje          VARCHAR(500) OUTPUT

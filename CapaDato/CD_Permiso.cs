@@ -27,7 +27,8 @@ namespace CapaDato
                             {
                                 id_permiso = Convert.ToInt32(dr["id_permiso"]),
                                 accion = dr["accion"].ToString(),
-                                descripcion = dr["descripcion"].ToString()
+                                descripcion = dr["descripcion"].ToString(),
+                                modulo = dr["modulo"].ToString()
                             });
                         }
                     }

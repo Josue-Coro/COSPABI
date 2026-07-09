@@ -29,9 +29,19 @@ namespace CapaNegocio
                 Mensaje = "El nombre completo es obligatorio.";
                 return false;
             }
+            if (!CN_Recursos.EsNombreValido(obj.nombre_completo))
+            {
+                Mensaje = "El nombre completo solo puede contener letras y espacios (sin números).";
+                return false;
+            }
             if (string.IsNullOrWhiteSpace(obj.ci))
             {
                 Mensaje = "El CI es obligatorio.";
+                return false;
+            }
+            if (!CN_Recursos.EsNumerico(obj.ci, 4, 10))
+            {
+                Mensaje = "El CI debe contener solo números (entre 4 y 10 dígitos).";
                 return false;
             }
             if (string.IsNullOrWhiteSpace(obj.genero))
@@ -44,7 +54,7 @@ namespace CapaNegocio
                 Mensaje = "El email es obligatorio (requerido para pagos por QR).";
                 return false;
             }
-            if (obj.email.IndexOf('@') <= 0 || obj.email.LastIndexOf('.') < obj.email.IndexOf('@'))
+            if (!CN_Recursos.EsEmailValido(obj.email))
             {
                 Mensaje = "El email no tiene un formato válido.";
                 return false;
@@ -52,6 +62,16 @@ namespace CapaNegocio
             if (obj.fecha_nacimiento == DateTime.MinValue)
             {
                 Mensaje = "La fecha de nacimiento es obligatoria.";
+                return false;
+            }
+            if (obj.fecha_nacimiento > DateTime.Today)
+            {
+                Mensaje = "La fecha de nacimiento no puede ser futura.";
+                return false;
+            }
+            if (obj.fecha_nacimiento < DateTime.Today.AddYears(-120))
+            {
+                Mensaje = "La fecha de nacimiento no es válida.";
                 return false;
             }
 
@@ -77,9 +97,19 @@ namespace CapaNegocio
                 Mensaje = "El nombre completo es obligatorio.";
                 return false;
             }
+            if (!CN_Recursos.EsNombreValido(obj.nombre_completo))
+            {
+                Mensaje = "El nombre completo solo puede contener letras y espacios (sin números).";
+                return false;
+            }
             if (string.IsNullOrWhiteSpace(obj.ci))
             {
                 Mensaje = "El CI es obligatorio.";
+                return false;
+            }
+            if (!CN_Recursos.EsNumerico(obj.ci, 4, 10))
+            {
+                Mensaje = "El CI debe contener solo números (entre 4 y 10 dígitos).";
                 return false;
             }
             if (string.IsNullOrWhiteSpace(obj.genero))
@@ -92,7 +122,7 @@ namespace CapaNegocio
                 Mensaje = "El email es obligatorio (requerido para pagos por QR).";
                 return false;
             }
-            if (obj.email.IndexOf('@') <= 0 || obj.email.LastIndexOf('.') < obj.email.IndexOf('@'))
+            if (!CN_Recursos.EsEmailValido(obj.email))
             {
                 Mensaje = "El email no tiene un formato válido.";
                 return false;
@@ -100,6 +130,16 @@ namespace CapaNegocio
             if (obj.fecha_nacimiento == DateTime.MinValue)
             {
                 Mensaje = "La fecha de nacimiento es obligatoria.";
+                return false;
+            }
+            if (obj.fecha_nacimiento > DateTime.Today)
+            {
+                Mensaje = "La fecha de nacimiento no puede ser futura.";
+                return false;
+            }
+            if (obj.fecha_nacimiento < DateTime.Today.AddYears(-120))
+            {
+                Mensaje = "La fecha de nacimiento no es válida.";
                 return false;
             }
 

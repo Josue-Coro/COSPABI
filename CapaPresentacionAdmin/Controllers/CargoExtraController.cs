@@ -2,6 +2,7 @@ using CapaModelo;
 using CapaNegocio;
 using CapaPresentacionAdmin.Filtros;
 using System;
+using System.Collections.Generic;
 using System.Web.Mvc;
 using static CapaModelo.CM_CargoExtra;
 
@@ -24,6 +25,14 @@ namespace CapaPresentacionAdmin.Controllers
         {
             var lista = new CN_Lectura().ListarPeriodosAutomaticos();
             return Json(new { data = lista }, JsonRequestBehavior.AllowGet);
+        }
+
+        [HttpGet]
+        [ValidarPermisos(NombrePermiso = "Gestionar Cargo Extra")]
+        public JsonResult ObtenerPeriodoActual()
+        {
+            var periodo = new CN_Lectura().ObtenerPeriodoActual();
+            return Json(new { data = periodo }, JsonRequestBehavior.AllowGet);
         }
 
         [HttpGet]
@@ -89,6 +98,58 @@ namespace CapaPresentacionAdmin.Controllers
             catch (Exception ex)
             {
                 return Json(new { exito = false, id = 0, mensaje = ex.Message });
+            }
+        }
+
+        [HttpPost]
+        [ValidateInput(false)]
+        [ValidarPermisos(NombrePermiso = "Gestionar Cargo Extra")]
+        public JsonResult RegistrarCargosExtra(int idPeriodo, int idSocio, List<CM_CargoExtra> cargos)
+        {
+            try
+            {
+                if (cargos == null || cargos.Count == 0)
+                    return Json(new { exito = false, registrados = 0, mensaje = "Agrega al menos un cargo a la lista." });
+
+                // Regla de negocio: los cargos extra solo se registran en el período actual
+                var periodoActual = new CN_Lectura().ObtenerPeriodoActual();
+                if (periodoActual == null || idPeriodo != periodoActual.id_periodo)
+                    return Json(new { exito = false, registrados = 0, mensaje = "Solo se pueden registrar cargos en el período actual." });
+
+                // Validación: no permitir el mismo tipo de cargo dos veces en el lote
+                var tiposVistos = new HashSet<int>();
+                foreach (var c in cargos)
+                {
+                    if (!tiposVistos.Add(c.tipo_cargo_id_tipo))
+                        return Json(new { exito = false, registrados = 0, mensaje = "No puedes registrar el mismo tipo de cargo dos veces." });
+                }
+
+                var oUsuario = (CM_Usuario_Activo)Session["Usuario"];
+                int registrados = 0;
+                var errores = new List<string>();
+
+                foreach (var c in cargos)
+                {
+                    c.periodo_id_periodo = idPeriodo;
+                    c.socio_id_socio     = idSocio;
+                    int id = cnCargoExtra.Registrar(c, oUsuario.id_usuario_admin, out string msg);
+                    if (id > 0) registrados++;
+                    else        errores.Add((string.IsNullOrEmpty(c.descripcion) ? "Cargo" : c.descripcion) + ": " + msg);
+                }
+
+                string mensaje;
+                if (registrados == cargos.Count)
+                    mensaje = registrados + " cargo(s) registrado(s) correctamente.";
+                else if (registrados > 0)
+                    mensaje = registrados + " registrado(s), " + errores.Count + " omitido(s). " + string.Join(" | ", errores);
+                else
+                    mensaje = "No se registró ningún cargo. " + string.Join(" | ", errores);
+
+                return Json(new { exito = registrados > 0, registrados, fallidos = errores.Count, mensaje });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { exito = false, registrados = 0, mensaje = ex.Message });
             }
         }
 

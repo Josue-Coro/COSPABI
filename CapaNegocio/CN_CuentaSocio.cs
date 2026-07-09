@@ -28,9 +28,19 @@ namespace CapaNegocio
                 Mensaje = "El usuario es obligatorio.";
                 return false;
             }
+            if (!CN_Recursos.EsUsuarioValido(obj.usuario))
+            {
+                Mensaje = "El usuario debe tener de 3 a 30 caracteres, sin espacios (solo letras, números, punto, guion y guion bajo).";
+                return false;
+            }
             if (string.IsNullOrWhiteSpace(obj.contrasena))
             {
                 Mensaje = "La contraseña es obligatoria.";
+                return false;
+            }
+            if (obj.contrasena.Length < 6)
+            {
+                Mensaje = "La contraseña debe tener al menos 6 caracteres.";
                 return false;
             }
             if (obj.socio_id_socio <= 0)
@@ -59,6 +69,17 @@ namespace CapaNegocio
             if (string.IsNullOrWhiteSpace(obj.usuario))
             {
                 Mensaje = "El usuario es obligatorio.";
+                return false;
+            }
+            if (!CN_Recursos.EsUsuarioValido(obj.usuario))
+            {
+                Mensaje = "El usuario debe tener de 3 a 30 caracteres, sin espacios (solo letras, números, punto, guion y guion bajo).";
+                return false;
+            }
+            // Contraseña opcional al editar — solo valida longitud si viene con valor
+            if (!string.IsNullOrWhiteSpace(obj.contrasena) && obj.contrasena.Length < 6)
+            {
+                Mensaje = "La contraseña debe tener al menos 6 caracteres.";
                 return false;
             }
             if (obj.socio_id_socio <= 0)

@@ -20,11 +20,7 @@ namespace CapaPresentacionAdmin.Controllers
         [HttpPost]
         public JsonResult ValidarLogin(string usuario, string contrasena)
         {
-            CM_Usuario_Activo oUsuario = new CM_Usuario_Activo();
-            
-            string mensaje = string.Empty;
-
-            oUsuario = new CN_Login().Login(usuario, contrasena);
+            CM_Usuario_Activo oUsuario = new CN_Login().Login(usuario, contrasena, out string mensaje);
 
             if (oUsuario != null)
             {
@@ -44,7 +40,10 @@ namespace CapaPresentacionAdmin.Controllers
             }
             else
             {
-                mensaje = "Correo o contraseña incorrectos, o el usuario/rol no está activo.";
+                // El mensaje viene del SP: genérico si falló la credencial,
+                // explícito si la cuenta está bloqueada por intentos fallidos.
+                if (string.IsNullOrEmpty(mensaje))
+                    mensaje = "Usuario o contraseña incorrectos, o el usuario/rol no está activo.";
 
                 return Json(new
                 {

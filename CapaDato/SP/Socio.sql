@@ -112,6 +112,15 @@ BEGIN
             RETURN;
         END
 
+        -- Validar que no exista otro socio con el mismo nombre
+        IF EXISTS (SELECT 1 FROM socio
+                   WHERE LTRIM(RTRIM(nombre_socio)) = LTRIM(RTRIM(@nombre_socio)))
+        BEGIN
+            SET @Resultado = 0;
+            SET @Mensaje = 'Ya existe un socio registrado con ese nombre.';
+            RETURN;
+        END
+
         INSERT INTO socio (
             nombre_socio, cliente_id_cliente, rol_socio_id_rol_socio,
             ubicacion, medidor_id_medidor, num_casa, num_ocupantes,
@@ -182,13 +191,25 @@ BEGIN
 
         -- Validar código fijo único en OTRO socio
         IF EXISTS (
-            SELECT 1 FROM socio 
-            WHERE codigo_fijo = @codigo_fijo 
+            SELECT 1 FROM socio
+            WHERE codigo_fijo = @codigo_fijo
               AND id_socio <> @id_socio
         )
         BEGIN
             SET @Resultado = 0;
             SET @Mensaje = 'El código fijo ya existe en otro socio.';
+            RETURN;
+        END
+
+        -- Validar que OTRO socio no tenga el mismo nombre
+        IF EXISTS (
+            SELECT 1 FROM socio
+            WHERE LTRIM(RTRIM(nombre_socio)) = LTRIM(RTRIM(@nombre_socio))
+              AND id_socio <> @id_socio
+        )
+        BEGIN
+            SET @Resultado = 0;
+            SET @Mensaje = 'Ya existe otro socio registrado con ese nombre.';
             RETURN;
         END
 

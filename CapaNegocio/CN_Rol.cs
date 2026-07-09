@@ -27,6 +27,11 @@ namespace CapaNegocio
                 Mensaje = "El nombre del rol no puede ser vacío";
                 return 0;
             }
+            if (!CN_Recursos.EsNombreValido(obj.nombre))
+            {
+                Mensaje = "El nombre del rol solo puede contener letras y espacios (sin números).";
+                return 0;
+            }
             if (string.IsNullOrWhiteSpace(obj.descripcion))
             {
                 Mensaje = "La descripción del rol no puede ser vacía";
@@ -52,6 +57,11 @@ namespace CapaNegocio
             if (string.IsNullOrWhiteSpace(obj.nombre))
             {
                 Mensaje = "El nombre del rol no puede ser vacío";
+                return false;
+            }
+            if (!CN_Recursos.EsNombreValido(obj.nombre))
+            {
+                Mensaje = "El nombre del rol solo puede contener letras y espacios (sin números).";
                 return false;
             }
             if (string.IsNullOrWhiteSpace(obj.descripcion))

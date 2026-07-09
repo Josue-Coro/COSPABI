@@ -93,13 +93,9 @@ namespace CapaDato
             {
                 using (SqlConnection cn = new SqlConnection(CD_Conexion.cn))
                 {
-                    string sql = @"SELECT TOP 10 id_socio, nombre_socio, codigo_fijo
-                                   FROM socio
-                                   WHERE nombre_socio LIKE '%' + @b + '%'
-                                      OR CAST(codigo_fijo AS VARCHAR) LIKE '%' + @b + '%'
-                                   ORDER BY codigo_fijo";
-                    SqlCommand cmd = new SqlCommand(sql, cn);
-                    cmd.Parameters.AddWithValue("@b", busqueda ?? "");
+                    SqlCommand cmd = new SqlCommand("dbo.sp_buscar_socios_cargo", cn);
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.Parameters.AddWithValue("@Busqueda", busqueda ?? "");
                     cn.Open();
                     SqlDataReader dr = cmd.ExecuteReader();
                     while (dr.Read())

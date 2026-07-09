@@ -5,7 +5,7 @@ GO
 -- ══════════════════════════════════════════
 -- LISTAR con paginación y búsqueda
 -- ══════════════════════════════════════════
-CREATE PROCEDURE dbo.sp_listar_notificaciones
+CREATE OR ALTER PROCEDURE dbo.sp_listar_notificaciones
 (
     @Busqueda     VARCHAR(250) = '',
     @Pagina       INT          = 1,
@@ -42,7 +42,7 @@ GO
 -- ══════════════════════════════════════════
 -- OBTENER por ID
 -- ══════════════════════════════════════════
-CREATE PROCEDURE dbo.sp_obtener_notificacion
+CREATE OR ALTER PROCEDURE dbo.sp_obtener_notificacion
 (
     @IdNotificacion INT
 )
@@ -65,7 +65,7 @@ GO
 -- ══════════════════════════════════════════
 -- REGISTRAR
 -- ══════════════════════════════════════════
-CREATE PROCEDURE dbo.sp_registrar_notificacion
+CREATE OR ALTER PROCEDURE dbo.sp_registrar_notificacion
 (
     @Titulo       VARCHAR(255),
     @Mensaje      VARCHAR(1000),
@@ -74,6 +74,15 @@ CREATE PROCEDURE dbo.sp_registrar_notificacion
 AS
 BEGIN
     SET NOCOUNT ON;
+
+    -- No permitir una notificación duplicada (mismo título y mensaje)
+    IF EXISTS (SELECT 1 FROM notificacion
+               WHERE LTRIM(RTRIM(titulo))  = LTRIM(RTRIM(@Titulo))
+                 AND LTRIM(RTRIM(mensaje)) = LTRIM(RTRIM(@Mensaje)))
+    BEGIN
+        SELECT 0 AS IdGenerado, 0 AS Resultado, 'Ya existe una notificación con el mismo título y mensaje.' AS Mensaje;
+        RETURN;
+    END
 
     INSERT INTO notificacion (
         titulo,
@@ -97,7 +106,7 @@ GO
 -- ══════════════════════════════════════════
 -- EDITAR
 -- ══════════════════════════════════════════
-CREATE PROCEDURE dbo.sp_editar_notificacion
+CREATE OR ALTER PROCEDURE dbo.sp_editar_notificacion
 (
     @IdNotificacion INT,
     @Titulo         VARCHAR(255),
@@ -107,6 +116,22 @@ CREATE PROCEDURE dbo.sp_editar_notificacion
 AS
 BEGIN
     SET NOCOUNT ON;
+
+    IF NOT EXISTS (SELECT 1 FROM notificacion WHERE id_notificacion = @IdNotificacion)
+    BEGIN
+        SELECT 0 AS Resultado, 'La notificación no existe.' AS Mensaje;
+        RETURN;
+    END
+
+    -- No permitir duplicar OTRA notificación (mismo título y mensaje)
+    IF EXISTS (SELECT 1 FROM notificacion
+               WHERE LTRIM(RTRIM(titulo))  = LTRIM(RTRIM(@Titulo))
+                 AND LTRIM(RTRIM(mensaje)) = LTRIM(RTRIM(@Mensaje))
+                 AND id_notificacion <> @IdNotificacion)
+    BEGIN
+        SELECT 0 AS Resultado, 'Ya existe otra notificación con el mismo título y mensaje.' AS Mensaje;
+        RETURN;
+    END
 
     UPDATE notificacion SET
         titulo  = @Titulo,
@@ -121,7 +146,7 @@ GO
 -- ══════════════════════════════════════════
 -- ELIMINAR (Fisico con validacion)
 -- ══════════════════════════════════════════
-CREATE PROCEDURE dbo.sp_eliminar_notificacion
+CREATE OR ALTER PROCEDURE dbo.sp_eliminar_notificacion
 (
     @IdNotificacion INT
 )
@@ -156,7 +181,7 @@ GO
 -- ══════════════════════════════════════════
 -- ASIGNAR SOCIOS a una notificacion
 -- ══════════════════════════════════════════
-CREATE PROCEDURE dbo.sp_asignar_notificacion_socios
+CREATE OR ALTER PROCEDURE dbo.sp_asignar_notificacion_socios
 (
     @IdNotificacion INT,
     @EnviarATodos   BIT          = 0,
@@ -191,7 +216,7 @@ GO
 -- ══════════════════════════════════════════
 -- LISTAR SOCIOS asignados a una notificacion
 -- ══════════════════════════════════════════
-CREATE PROCEDURE dbo.sp_listar_notificacion_socios
+CREATE OR ALTER PROCEDURE dbo.sp_listar_notificacion_socios
 (
     @IdNotificacion INT
 )

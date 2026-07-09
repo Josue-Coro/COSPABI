@@ -12,15 +12,18 @@ namespace CapaDato
     public class CD_Login
     {
 
-        public CM_Usuario_Activo Login(string usuario, string contrasenaHasheada)
+        public CM_Usuario_Activo Login(string usuario, string contrasenaHasheada, out string Mensaje)
         {
             CM_Usuario_Activo Usuario = null;
+            Mensaje = string.Empty;
 
             using (SqlConnection oConexion = new SqlConnection(CD_Conexion.cn))
             {
                 SqlCommand cmd = new SqlCommand("dbo.sp_login_admin", oConexion);
                 cmd.Parameters.AddWithValue("@Usuario", usuario);
                 cmd.Parameters.AddWithValue("@Contrasena", contrasenaHasheada);
+                cmd.Parameters.Add("@Resultado", SqlDbType.Int).Direction          = ParameterDirection.Output;
+                cmd.Parameters.Add("@Mensaje",   SqlDbType.VarChar, 500).Direction = ParameterDirection.Output;
                 cmd.CommandType = CommandType.StoredProcedure;
 
                 try
@@ -62,10 +65,14 @@ namespace CapaDato
 
                     dr.Close();
 
+                    // Los OUTPUT params están disponibles después de cerrar el reader
+                    Mensaje = cmd.Parameters["@Mensaje"].Value?.ToString() ?? string.Empty;
+
                 }
                 catch
                 {
                     Usuario = null;
+                    Mensaje = "Error de conexión con la base de datos.";
                 }
             }
             return Usuario;

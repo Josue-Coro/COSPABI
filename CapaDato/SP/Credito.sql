@@ -57,6 +57,9 @@ BEGIN
         IF EXISTS (SELECT 1 FROM socio WHERE codigo_fijo = @codigo_fijo)
         BEGIN SET @Mensaje = 'El código fijo ingresado ya existe.'; RETURN; END
 
+        IF EXISTS (SELECT 1 FROM socio WHERE LTRIM(RTRIM(nombre_socio)) = LTRIM(RTRIM(@nombre_socio)))
+        BEGIN SET @Mensaje = 'Ya existe un socio registrado con ese nombre.'; RETURN; END
+
         IF NOT EXISTS (SELECT 1 FROM metodo_pago WHERE id_metodo_pago = @id_metodo_pago)
         BEGIN SET @Mensaje = 'El método de pago seleccionado no existe.'; RETURN; END
 

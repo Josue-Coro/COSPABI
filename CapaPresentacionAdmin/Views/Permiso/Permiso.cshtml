@@ -276,7 +276,7 @@
         rolActual = { id: 0, nombre: '' };
     }
 
-    // -- Renderizar checkboxes -----------------------------------------------
+    // -- Renderizar checkboxes agrupados por módulo ---------------------------
     function renderizarPermisos(permisos) {
         if (!permisos || permisos.length === 0) {
             $('#listaPermisos').html(
@@ -285,22 +285,48 @@
             return;
         }
 
-        var html = '<div class="space-y-2" id="contenedorPermisos">';
+        // Agrupar por módulo (vienen ya ordenados por módulo desde el SP)
+        var grupos = [];   // [{ nombre, permisos: [] }]
         $.each(permisos, function (i, p) {
-            var checked = p.asignado ? 'checked' : '';
+            var mod = p.modulo || 'Otros';
+            var ultimo = grupos[grupos.length - 1];
+            if (!ultimo || ultimo.nombre !== mod) {
+                grupos.push({ nombre: mod, permisos: [] });
+                ultimo = grupos[grupos.length - 1];
+            }
+            ultimo.permisos.push(p);
+        });
+
+        var html = '<div id="contenedorPermisos">';
+        $.each(grupos, function (g, grupo) {
             html +=
-                '<label class="item-permiso flex items-start gap-3 p-3 rounded-xl border border-gray-100 ' +
-                '              hover:bg-gray-50 cursor-pointer transition group" ' +
-                '       data-nombre="' + p.accion.toLowerCase() + '">' +
-                '  <input type="checkbox" class="checkbox-permiso mt-0.5 w-4 h-4 rounded cursor-pointer flex-shrink-0" ' +
-                '         value="' + p.id_permiso + '" ' + checked + '>' +
-                '  <div class="min-w-0">' +
-                '    <p class="text-sm font-medium text-gray-800 leading-snug">' + p.accion + '</p>' +
-                (p.descripcion
-                    ? '<p class="text-xs text-gray-400 mt-0.5">' + p.descripcion + '</p>'
-                    : '') +
+                '<div class="grupo-modulo' + (g > 0 ? ' mt-5' : '') + '">' +
+                '  <div class="flex items-center gap-2 mb-2">' +
+                '    <span class="text-xs font-bold text-primary-700 uppercase tracking-wider">' + grupo.nombre + '</span>' +
+                '    <div class="flex-1 h-px bg-gray-200"></div>' +
+                '    <span class="text-xs text-gray-400 contador-modulo"></span>' +
                 '  </div>' +
-                '</label>';
+                '  <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">';
+
+            $.each(grupo.permisos, function (i, p) {
+                var checked = p.asignado ? 'checked' : '';
+                var filtro  = (p.accion + ' ' + (p.descripcion || '') + ' ' + grupo.nombre).toLowerCase();
+                html +=
+                    '<label class="item-permiso flex items-start gap-3 p-3 rounded-xl border border-gray-100 ' +
+                    '              hover:bg-gray-50 cursor-pointer transition group" ' +
+                    '       data-nombre="' + filtro + '">' +
+                    '  <input type="checkbox" class="checkbox-permiso mt-0.5 w-4 h-4 rounded cursor-pointer flex-shrink-0" ' +
+                    '         value="' + p.id_permiso + '" ' + checked + '>' +
+                    '  <div class="min-w-0">' +
+                    '    <p class="text-sm font-medium text-gray-800 leading-snug">' + p.accion + '</p>' +
+                    (p.descripcion
+                        ? '<p class="text-xs text-gray-400 mt-0.5">' + p.descripcion + '</p>'
+                        : '') +
+                    '  </div>' +
+                    '</label>';
+            });
+
+            html += '  </div></div>';
         });
         html += '</div>';
 
@@ -317,6 +343,10 @@
         $('.item-permiso').each(function () {
             $(this).toggle($(this).data('nombre').indexOf(t) !== -1);
         });
+        // Ocultar los módulos que quedaron sin resultados
+        $('.grupo-modulo').each(function () {
+            $(this).toggle($(this).find('.item-permiso:visible').length > 0);
+        });
     });
 
     // -- Marcar / desmarcar todos --------------------------------------------
@@ -329,6 +359,13 @@
         var total    = $('.checkbox-permiso').length;
         var marcados = $('.checkbox-permiso:checked').length;
         $('#contadorMarcados').text(marcados + ' / ' + total + ' seleccionados');
+
+        // Contador por módulo
+        $('.grupo-modulo').each(function () {
+            var t = $(this).find('.checkbox-permiso').length;
+            var m = $(this).find('.checkbox-permiso:checked').length;
+            $(this).find('.contador-modulo').text(m + ' / ' + t);
+        });
     }
 
     // -- Guardar permisos ----------------------------------------------------

@@ -26,7 +26,6 @@ namespace CapaPresentacionAdmin.Controllers
             return Json(new { data = lista }, JsonRequestBehavior.AllowGet);
         }
 
-        // Para poblar el select de usuarios en el filtro
         [HttpGet]
         [ValidarPermisos(NombrePermiso = "Visualizar Bitacora")]
         public JsonResult ListarUsuarios()

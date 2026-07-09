@@ -17,12 +17,6 @@ namespace CapaPresentacionAdmin.Controllers
         {
             return View();
         }
-        [ValidarPermisos(NombrePermiso = "Gestionar Caja")]
-        public ActionResult Reporte()
-        {
-            return View();
-        }
-
         // Caja abierta del cajero logueado (o null)
         [HttpGet]
         [ValidarPermisos(NombrePermiso = "Gestionar Caja")]

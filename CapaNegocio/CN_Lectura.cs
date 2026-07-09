@@ -72,5 +72,14 @@ namespace CapaNegocio
 
             return lista;
         }
+
+        // Período del mes en curso (auto-creado si no existe). Mismo formato que ListarPeriodosAutomaticos.
+        public CM_Periodo ObtenerPeriodoActual()
+        {
+            var hoy    = DateTime.Today;
+            var nombre = hoy.Month.ToString("D2") + "/" + hoy.Year;
+            int id     = cdLectura.ObtenerOCrearPeriodo(nombre);
+            return id > 0 ? new CM_Periodo { id_periodo = id, periodo = nombre } : null;
+        }
     }
 }

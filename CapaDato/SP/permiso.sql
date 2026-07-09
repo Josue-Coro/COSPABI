@@ -2,22 +2,33 @@ USE [COSPABIRL1]
 GO
 
 -- =============================================
--- LISTAR TODOS LOS PERMISOS
+-- LISTAR TODOS LOS PERMISOS (agrupados por módulo)
 -- =============================================
-CREATE PROCEDURE [dbo].[sp_listar_permisos]
+CREATE OR ALTER PROCEDURE [dbo].[sp_listar_permisos]
 AS
 BEGIN
     SET NOCOUNT ON;
-    SELECT id_permiso, accion, descripcion
+    SELECT id_permiso, accion, descripcion, modulo
     FROM [dbo].[permiso]
-    ORDER BY accion
+    ORDER BY
+        CASE modulo
+            WHEN 'Administración'      THEN 1
+            WHEN 'Atención al Cliente' THEN 2
+            WHEN 'Operaciones'         THEN 3
+            WHEN 'Caja y Pagos'        THEN 4
+            WHEN 'Configuración'       THEN 5
+            WHEN 'Portal de Socios'    THEN 6
+            WHEN 'Reportes'            THEN 7
+            ELSE 99
+        END,
+        accion
 END
 GO
 
 -- =============================================
 -- LISTAR PERMISOS DE UN ROL ESPECÍFICO
 -- =============================================
-CREATE PROCEDURE [dbo].[sp_listar_permisos_por_rol]
+CREATE OR ALTER PROCEDURE [dbo].[sp_listar_permisos_por_rol]
     @id_rol INT
 AS
 BEGIN
@@ -34,14 +45,15 @@ GO
 -- Usa un TVP para recibir la lista de permisos seleccionados
 -- =============================================
 
--- Primero crear el tipo de tabla
-CREATE TYPE [dbo].[TVP_IdsPermisos] AS TABLE
-(
-    id_permiso INT NOT NULL
-)
+-- Primero crear el tipo de tabla (solo si no existe)
+IF TYPE_ID('dbo.TVP_IdsPermisos') IS NULL
+    CREATE TYPE [dbo].[TVP_IdsPermisos] AS TABLE
+    (
+        id_permiso INT NOT NULL
+    )
 GO
 
-CREATE PROCEDURE [dbo].[sp_guardar_permisos_rol]
+CREATE OR ALTER PROCEDURE [dbo].[sp_guardar_permisos_rol]
     @id_rol         INT,
     @TVP_Permisos   [dbo].[TVP_IdsPermisos] READONLY,
     @Resultado      INT OUTPUT,

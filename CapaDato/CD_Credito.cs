@@ -16,9 +16,8 @@ namespace CapaDato
             {
                 using (SqlConnection cn = new SqlConnection(CD_Conexion.cn))
                 {
-                    SqlCommand cmd = new SqlCommand(
-                        "SELECT TOP 1 costo_inscripcion FROM periodo " +
-                        "WHERE costo_inscripcion IS NOT NULL ORDER BY id_periodo DESC", cn);
+                    SqlCommand cmd = new SqlCommand("dbo.sp_obtener_costo_inscripcion_vigente", cn);
+                    cmd.CommandType = CommandType.StoredProcedure;
                     cn.Open();
                     object r = cmd.ExecuteScalar();
                     if (r != null && r != DBNull.Value) costo = Convert.ToDecimal(r);

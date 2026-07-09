@@ -13,22 +13,6 @@
 </div>
 
 
-<!-- CREATE PROCEDURE [dbo].[sp_listar_tarifa]
-AS
-BEGIN
-    SET NOCOUNT ON;
-    SELECT
-        u.id_tarifa,
-        u.consumo_minimo_m3,
-        u.monto_minimo,
-        u.precio_m3,
-        u.rol_socio_id_rol_socio,
-        r.rol_socio AS nombre_rol
-    FROM [dbo].[tarifa] u
-    INNER JOIN [dbo].[rol_socio] r ON r.id_rol_socio = u.id_tarifa
-END
-GO
- -->
 <!-- Tabla -->
 <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
     <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
@@ -56,7 +40,7 @@ GO
             </thead>
             <tbody id="bodyTarifas" class="divide-y divide-gray-100">
                 <tr>
-                    <td colspan="7" class="px-6 py-10 text-center text-sm text-gray-400">
+                    <td colspan="6" class="px-6 py-10 text-center text-sm text-gray-400">
                         <svg class="animate-spin mx-auto mb-2" style="width:22px;height:22px;" fill="none" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
@@ -81,7 +65,7 @@ GO
         <div class="h-1.5 bg-gradient-to-r from-primary-500 to-primary-700"></div>
         <div class="p-6">
             <div class="flex items-center justify-between mb-4">
-                <h3 class="text-base font-semibold text-gray-800">Editar Usuario</h3>
+                <h3 class="text-base font-semibold text-gray-800">Editar Tarifa</h3>
                 <button onclick="cerrarEditar()" class="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 transition">
                     <svg style="width:18px;height:18px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />

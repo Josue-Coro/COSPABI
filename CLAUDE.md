@@ -3,7 +3,8 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 > The user is from Bolivia and works in Spanish. **Respond in Spanish.**
-> `CONTEXTO_COSPABI.md` is the authoritative handoff doc for domain rules (facturación, caja, pagos, Libélula) — read it for any business-logic work. `CapaPresentacionAdmin/main.md` is the UI design system (colors, typography, components).
+> `CONTEXTO_COSPABI.md` is the authoritative handoff doc for domain rules (facturación, caja, pagos, Libélula) — read it for any business-logic work. `CapaPresentacionAdmin/main.md` has the color palette and component specs; **its CSS framework section is outdated** (describes CDN approach that was replaced — follow the compiled-CSS approach in this file instead).
+> `AGENTS.md` mirrors this file for other coding agents — apply any edit to both files.
 
 ## What this is
 
@@ -16,7 +17,7 @@ COSPABI — management system for a water cooperative (cooperativa de agua) in B
 Classic Capas (layered) architecture. Each entity flows through parallel files named by prefix:
 
 - **`CapaModelo`** (`CM_*`) — POCOs only. Some files hold nested classes (e.g. `CM_Cliente` contains `CM_Cliente_Paginado`, accessed via `using static CapaModelo.CM_Cliente;`).
-- **`CapaDato`** (`CD_*`) — data access. Each method opens a `SqlConnection` from `CD_Conexion.cn`, calls a stored procedure, maps the reader. **All SQL lives in stored procedures**, not in C#. SQL source files live in `CapaDato/SP/` (procedures, `CREATE OR ALTER`) and `CapaDato/BD/` (schema + numbered migrations).
+- **`CapaDato`** (`CD_*`) — data access. Each method opens a `SqlConnection` from `CD_Conexion.cn`, calls a stored procedure, maps the reader. **All SQL lives in stored procedures**, not in C# (the last inline queries were moved to `CapaDato/SP/ConsultasDirectasMigradas.sql`). SQL source files live in `CapaDato/SP/` (procedures, `CREATE OR ALTER`, one file per entity) and `CapaDato/BD/` (schema + numbered migrations).
 - **`CapaNegocio`** (`CN_*`) — validation + business rules + **bitácora (audit log)**. The CN method validates, delegates to its CD counterpart, and on success calls `cnBitacora.Registrar("...", idUsuarioSesion)`. Controllers should call CN, never CD directly.
 - **`CapaPresentacionAdmin`** — the main MVC web app (admin). This is where almost all work happens.
 - **`CapaPresentacionCliente`** — socio self-service portal. Barely developed.
@@ -25,13 +26,25 @@ Classic Capas (layered) architecture. Each entity flows through parallel files n
 
 ### Stored-procedure return convention (IMPORTANT)
 
-CD methods that mutate data use **output parameters** `@Resultado INT OUTPUT` and `@Mensaje VARCHAR(500) OUTPUT`, read after `ExecuteNonQuery()`. The matching SP must declare those OUTPUT params and `SET` them (not `SELECT` them). A mismatch here produces *"Procedure or function ... has too many arguments specified"* at runtime. List/Obtener SPs instead return result sets read with `ExecuteReader`. When adding a mutating SP, follow the `@Resultado`/`@Mensaje` OUTPUT pattern to stay consistent with the CD layer.
+CD methods that mutate data use **output parameters** `@Resultado INT OUTPUT` and `@Mensaje VARCHAR(500) OUTPUT`, read after `ExecuteNonQuery()`. The matching SP must declare those OUTPUT params and `SET` them (not `SELECT` them). A mismatch here produces *"Procedure or function ... has too many arguments specified"* at runtime. Some SPs use a different name for the integer output (e.g. `@Generados` in `sp_generar_avisos_periodo`) — the names must match exactly between the CD call and the SP declaration. List/Obtener SPs instead return result sets read with `ExecuteReader`. When adding a mutating SP, follow the `@Resultado`/`@Mensaje` OUTPUT pattern to stay consistent with the CD layer.
 
 ### Auth & permissions
 
 - Login stores `CM_Usuario_Activo` (with `ListaPermisos`) in `Session["Usuario"]`; the layout also reads `Session["NombreUsuario"]` / `Session["RolUsuario"]`.
-- Controllers are gated with `[ValidarPermisos(NombrePermiso = "Gestionar X")]` (in `CapaPresentacionAdmin/Filtros/`). No session → redirect to Login; session but missing permission → AccesoDenegado.
-- Controller actions return `JsonResult` shaped `{ exito, mensaje, ...data }`; views consume via jQuery AJAX. Page actions return `View()`. **Exception:** `PermisoController` returns `{ resultado: int }` (success = `resultado > 0`), not `exito` — match the shape per controller in JS.
+- Controllers are gated with `[ValidarPermisos(NombrePermiso = "...")]` (in `CapaPresentacionAdmin/Filtros/`). Permission names vary (e.g. `"Gestionar Caja"`, `"Visualizar Bitacora"`). No session → redirect to Login; session but missing permission → AccesoDenegado.
+- **JsonResult shapes are not uniform:** mutation actions return `{ exito: bool, mensaje: string, ...data }`; read actions (Listar, Obtener) return `{ data: list }`. `PermisoController` is a further exception: returns `{ resultado: int }` (success = `resultado > 0`). Match the shape of the existing controller when writing JS consumers.
+
+### UI modal pattern
+
+Views use two modal approaches — pick the right one:
+- **`iframe` modals with `Layout = null`**: the form view has no layout; the parent page opens it in a Bootstrap/custom modal. Simpler isolation, no script-ordering issues.
+- **`@section scripts` modals**: the form lives in-page; script goes in `@section scripts { }` of the same view. Used when the form shares the main layout.
+
+Cross-module constraint: **registering a new socio requires an open caja** — `sp_registrar_socio_con_inscripcion` receives `@id_caja` and the inscription payment is tied to that caja. The SocioController must call `CN_Caja.ObtenerCajaAbierta()` (or equivalent) before creating a socio.
+
+### Printing / "PDF" output
+
+There is **no server-side PDF library**. Printable documents (aviso, recibo de pago, reporte de caja) are standalone views without `_Layout` that call `window.print()` — see `Views/Aviso/ImprimirAviso.cshtml`, `Views/Pago/ImprimirRecibo.cshtml`, `Views/Caja/Reporte.cshtml`. Follow that pattern for new printable documents instead of adding a PDF package.
 
 ## Build & run
 
