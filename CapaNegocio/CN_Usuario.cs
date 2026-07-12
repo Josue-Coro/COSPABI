@@ -10,12 +10,12 @@ namespace CapaNegocio
         private readonly CN_Bitacora cdBitacora = new CN_Bitacora();
         private CN_Recursos Recursos = new CN_Recursos();
 
-        public List<CM_Usuario> Listar()
+        public List<CM_Usuario> Listar(bool incluirSuperadmin)
         {
-            return cdUsuario.Listar();
+            return cdUsuario.Listar(incluirSuperadmin);
         }
 
-        public int Registrar(CM_Usuario obj, int idUsuarioSesion, out string Mensaje)
+        public int Registrar(CM_Usuario obj, int idUsuarioSesion, bool solicitanteEsSuperadmin, out string Mensaje)
         {
             Mensaje = string.Empty;
 
@@ -67,7 +67,7 @@ namespace CapaNegocio
             string contraseñaEncriptada = Recursos.ConvertirSha256(obj.contraseña);
                         obj.contraseña = contraseñaEncriptada;
 
-            int idGenerado = cdUsuario.Registrar(obj, idUsuarioSesion, out Mensaje);
+            int idGenerado = cdUsuario.Registrar(obj, idUsuarioSesion, solicitanteEsSuperadmin, out Mensaje);
 
             if (idGenerado > 0)
                 cdBitacora.Registrar("Registro de nuevo usuario: " + obj.usuario, idUsuarioSesion);
@@ -75,7 +75,7 @@ namespace CapaNegocio
             return idGenerado;
         }
 
-        public bool Editar(CM_Usuario obj, int idUsuarioSesion, out string Mensaje)
+        public bool Editar(CM_Usuario obj, int idUsuarioSesion, bool solicitanteEsSuperadmin, out string Mensaje)
         {
             Mensaje = string.Empty;
 
@@ -124,7 +124,7 @@ namespace CapaNegocio
             if (!string.IsNullOrWhiteSpace(contraseñaEncriptada))
                 obj.contraseña = contraseñaEncriptada;
 
-            bool resultado = cdUsuario.Editar(obj, idUsuarioSesion, out Mensaje);
+            bool resultado = cdUsuario.Editar(obj, idUsuarioSesion, solicitanteEsSuperadmin, out Mensaje);
 
             if (resultado)
                 cdBitacora.Registrar("Edición del usuario: " + obj.usuario, idUsuarioSesion);
@@ -132,9 +132,9 @@ namespace CapaNegocio
             return resultado;
         }
 
-        public bool Eliminar(int id, int idUsuarioSesion, out string Mensaje)
+        public bool Eliminar(int id, int idUsuarioSesion, bool solicitanteEsSuperadmin, out string Mensaje)
         {
-            bool resultado = cdUsuario.Eliminar(id, idUsuarioSesion, out Mensaje);
+            bool resultado = cdUsuario.Eliminar(id, idUsuarioSesion, solicitanteEsSuperadmin, out Mensaje);
 
             if (resultado)
                 cdBitacora.Registrar("Desactivación del usuario con ID: " + id, idUsuarioSesion);

@@ -42,6 +42,52 @@ END
 GO
 
 -- ══════════════════════════════════════════
+-- LISTAR PERSONAS DISPONIBLES PARA SOCIO
+-- Regla institucional: una persona puede tener como máximo 4 socios
+-- (4 medidores). Excluye a quienes ya alcanzaron ese tope.
+-- Mismo shape que sp_listar_clientes (total + datos) para reusar el mapeo.
+-- ══════════════════════════════════════════
+CREATE OR ALTER PROCEDURE dbo.sp_listar_personas_disponibles_socio
+(
+    @Busqueda     VARCHAR(250) = '',
+    @Pagina       INT          = 1,
+    @TamanoPagina INT          = 10
+)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @Offset    INT = (@Pagina - 1) * @TamanoPagina;
+    DECLARE @MaxSocios INT = 4;
+
+    SELECT COUNT(*) AS TotalRegistros
+    FROM cliente c
+    WHERE (@Busqueda = ''
+           OR c.nombre_completo LIKE '%' + @Busqueda + '%'
+           OR c.ci              LIKE '%' + @Busqueda + '%')
+      AND (SELECT COUNT(*) FROM socio s WHERE s.cliente_id_cliente = c.id_cliente) < @MaxSocios;
+
+    SELECT
+        c.id_cliente,
+        c.nombre_completo,
+        c.ci,
+        c.genero,
+        c.telefono,
+        c.email,
+        c.fecha_nacimiento,
+        c.fecha_registro,
+        c.estado
+    FROM cliente c
+    WHERE (@Busqueda = ''
+           OR c.nombre_completo LIKE '%' + @Busqueda + '%'
+           OR c.ci              LIKE '%' + @Busqueda + '%')
+      AND (SELECT COUNT(*) FROM socio s WHERE s.cliente_id_cliente = c.id_cliente) < @MaxSocios
+    ORDER BY c.id_cliente DESC
+    OFFSET @Offset ROWS FETCH NEXT @TamanoPagina ROWS ONLY;
+END
+GO
+
+-- ══════════════════════════════════════════
 -- OBTENER por ID
 -- ══════════════════════════════════════════
 CREATE OR ALTER PROCEDURE dbo.sp_obtener_cliente

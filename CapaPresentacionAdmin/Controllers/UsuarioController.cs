@@ -9,7 +9,13 @@ namespace CapaPresentacionAdmin.Controllers
     [Authorize]
     public class UsuarioController : Controller
     {
-        
+        // El rol SUPERADMIN (ingeniero de TI) solo es visible/gestionable por otro SUPERADMIN.
+        private bool EsSuperadmin()
+        {
+            var u = Session["Usuario"] as CM_Usuario_Activo;
+            return u != null && (u.nombre_rol ?? "").ToUpper() == "SUPERADMIN";
+        }
+
         [ValidarPermisos(NombrePermiso = "Gestionar Usuarios")]
         public ActionResult Usuario()
         {
@@ -20,7 +26,8 @@ namespace CapaPresentacionAdmin.Controllers
         [ValidarPermisos(NombrePermiso = "Gestionar Usuarios")]
         public JsonResult ListarUsuarios()
         {
-            List<CM_Usuario> lista = new CN_Usuario().Listar();
+            // Si el solicitante no es SUPERADMIN, no se listan los usuarios SUPERADMIN
+            List<CM_Usuario> lista = new CN_Usuario().Listar(EsSuperadmin());
             return Json(new { data = lista }, JsonRequestBehavior.AllowGet);
         }
 
@@ -31,6 +38,11 @@ namespace CapaPresentacionAdmin.Controllers
             List<CM_Rol> lista = new CN_Rol().Listar();
             // Solo roles activos para los selects
             var activos = lista.FindAll(r => r.estado == true);
+
+            // Un no-superadmin no puede asignar el rol SUPERADMIN: se oculta del selector
+            if (!EsSuperadmin())
+                activos = activos.FindAll(r => (r.nombre ?? "").ToUpper() != "SUPERADMIN");
+
             return Json(new { data = activos }, JsonRequestBehavior.AllowGet);
         }
 
@@ -47,7 +59,7 @@ namespace CapaPresentacionAdmin.Controllers
             string mensaje = string.Empty;
             int idUsuarioSesion = ((CM_Usuario_Activo)Session["Usuario"]).id_usuario_admin;
 
-            object resultado = new CN_Usuario().Registrar(obj, idUsuarioSesion, out mensaje);
+            object resultado = new CN_Usuario().Registrar(obj, idUsuarioSesion, EsSuperadmin(), out mensaje);
             return Json(new { resultado = resultado, mensaje = mensaje }, JsonRequestBehavior.AllowGet);
         }
 
@@ -64,7 +76,7 @@ namespace CapaPresentacionAdmin.Controllers
             string mensaje = string.Empty;
             int idUsuarioSesion = ((CM_Usuario_Activo)Session["Usuario"]).id_usuario_admin;
 
-            object resultado = new CN_Usuario().Editar(obj, idUsuarioSesion, out mensaje);
+            object resultado = new CN_Usuario().Editar(obj, idUsuarioSesion, EsSuperadmin(), out mensaje);
             return Json(new { resultado = resultado, mensaje = mensaje }, JsonRequestBehavior.AllowGet);
         }
 
@@ -81,7 +93,7 @@ namespace CapaPresentacionAdmin.Controllers
             string mensaje = string.Empty;
             int idUsuarioSesion = ((CM_Usuario_Activo)Session["Usuario"]).id_usuario_admin;
 
-            bool resultado = new CN_Usuario().Eliminar(id, idUsuarioSesion, out mensaje);
+            bool resultado = new CN_Usuario().Eliminar(id, idUsuarioSesion, EsSuperadmin(), out mensaje);
             return Json(new { resultado = resultado, mensaje = mensaje }, JsonRequestBehavior.AllowGet);
         }
     }

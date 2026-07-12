@@ -1,5 +1,5 @@
 ﻿@{
-    ViewBag.Title = "RegistrarCliente";
+    ViewBag.Title = "Registrar Persona";
     Layout = null;
 }
 <!DOCTYPE html>
@@ -97,7 +97,7 @@
 
     <button id="btnGuardar" onclick="registrar()"
             class="btn-primary w-full py-2.5 rounded-xl text-sm font-semibold text-white flex items-center justify-center gap-2">
-        <span id="btnText">Registrar Cliente</span>
+        <span id="btnText">Registrar Persona</span>
         <svg id="btnSpinner" class="hidden animate-spin" style="width:16px;height:16px;" fill="none" viewBox="0 0 24 24">
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
@@ -137,7 +137,7 @@
                     if (res.exito) {
                         window.parent.onAccionCompletada();
                     } else {
-                        mostrarError(res.mensaje || 'No se pudo registrar el cliente.');
+                        mostrarError(res.mensaje || 'No se pudo registrar la persona.');
                         setLoading(false);
                     }
                 },
@@ -152,7 +152,7 @@
         function ocultarError()    { $('#errorMsg').addClass('hidden'); }
         function setLoading(v)     {
             $('#btnGuardar').prop('disabled', v);
-            $('#btnText').text(v ? 'Guardando...' : 'Registrar Cliente');
+            $('#btnText').text(v ? 'Guardando...' : 'Registrar Persona');
             $('#btnSpinner').toggleClass('hidden', !v);
         }
     </script>

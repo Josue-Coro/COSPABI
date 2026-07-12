@@ -11,6 +11,17 @@ namespace CapaDato
     {
         public CM_Cliente_Paginado Listar(string busqueda, int pagina, int tamanoPagina)
         {
+            return ListarInterno("dbo.sp_listar_clientes", busqueda, pagina, tamanoPagina);
+        }
+
+        // Personas que aún pueden ser socio (menos de 4 socios). Para el alta de socio.
+        public CM_Cliente_Paginado ListarDisponiblesParaSocio(string busqueda, int pagina, int tamanoPagina)
+        {
+            return ListarInterno("dbo.sp_listar_personas_disponibles_socio", busqueda, pagina, tamanoPagina);
+        }
+
+        private CM_Cliente_Paginado ListarInterno(string nombreSp, string busqueda, int pagina, int tamanoPagina)
+        {
             var resultado = new CM_Cliente_Paginado
             {
                 Clientes = new List<CM_Cliente>()
@@ -20,7 +31,7 @@ namespace CapaDato
             {
                 using (SqlConnection cn = new SqlConnection(CD_Conexion.cn))
                 {
-                    SqlCommand cmd = new SqlCommand("dbo.sp_listar_clientes", cn);
+                    SqlCommand cmd = new SqlCommand(nombreSp, cn);
                     cmd.CommandType = CommandType.StoredProcedure;
                     cmd.Parameters.AddWithValue("@Busqueda", busqueda ?? "");
                     cmd.Parameters.AddWithValue("@Pagina", pagina);

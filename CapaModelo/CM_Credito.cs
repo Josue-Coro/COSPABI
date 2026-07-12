@@ -13,6 +13,7 @@ namespace CapaModelo
         public int     periodo_id_periodo { get; set; }
         public int?    aviso_id_aviso     { get; set; }
         public bool    en_aviso           { get; set; }
+        public int?    pago_id_pago       { get; set; }
 
         // Campos de display (JOINs en SPs)
         public string  nombre_socio   { get; set; }

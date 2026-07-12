@@ -30,7 +30,10 @@ CD methods that mutate data use **output parameters** `@Resultado INT OUTPUT` an
 
 ### Auth & permissions
 
-- Login stores `CM_Usuario_Activo` (with `ListaPermisos`) in `Session["Usuario"]`; the layout also reads `Session["NombreUsuario"]` / `Session["RolUsuario"]`.
+- Login stores `CM_Usuario_Activo` (with `ListaPermisos`) in `Session["Usuario"]`; the layout also reads `Session["NombreUsuario"]` / `Session["RolUsuario"]`. Passwords are SHA-256 (no salt) via `CN_Recursos.ConvertirSha256`.
+- `sp_login_admin` enforces **account lockout**: 5 failed attempts → 15-min block (columns `intentos_fallidos`/`bloqueado_hasta` on `usuario_admin`, Migración 10). All counting/blocking and failure bitácora live in the SP; it returns both result sets (user + permisos) *and* `@Resultado`/`@Mensaje` OUTPUT params. Failure messages are deliberately generic so account existence isn't revealed.
+- `permiso.modulo` (Migración 09) groups the 37 permisos into 7 modules; `sp_listar_permisos` returns them pre-sorted by module for the grouped UI in `Views/Permiso/Permiso.cshtml`.
+- **The `SUPERADMIN` role is shielded** (cross-cutting, by role *name*): non-superadmin users can't see it or its users in listings (Rol, Usuario, Permiso, Bitácora filter) nor modify/assign it. Controllers compute `esSuperadmin` from `Session["Usuario"].nombre_rol` and pass it down (`CN_Rol.Listar(bool)`, `@IncluirSuperadmin` / `@SolicitanteEsSuperadmin` in the SPs); the SPs enforce the block. Any new listing or mutation touching roles/usuarios must respect this.
 - Controllers are gated with `[ValidarPermisos(NombrePermiso = "...")]` (in `CapaPresentacionAdmin/Filtros/`). Permission names vary (e.g. `"Gestionar Caja"`, `"Visualizar Bitacora"`). No session → redirect to Login; session but missing permission → AccesoDenegado.
 - **JsonResult shapes are not uniform:** mutation actions return `{ exito: bool, mensaje: string, ...data }`; read actions (Listar, Obtener) return `{ data: list }`. `PermisoController` is a further exception: returns `{ resultado: int }` (success = `resultado > 0`). Match the shape of the existing controller when writing JS consumers.
 
@@ -57,6 +60,8 @@ There is **no server-side PDF library**. Printable documents (aviso, recibo de p
 
 Run the web app from Visual Studio (IIS Express). There are **no automated tests** in this repo.
 
+After rebuilding DLLs, **IIS Express keeps serving the old binaries** — the user must Stop/Start the app in VS and hard-refresh (Ctrl+F5). If a change "doesn't show up", suspect this first.
+
 ### CSS (Tailwind)
 
 The admin UI uses **Tailwind CSS compiled to a local stylesheet** (`Content/app.css`) — the old CDN approach was removed. After editing Tailwind classes or `Content/tailwind.css`, rebuild from `CapaPresentacionAdmin/`:
@@ -69,6 +74,18 @@ npm run watch:css      # watch mode while developing
 ### Database deploy
 
 Run the relevant `.sql` files against SQL Server (executable in chunks split on `GO`). SPs use `CREATE OR ALTER`, so re-running is safe. Apply `CapaDato/BD/Migracion_0N_*.sql` in order for schema changes. After editing any SP in `CapaDato/SP/*.sql`, **re-run that file against the database** — file edits do not touch the live DB.
+
+Deploy from the CLI with sqlcmd — **`-f 65001` (UTF-8) and `-I` (QUOTED_IDENTIFIER ON) are both mandatory**:
+
+```bash
+"/c/Program Files/Microsoft SQL Server/Client SDK/ODBC/170/Tools/Binn/sqlcmd" \
+  -S "DESKTOP-NLFU4EP\SQLEXPRESS" -d COSPABIRL1 -f 65001 -I -i "CapaDato/SP/archivo.sql"
+```
+
+- `-f 65001`: column names contain `ñ` (e.g. `contraseña`); without it the file fails with *"Incorrect syntax near '�'"*.
+- `-I`: several tables (`pago`, `credito_inscripcion`) have **filtered indexes**. SQL Server bakes the `QUOTED_IDENTIFIER` setting into a stored procedure at CREATE time. sqlcmd defaults it OFF, so deploying an SP without `-I` stores it with QI OFF — and any INSERT that proc does into a filtered-index table then fails at runtime **from the app too** (*"INSERT failed because the following SET options have incorrect settings: 'QUOTED_IDENTIFIER'"*), not just in sqlcmd. Always deploy SP files with `-I`. (.NET SqlClient connections already run QI ON, which is why only sqlcmd-deployed procs get corrupted.)
+
+Some older SP files (`usuario.sql`, `Login.sql`) still carry legacy `CREATE TABLE` statements at the top — re-running them prints *"There is already an object named..."* errors. That noise is expected; the `CREATE OR ALTER PROCEDURE` batches after it still apply.
 
 - Connection string `name="cadena"` is in each web project's `Web.config`. Local default: `DESKTOP-NLFU4EP\SQLEXPRESS`, catalog `COSPABIRL1`.
 

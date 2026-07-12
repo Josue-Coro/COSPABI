@@ -89,7 +89,8 @@ namespace CapaDato
                             monto_pago     = Convert.ToDecimal(dr["monto_pago"]),
                             estado         = dr["estado"].ToString(),
                             en_aviso       = Convert.ToInt32(dr["en_aviso"]) == 1,
-                            aviso_id_aviso = dr["aviso_id_aviso"] is DBNull ? (int?)null : Convert.ToInt32(dr["aviso_id_aviso"])
+                            aviso_id_aviso = dr["aviso_id_aviso"] is DBNull ? (int?)null : Convert.ToInt32(dr["aviso_id_aviso"]),
+                            pago_id_pago   = dr["pago_id_pago"] is DBNull ? (int?)null : Convert.ToInt32(dr["pago_id_pago"])
                         });
                     }
                     dr.Close();

@@ -1,5 +1,5 @@
 ﻿@{
-    ViewBag.Title = "Clientes";
+    ViewBag.Title = "Personas";
     Layout = "~/Views/Shared/_Layout.cshtml";
 
     var oUsuario = (CapaModelo.CM_Usuario_Activo)Session["Usuario"];
@@ -12,8 +12,8 @@
 
 <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
     <div>
-        <h1 class="text-xl font-semibold text-gray-800">Gestión de Clientes</h1>
-        <p class="text-sm text-gray-400 mt-0.5">Administra los clientes registrados en el sistema</p>
+        <h1 class="text-xl font-semibold text-gray-800">Gestión de Personas</h1>
+        <p class="text-sm text-gray-400 mt-0.5">Administra las personas registradas en el sistema</p>
     </div>
     @if (puedeRegistrar)
     {
@@ -22,14 +22,14 @@
             <svg style="width:16px;height:16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
             </svg>
-            Nuevo Cliente
+            Nueva Persona
         </button>
     }
 </div>
 
 <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
     <div class="px-6 py-4 border-b border-gray-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-        <span class="text-sm font-semibold text-gray-700">Lista de Clientes</span>
+        <span class="text-sm font-semibold text-gray-700">Lista de Personas</span>
         <div class="flex items-center gap-3">
             <!-- Buscador -->
             <div class="flex items-center gap-2 bg-gray-100 rounded-lg px-3 py-1.5 w-52">
@@ -38,7 +38,7 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                           d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
-                <input type="text" id="txtBusqueda" placeholder="Buscar cliente..."
+                <input type="text" id="txtBusqueda" placeholder="Buscar persona..."
                        class="bg-transparent text-sm text-gray-600 outline-none w-full placeholder-gray-400">
             </div>
             <!-- Tamaño de página -->
@@ -76,7 +76,7 @@
                                     stroke="currentColor" stroke-width="4" />
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
                         </svg>
-                        Cargando clientes...
+                        Cargando personas...
                     </td>
                 </tr>
             </tbody>
@@ -99,7 +99,7 @@
         <div class="h-1.5 bg-gradient-to-r from-primary-500 to-primary-700"></div>
         <div class="p-6">
             <div class="flex items-center justify-between mb-4">
-                <h3 class="text-base font-semibold text-gray-800">Nuevo Cliente</h3>
+                <h3 class="text-base font-semibold text-gray-800">Nueva Persona</h3>
                 <button onclick="cerrarCrear()"
                         class="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 transition">
                     <svg style="width:18px;height:18px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -121,7 +121,7 @@
         <div class="h-1.5 bg-gradient-to-r from-primary-500 to-primary-700"></div>
         <div class="p-6">
             <div class="flex items-center justify-between mb-4">
-                <h3 class="text-base font-semibold text-gray-800">Editar Cliente</h3>
+                <h3 class="text-base font-semibold text-gray-800">Editar Persona</h3>
                 <button onclick="cerrarEditar()"
                         class="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 transition">
                     <svg style="width:18px;height:18px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -231,7 +231,7 @@
         tbody.empty();
 
         if (!clientes || clientes.length === 0) {
-            tbody.append('<tr><td colspan="9" class="px-6 py-10 text-center text-sm text-gray-400">No se encontraron clientes.</td></tr>');
+            tbody.append('<tr><td colspan="9" class="px-6 py-10 text-center text-sm text-gray-400">No se encontraron personas.</td></tr>');
             return;
         }
 

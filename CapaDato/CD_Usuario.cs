@@ -8,7 +8,7 @@ namespace CapaDato
 {
     public class CD_Usuario
     {
-        public List<CM_Usuario> Listar()
+        public List<CM_Usuario> Listar(bool incluirSuperadmin)
         {
             List<CM_Usuario> lista = new List<CM_Usuario>();
             try
@@ -17,6 +17,7 @@ namespace CapaDato
                 {
                     SqlCommand cmd = new SqlCommand("sp_listar_usuarios", conexion);
                     cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.Parameters.AddWithValue("@IncluirSuperadmin", incluirSuperadmin);
                     conexion.Open();
                     using (SqlDataReader dr = cmd.ExecuteReader())
                     {
@@ -47,7 +48,7 @@ namespace CapaDato
             return lista;
         }
 
-        public int Registrar(CM_Usuario obj, int idUsuarioSesion, out string Mensaje)
+        public int Registrar(CM_Usuario obj, int idUsuarioSesion, bool solicitanteEsSuperadmin, out string Mensaje)
         {
             int idGenerado = 0;
             Mensaje = string.Empty;
@@ -64,6 +65,7 @@ namespace CapaDato
                         cmd.Parameters.AddWithValue("@contrasena", obj.contraseña);
                         cmd.Parameters.AddWithValue("@estado", obj.estado);
                         cmd.Parameters.AddWithValue("@rol_id_rol", obj.rol_id_rol);
+                        cmd.Parameters.AddWithValue("@SolicitanteEsSuperadmin", solicitanteEsSuperadmin);
                         cmd.Parameters.Add("@Resultado", SqlDbType.Int).Direction = ParameterDirection.Output;
                         cmd.Parameters.Add("@Mensaje", SqlDbType.VarChar, 500).Direction = ParameterDirection.Output;
 
@@ -83,7 +85,7 @@ namespace CapaDato
             return idGenerado;
         }
 
-        public bool Editar(CM_Usuario obj, int idUsuarioSesion, out string Mensaje)
+        public bool Editar(CM_Usuario obj, int idUsuarioSesion, bool solicitanteEsSuperadmin, out string Mensaje)
         {
             bool resultado = false;
             Mensaje = string.Empty;
@@ -102,6 +104,7 @@ namespace CapaDato
                         cmd.Parameters.AddWithValue("@contrasena", obj.contraseña ?? string.Empty);
                         cmd.Parameters.AddWithValue("@estado", obj.estado);
                         cmd.Parameters.AddWithValue("@rol_id_rol", obj.rol_id_rol);
+                        cmd.Parameters.AddWithValue("@SolicitanteEsSuperadmin", solicitanteEsSuperadmin);
                         cmd.Parameters.Add("@Resultado", SqlDbType.Int).Direction = ParameterDirection.Output;
                         cmd.Parameters.Add("@Mensaje", SqlDbType.VarChar, 500).Direction = ParameterDirection.Output;
 
@@ -121,7 +124,7 @@ namespace CapaDato
             return resultado;
         }
 
-        public bool Eliminar(int id_usuario_admin, int idUsuarioSesion, out string Mensaje)
+        public bool Eliminar(int id_usuario_admin, int idUsuarioSesion, bool solicitanteEsSuperadmin, out string Mensaje)
         {
             bool resultado = false;
             Mensaje = string.Empty;
@@ -133,6 +136,7 @@ namespace CapaDato
                     {
                         cmd.CommandType = CommandType.StoredProcedure;
                         cmd.Parameters.AddWithValue("@id_usuario_admin", id_usuario_admin);
+                        cmd.Parameters.AddWithValue("@SolicitanteEsSuperadmin", solicitanteEsSuperadmin);
                         cmd.Parameters.Add("@Resultado", SqlDbType.Int).Direction = ParameterDirection.Output;
                         cmd.Parameters.Add("@Mensaje", SqlDbType.VarChar, 500).Direction = ParameterDirection.Output;
 

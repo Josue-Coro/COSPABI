@@ -9,6 +9,21 @@ namespace CapaPresentacionAdmin.Controllers
     [Authorize]
     public class PermisoController : Controller
     {
+        // El rol SUPERADMIN solo es visible/gestionable por otro SUPERADMIN.
+        private bool EsSuperadmin()
+        {
+            var u = Session["Usuario"] as CM_Usuario_Activo;
+            return u != null && (u.nombre_rol ?? "").ToUpper() == "SUPERADMIN";
+        }
+
+        private bool EsRolSuperadmin(int idRol)
+        {
+            foreach (var r in new CN_Rol().Listar(true))
+                if (r.id_rol == idRol)
+                    return (r.nombre ?? "").ToUpper() == "SUPERADMIN";
+            return false;
+        }
+
         [ValidarPermisos(NombrePermiso = "Gestionar Permiso")]
         public ActionResult Permiso()
         {
@@ -20,7 +35,8 @@ namespace CapaPresentacionAdmin.Controllers
         [ValidarPermisos(NombrePermiso = "Gestionar Permiso")]
         public JsonResult ListarRoles()
         {
-            List<CM_Rol> lista = new CN_Rol().Listar();
+            // Un no-superadmin no ve el rol SUPERADMIN en la gestión de permisos
+            List<CM_Rol> lista = new CN_Rol().Listar(EsSuperadmin());
             return Json(new { data = lista }, JsonRequestBehavior.AllowGet);
         }
 
@@ -40,6 +56,10 @@ namespace CapaPresentacionAdmin.Controllers
         {
             string mensaje = string.Empty;
             int idUsuarioSesion = ((CM_Usuario_Activo)Session["Usuario"]).id_usuario_admin;
+
+            // Un no-superadmin no puede modificar los permisos del rol SUPERADMIN
+            if (!EsSuperadmin() && EsRolSuperadmin(id_rol))
+                return Json(new { resultado = 0, mensaje = "No tienes permiso para modificar los permisos del rol SUPERADMIN." });
 
             // permisos puede llegar null si no hay ninguno marcado
             if (permisos == null)

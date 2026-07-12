@@ -1,9 +1,9 @@
 ﻿@{
-    ViewBag.Title = "EliminarCliente";
+    ViewBag.Title = "Cambiar Estado";
     Layout = null;
     int id = 0;
     int.TryParse(Request.QueryString["id"], out id);
-    string nombre = Request.QueryString["nombre"] ?? "este cliente";
+    string nombre = Request.QueryString["nombre"] ?? "esta persona";
     bool estadoActual = Request.QueryString["estado"] == "true";
 }
 <!DOCTYPE html>
@@ -59,13 +59,13 @@
         <p class="text-sm text-gray-600">
             ¿Deseas <span class="font-semibold @(estadoActual ? "text-red-600" : "text-green-600")">
                 @(estadoActual ? "desactivar" : "activar")
-            </span> al cliente
+            </span> a la persona
             <span class="font-semibold text-gray-800">"@nombre"</span>?
         </p>
         <p class="text-xs text-gray-400 mt-1">
             @(estadoActual
-                ? "El cliente quedará inactivo en el sistema."
-                : "El cliente volverá a estar activo en el sistema.")
+                ? "La persona quedará inactiva en el sistema."
+                : "La persona volverá a estar activa en el sistema.")
         </p>
     </div>
 

@@ -1,5 +1,5 @@
 ﻿@{
-    ViewBag.Title = "EditarCliente";
+    ViewBag.Title = "Editar Persona";
     Layout = null;
     int id = 0;
     int.TryParse(Request.QueryString["id"], out id);
@@ -117,7 +117,7 @@
                 type: 'GET',
                 data: { id: id },
                 success: function (res) {
-                    if (!res.exito) { mostrarError('No se pudo cargar el cliente.'); return; }
+                    if (!res.exito) { mostrarError('No se pudo cargar la persona.'); return; }
                     var c = res.cliente;
                     $('#txtNombre').val(c.nombre_completo);
                     $('#txtCI').val(c.ci);
@@ -163,7 +163,7 @@
                     if (res.exito) {
                         window.parent.onAccionCompletada();
                     } else {
-                        mostrarError(res.mensaje || 'No se pudo actualizar el cliente.');
+                        mostrarError(res.mensaje || 'No se pudo actualizar la persona.');
                         setLoading(false);
                     }
                 },

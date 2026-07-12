@@ -38,5 +38,10 @@ namespace CapaNegocio
         {
             return cdPago.ObtenerReciboPago(idPago);
         }
+
+        public CM_ReciboPago ObtenerReciboInscripcion(int idPago)
+        {
+            return cdPago.ObtenerReciboInscripcion(idPago);
+        }
     }
 }

@@ -13,9 +13,9 @@ namespace CapaNegocio
         private CD_Rol cdrol = new CD_Rol();
         private CN_Bitacora CD_Bitacora = new CN_Bitacora();
 
-        public List<CM_Rol> Listar()
+        public List<CM_Rol> Listar(bool incluirSuperadmin = true)
         {
-            return cdrol.Listar();
+            return cdrol.Listar(incluirSuperadmin);
         }
         public int Registrar(CM_Rol obj, int idUsuario, out string Mensaje)
         {
@@ -50,7 +50,7 @@ namespace CapaNegocio
 
             return idGenerado;
         }
-        public bool Editar(CM_Rol obj, int idUsuario, out string Mensaje)
+        public bool Editar(CM_Rol obj, int idUsuario, bool solicitanteEsSuperadmin, out string Mensaje)
         {
             Mensaje = string.Empty;
             //validarciones
@@ -74,16 +74,16 @@ namespace CapaNegocio
                 Mensaje = "El estado del rol (Activo/Inactivo) es obligatorio.";
                 return false;
             }
-            bool resultado = cdrol.Editar(obj, idUsuario, out Mensaje);
+            bool resultado = cdrol.Editar(obj, idUsuario, solicitanteEsSuperadmin, out Mensaje);
 
-            if (resultado) 
+            if (resultado)
                 CD_Bitacora.Registrar("Edición del rol: " + obj.nombre, idUsuario);
 
             return resultado;
         }
-        public bool Eliminar(int id, int idUsuario, out string Mensaje)
+        public bool Eliminar(int id, int idUsuario, bool solicitanteEsSuperadmin, out string Mensaje)
         {
-            bool resultado = cdrol.Eliminar(id, idUsuario, out Mensaje);
+            bool resultado = cdrol.Eliminar(id, idUsuario, solicitanteEsSuperadmin, out Mensaje);
 
             if (resultado) 
                 CD_Bitacora.Registrar("Eliminación del rol con ID: " + id, idUsuario);

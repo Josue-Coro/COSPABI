@@ -28,11 +28,13 @@ namespace CapaPresentacionAdmin.Filtros
                 if (!tienePermiso)
                 {
                     // 4. Si NO tiene permiso, redirigir a la vista de Acceso Denegado
+                    //    (pasamos el permiso requerido para mostrarlo en el mensaje)
                     filterContext.Result = new RedirectToRouteResult(
                         new RouteValueDictionary
                         {
                             { "controller", "Login" },
-                            { "action", "AccesoDenegado" }
+                            { "action", "AccesoDenegado" },
+                            { "permiso", NombrePermiso }
                         });
                 }
             }

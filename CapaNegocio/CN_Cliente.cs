@@ -15,6 +15,12 @@ namespace CapaNegocio
             return cdCliente.Listar(busqueda, pagina, tamanoPagina);
         }
 
+        // Personas disponibles para asignar como socio (menos de 4 socios)
+        public CM_Cliente_Paginado ListarDisponiblesParaSocio(string busqueda, int pagina, int tamanoPagina)
+        {
+            return cdCliente.ListarDisponiblesParaSocio(busqueda, pagina, tamanoPagina);
+        }
+
         public CM_Cliente Obtener(int idCliente)
         {
             return cdCliente.Obtener(idCliente);

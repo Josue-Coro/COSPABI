@@ -109,14 +109,25 @@
         $('#modalDetalle').removeClass('hidden');
         $.get('@Url.Action("Detalle", "Credito")', { idSocio: idSocio }, function (res) {
             if (!res.exito) { $('#modalBody').html('<div class="text-red-500 py-4 text-center">' + (res.mensaje || 'Error') + '</div>'); return; }
+            var reciboUrl = '@Url.Action("ImprimirReciboInscripcion", "Credito")';
             var rows = res.cuotas.map(function (q) {
                 var badge = q.estado === 'CANCELADO'
                     ? '<span class="px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-xs font-semibold">CANCELADO</span>'
                     : '<span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-xs font-semibold">PENDIENTE</span>';
                 var av = q.en_aviso ? '<span class="text-xs text-gray-400 ml-1">(aviso #' + q.aviso_id_aviso + ')</span>' : '';
+                // La cuota inicial (pago directo en caja) tiene su recibo; las demás se cobran en el aviso
+                var recibo = q.pago_id_pago
+                    ? '<a href="' + reciboUrl + '?idPago=' + q.pago_id_pago + '" target="_blank" ' +
+                      'class="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 text-xs font-semibold">' +
+                      '<svg style="width:13px;height:13px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">' +
+                      '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" ' +
+                      'd="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>' +
+                      '</svg>Recibo</a>'
+                    : '';
                 return '<div class="flex items-center justify-between py-2 border-b border-gray-100">' +
                     '<div><span class="font-semibold text-gray-700">Cuota ' + q.num_cuota + '</span> ' +
-                    '<span class="text-xs text-gray-500 ml-1">' + q.nombre_periodo + '</span> ' + av + '</div>' +
+                    '<span class="text-xs text-gray-500 ml-1">' + q.nombre_periodo + '</span> ' + av +
+                    (recibo ? '<div class="mt-0.5">' + recibo + '</div>' : '') + '</div>' +
                     '<div class="flex items-center gap-3"><span class="font-mono text-gray-700">Bs. ' + fmt(q.monto_pago) + '</span>' + badge + '</div>' +
                     '</div>';
             }).join('');

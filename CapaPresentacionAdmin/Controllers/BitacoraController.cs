@@ -30,7 +30,11 @@ namespace CapaPresentacionAdmin.Controllers
         [ValidarPermisos(NombrePermiso = "Visualizar Bitacora")]
         public JsonResult ListarUsuarios()
         {
-            List<CM_Usuario> lista = new CN_Usuario().Listar();
+            // Un no-superadmin no ve al SUPERADMIN ni en el filtro de la bitácora
+            var u = Session["Usuario"] as CM_Usuario_Activo;
+            bool esSuper = u != null && (u.nombre_rol ?? "").ToUpper() == "SUPERADMIN";
+
+            List<CM_Usuario> lista = new CN_Usuario().Listar(esSuper);
             return Json(new { data = lista }, JsonRequestBehavior.AllowGet);
         }
     }

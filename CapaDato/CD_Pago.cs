@@ -112,12 +112,23 @@ namespace CapaDato
 
         public CM_ReciboPago ObtenerReciboPago(int idPago)
         {
+            return ObtenerRecibo("dbo.sp_recibo_pago_aviso", idPago);
+        }
+
+        // Recibo del pago inicial de inscripcion (pago sin aviso, ligado al credito).
+        public CM_ReciboPago ObtenerReciboInscripcion(int idPago)
+        {
+            return ObtenerRecibo("dbo.sp_recibo_pago_inscripcion", idPago);
+        }
+
+        private CM_ReciboPago ObtenerRecibo(string nombreSp, int idPago)
+        {
             CM_ReciboPago recibo = null;
             try
             {
                 using (SqlConnection cn = new SqlConnection(CD_Conexion.cn))
                 {
-                    SqlCommand cmd = new SqlCommand("dbo.sp_recibo_pago_aviso", cn);
+                    SqlCommand cmd = new SqlCommand(nombreSp, cn);
                     cmd.CommandType = CommandType.StoredProcedure;
                     cmd.Parameters.AddWithValue("@id_pago", idPago);
                     cn.Open();

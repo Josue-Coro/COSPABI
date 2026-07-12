@@ -62,9 +62,12 @@
 
     <div class="line-double"></div>
     
-    <div style="margin-top: 5px; margin-bottom: 5px;">
-        Consumo : @Model.consumo Cub
-    </div>
+    @if (Model.consumo.HasValue)
+    {
+        <div style="margin-top: 5px; margin-bottom: 5px;">
+            Consumo : @Model.consumo Cub
+        </div>
+    }
 
     <table>
         <tr>

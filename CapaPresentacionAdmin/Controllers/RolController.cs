@@ -13,6 +13,13 @@ namespace CapaPresentacionAdmin.Controllers
     [Authorize]
     public class RolController : Controller
     {
+        // El rol SUPERADMIN solo es visible/gestionable por otro SUPERADMIN.
+        private bool EsSuperadmin()
+        {
+            var u = Session["Usuario"] as CM_Usuario_Activo;
+            return u != null && (u.nombre_rol ?? "").ToUpper() == "SUPERADMIN";
+        }
+
         // GET: Rol
         [ValidarPermisos(NombrePermiso = "Gestionar Rol")]
         public ActionResult Rol()
@@ -23,7 +30,8 @@ namespace CapaPresentacionAdmin.Controllers
         [ValidarPermisos(NombrePermiso = "Gestionar Rol")]
         public JsonResult ListarRoles()
         {
-            List<CM_Rol> lista = new CN_Rol().Listar();
+            // Si el solicitante no es SUPERADMIN, no se lista el rol SUPERADMIN
+            List<CM_Rol> lista = new CN_Rol().Listar(EsSuperadmin());
             return Json(new { data = lista }, JsonRequestBehavior.AllowGet);
         }
 
@@ -63,7 +71,7 @@ namespace CapaPresentacionAdmin.Controllers
 
             int idUsuario = ((CM_Usuario_Activo)Session["Usuario"]).id_usuario_admin;
 
-            resultado = new CN_Rol().Editar(obj, idUsuario, out mensaje);
+            resultado = new CN_Rol().Editar(obj, idUsuario, EsSuperadmin(), out mensaje);
             return Json(new { resultado = resultado, mensaje = mensaje }, JsonRequestBehavior.AllowGet);
         }
 
@@ -79,7 +87,7 @@ namespace CapaPresentacionAdmin.Controllers
         {
             int idUsuario = ((CM_Usuario_Activo)Session["Usuario"]).id_usuario_admin;
 
-            bool resultado = new CN_Rol().Eliminar(id, idUsuario, out string mensaje);
+            bool resultado = new CN_Rol().Eliminar(id, idUsuario, EsSuperadmin(), out string mensaje);
 
             return Json(new { resultado = resultado, mensaje = mensaje }, JsonRequestBehavior.AllowGet);
         }

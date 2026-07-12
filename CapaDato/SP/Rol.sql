@@ -25,7 +25,8 @@ ALTER TABLE rol ADD CONSTRAINT rol_PK PRIMARY KEY CLUSTERED (id_rol)
 GO
 
 --listar roles sp
-create procedure [dbo].[sp_listar_roles]
+CREATE OR ALTER procedure [dbo].[sp_listar_roles]
+    @IncluirSuperadmin BIT = 1   -- 0 = ocultar el rol SUPERADMIN (para no-superadmins)
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -35,11 +36,12 @@ BEGIN
           ,[descripcion]
           ,[estado]
       FROM [dbo].[rol]
+     WHERE (@IncluirSuperadmin = 1 OR nombre <> 'SUPERADMIN')
 END
 go
 
---crear rol sp 
-create procedure [dbo].[sp_crear_rol]
+--crear rol sp
+CREATE OR ALTER procedure [dbo].[sp_crear_rol]
     @nombre nvarchar(100),
     @descripcion nvarchar(255),
     @estado bit,
@@ -65,18 +67,28 @@ begin
 end
 go
 --editar rol sp
-create procedure [dbo].[sp_editar_rol]
+CREATE OR ALTER procedure [dbo].[sp_editar_rol]
     @id_rol int,
     @nombre nvarchar(100),
     @descripcion nvarchar(255),
     @estado bit,
     @Resultado INT OUTPUT,
-    @Mensaje VARCHAR(500) OUTPUT
+    @Mensaje VARCHAR(500) OUTPUT,
+    @SolicitanteEsSuperadmin BIT = 0
 AS
 BEGIN
     SET NOCOUNT ON;
     SET @Resultado = 0;
     SET @Mensaje = '';
+
+    -- Solo un SUPERADMIN puede modificar el rol SUPERADMIN
+    IF @SolicitanteEsSuperadmin = 0
+       AND EXISTS (SELECT 1 FROM [dbo].[rol] WHERE id_rol = @id_rol AND nombre = 'SUPERADMIN')
+    BEGIN
+        SET @Mensaje = 'No tienes permiso para modificar el rol SUPERADMIN.';
+        RETURN;
+    END
+
     IF NOT EXISTS (SELECT 1 FROM [dbo].[rol] WHERE nombre = @nombre and id_rol <> @id_rol)
     BEGIN
           UPDATE [dbo].[rol]
@@ -92,15 +104,25 @@ END
 
 go
 --eliminar rol sp, solo poner estado en 0
-create procedure [dbo].[sp_eliminar_rol]
+CREATE OR ALTER procedure [dbo].[sp_eliminar_rol]
     @id_rol int,
     @Resultado INT OUTPUT,
-    @Mensaje VARCHAR(500) OUTPUT
+    @Mensaje VARCHAR(500) OUTPUT,
+    @SolicitanteEsSuperadmin BIT = 0
 AS
 BEGIN
     SET NOCOUNT ON;
     SET @Resultado = 0;
     SET @Mensaje = '';
+
+    -- Solo un SUPERADMIN puede desactivar el rol SUPERADMIN
+    IF @SolicitanteEsSuperadmin = 0
+       AND EXISTS (SELECT 1 FROM [dbo].[rol] WHERE id_rol = @id_rol AND nombre = 'SUPERADMIN')
+    BEGIN
+        SET @Mensaje = 'No tienes permiso para desactivar el rol SUPERADMIN.';
+        RETURN;
+    END
+
     IF EXISTS (SELECT 1 FROM [dbo].[rol] WHERE id_rol = @id_rol)
     BEGIN
         UPDATE [dbo].[rol]

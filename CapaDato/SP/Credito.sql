@@ -36,12 +36,14 @@ CREATE OR ALTER PROCEDURE dbo.sp_registrar_socio_con_inscripcion
     @cajero                  VARCHAR(150),
     -- salida
     @Resultado               INT           OUTPUT,
-    @Mensaje                 NVARCHAR(500) OUTPUT
+    @Mensaje                 NVARCHAR(500) OUTPUT,
+    @IdPago                  INT           = NULL OUTPUT   -- id del pago inicial (para el recibo)
 AS
 BEGIN
     SET NOCOUNT ON;
     SET @Resultado = 0;
     SET @Mensaje   = '';
+    SET @IdPago    = 0;
 
     DECLARE @MAX_CUOTAS  INT           = 4;
     DECLARE @MIN_INICIAL DECIMAL(10,2) = 500;
@@ -50,6 +52,10 @@ BEGIN
         -- ===== Validaciones del socio =====
         IF NOT EXISTS (SELECT 1 FROM cliente WHERE id_cliente = @cliente_id_cliente)
         BEGIN SET @Mensaje = 'El cliente seleccionado no existe.'; RETURN; END
+
+        -- Regla institucional: una persona puede tener como máximo 4 socios (4 medidores)
+        IF (SELECT COUNT(*) FROM socio WHERE cliente_id_cliente = @cliente_id_cliente) >= 4
+        BEGIN SET @Mensaje = 'Esta persona ya alcanzó el máximo de 4 socios (medidores) permitidos.'; RETURN; END
 
         IF @medidor_id_medidor IS NOT NULL AND EXISTS (SELECT 1 FROM socio WHERE medidor_id_medidor = @medidor_id_medidor)
         BEGIN SET @Mensaje = 'El medidor seleccionado ya está asignado a otro socio.'; RETURN; END
@@ -121,13 +127,14 @@ BEGIN
         );
         DECLARE @id_socio INT = SCOPE_IDENTITY();
 
-        -- 2) Cuota inicial: CANCELADO, en el periodo de registro
-        INSERT INTO credito_inscripcion (monto_pago, estado, num_cuota, socio_id_socio, periodo_id_periodo)
-        VALUES (@monto_inicial, 'CANCELADO', 1, @id_socio, @id_periodo_reg);
-
-        -- 3) Registrar el pago inicial (sin aviso, en la caja abierta). Efectivo -> APROBADO.
+        -- 2) Registrar el pago inicial (sin aviso, en la caja abierta). Efectivo -> APROBADO.
         INSERT INTO pago (fecha_pago, monto_pagado, cajero, estado_pago, aviso_id_aviso, metodo_pago_id_metodo_pago, vuelto, caja_id_caja)
         VALUES (@fecha_registro, @monto_inicial, @cajero, 'APROBADO', NULL, @id_metodo_pago, NULL, @id_caja);
+        SET @IdPago = CAST(SCOPE_IDENTITY() AS INT);
+
+        -- 3) Cuota inicial: CANCELADO, en el periodo de registro, ligada a su pago
+        INSERT INTO credito_inscripcion (monto_pago, estado, num_cuota, socio_id_socio, periodo_id_periodo, pago_id_pago)
+        VALUES (@monto_inicial, 'CANCELADO', 1, @id_socio, @id_periodo_reg, @IdPago);
 
         -- 4) Cuotas financiadas: PENDIENTE, en los periodos siguientes
         IF @saldo > 0
@@ -241,7 +248,8 @@ BEGIN
         ci.monto_pago,
         ci.estado,
         CASE WHEN av.id_aviso IS NOT NULL THEN 1 ELSE 0 END      AS en_aviso,
-        av.id_aviso                                              AS aviso_id_aviso
+        av.id_aviso                                              AS aviso_id_aviso,
+        ci.pago_id_pago                                          AS pago_id_pago
     FROM credito_inscripcion ci
     INNER JOIN periodo p ON p.id_periodo = ci.periodo_id_periodo
     OUTER APPLY (
@@ -260,4 +268,59 @@ GO
 INSERT INTO permiso (accion, descripcion)
 SELECT 'Gestionar Credito Inscripcion', 'Ver y dar seguimiento a las cuotas de inscripcion'
 WHERE NOT EXISTS (SELECT 1 FROM permiso WHERE accion = 'Gestionar Credito Inscripcion');
+GO
+
+-- =============================================================================
+-- sp_recibo_pago_inscripcion : recibo del pago inicial de inscripcion.
+-- El pago de inscripcion NO tiene aviso (aviso_id_aviso = NULL); se ubica por
+-- la cuota de credito_inscripcion que lo referencia (pago_id_pago).
+-- Devuelve la MISMA forma (cabecera + detalle) que sp_recibo_pago_aviso para
+-- reutilizar la vista ImprimirRecibo y el modelo CM_ReciboPago.
+-- =============================================================================
+CREATE OR ALTER PROCEDURE dbo.sp_recibo_pago_inscripcion
+    @id_pago INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Cuota de inscripcion ligada a este pago (normalmente la cuota inicial)
+    DECLARE @id_credito INT, @socio_id INT, @periodo_id INT, @monto_cuota DECIMAL(30,2), @num_cuota INT;
+    SELECT TOP 1
+        @id_credito  = ci.id_credito,
+        @socio_id    = ci.socio_id_socio,
+        @periodo_id  = ci.periodo_id_periodo,
+        @monto_cuota = ci.monto_pago,
+        @num_cuota   = ci.num_cuota
+    FROM credito_inscripcion ci
+    WHERE ci.pago_id_pago = @id_pago;
+
+    -- 1. Cabecera del recibo
+    SELECT
+        p.id_pago,
+        p.fecha_pago,
+        s.nombre_socio,
+        s.codigo_fijo,
+        per.periodo               AS nombre_periodo,
+        CAST(NULL AS DECIMAL(30,2)) AS consumo,
+        CAST(0 AS DECIMAL(30,2))    AS total_consumo,
+        p.monto_pagado            AS total_pagado,
+        p.vuelto,
+        p.cajero,
+        mp.metodo                 AS metodo_pago,
+        s.categoria,
+        r.ruta                    AS nombre_ruta,
+        s.ubicacion
+    FROM pago p
+    INNER JOIN credito_inscripcion ci ON ci.pago_id_pago = p.id_pago
+    INNER JOIN socio s   ON s.id_socio   = ci.socio_id_socio
+    INNER JOIN periodo per ON per.id_periodo = ci.periodo_id_periodo
+    LEFT  JOIN ruta r    ON r.id_ruta     = s.ruta_id_ruta
+    LEFT  JOIN metodo_pago mp ON mp.id_metodo_pago = p.metodo_pago_id_metodo_pago
+    WHERE p.id_pago = @id_pago;
+
+    -- 2. Detalle: la cuota de inscripcion pagada
+    SELECT
+        'Inscripción - Cuota ' + CAST(@num_cuota AS VARCHAR) + ' (pago inicial)' AS concepto,
+        @monto_cuota AS subtotal;
+END
 GO

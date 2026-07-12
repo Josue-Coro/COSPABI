@@ -79,6 +79,33 @@ namespace CapaPresentacionAdmin.Controllers
                             JsonRequestBehavior.AllowGet);
             }
         }
+        // Personas disponibles para el alta de socio: excluye a quienes ya tienen 4 socios (regla institucional)
+        [HttpGet]
+        [ValidarPermisos(NombrePermiso = "Gestionar Socio")]
+        public JsonResult ListarPersonasDisponibles(string busqueda = "", int pagina = 1, int tamanoPagina = 10)
+        {
+            try
+            {
+                var resultado = new CN_Cliente().ListarDisponiblesParaSocio(busqueda, pagina, tamanoPagina);
+
+                if (resultado == null)
+                    return Json(new { exito = false, mensaje = "Error al obtener los datos." },
+                                JsonRequestBehavior.AllowGet);
+
+                return Json(new
+                {
+                    exito = true,
+                    totalRegistros = resultado.TotalRegistros,
+                    clientes = resultado.Clientes
+                }, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                return Json(new { exito = false, mensaje = ex.Message },
+                            JsonRequestBehavior.AllowGet);
+            }
+        }
+
         [HttpGet]
         [ValidarPermisos(NombrePermiso = "Gestionar Socio")]
         public JsonResult Obtener(int id)
@@ -161,8 +188,8 @@ namespace CapaPresentacionAdmin.Controllers
                 return Json(new { exito = false, mensaje = "Debe abrir su caja antes de registrar un socio (el pago de inscripción entra a caja)." });
 
             string cajero  = (oUsuario.nombre + " " + oUsuario.apellido).Trim();
-            int idGenerado = new CN_Socio().Registrar(socio, oUsuario.id_usuario_admin, caja.id_caja, cajero, out string Mensaje);
-            return Json(new { exito = idGenerado > 0, mensaje = Mensaje });
+            int idGenerado = new CN_Socio().Registrar(socio, oUsuario.id_usuario_admin, caja.id_caja, cajero, out string Mensaje, out int idPago);
+            return Json(new { exito = idGenerado > 0, mensaje = Mensaje, idPago });
         }
 
 

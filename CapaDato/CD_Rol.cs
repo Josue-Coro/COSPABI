@@ -24,7 +24,7 @@ namespace CapaDato
               FROM [dbo].[rol]
         END
         go*/
-        public List<CM_Rol> Listar()
+        public List<CM_Rol> Listar(bool incluirSuperadmin = true)
         {
             List<CM_Rol> lista = new List<CM_Rol>();
             try
@@ -33,6 +33,7 @@ namespace CapaDato
                 {
                     SqlCommand cmd = new SqlCommand("sp_listar_roles", conexion);
                     cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.Parameters.AddWithValue("@IncluirSuperadmin", incluirSuperadmin);
                     conexion.Open();
                     using (SqlDataReader dr = cmd.ExecuteReader())
                     {
@@ -141,7 +142,7 @@ namespace CapaDato
                   SET @Mensaje = 'Ya existe un rol con este nombre.';
         END
         */
-        public bool Editar(CM_Rol obj, int idUsuario, out string Mensaje)
+        public bool Editar(CM_Rol obj, int idUsuario, bool solicitanteEsSuperadmin, out string Mensaje)
         {
             bool resultado = false;
             Mensaje = string.Empty;
@@ -155,6 +156,7 @@ namespace CapaDato
                         cmd.Parameters.AddWithValue("@nombre", obj.nombre);
                         cmd.Parameters.AddWithValue("@descripcion", obj.descripcion);
                         cmd.Parameters.AddWithValue("@estado", obj.estado);
+                        cmd.Parameters.AddWithValue("@SolicitanteEsSuperadmin", solicitanteEsSuperadmin);
 
                         cmd.Parameters.Add("@Mensaje", SqlDbType.VarChar, 500).Direction = ParameterDirection.Output;
                         cmd.Parameters.Add("@Resultado", SqlDbType.Int).Direction = ParameterDirection.Output;
@@ -196,7 +198,7 @@ namespace CapaDato
                 SET @Mensaje = 'No existe un rol con este ID.';
         END
         */
-        public bool Eliminar(int id_rol, int idUsuario, out string Mensaje)
+        public bool Eliminar(int id_rol, int idUsuario, bool solicitanteEsSuperadmin, out string Mensaje)
         {
             bool resultado = false;
             Mensaje = string.Empty;
@@ -207,6 +209,7 @@ namespace CapaDato
                     using (SqlCommand cmd = new SqlCommand("sp_eliminar_rol", conexion))
                     {
                         cmd.Parameters.AddWithValue("@id_rol", id_rol);
+                        cmd.Parameters.AddWithValue("@SolicitanteEsSuperadmin", solicitanteEsSuperadmin);
                         cmd.Parameters.Add("@Mensaje", SqlDbType.VarChar, 500).Direction = ParameterDirection.Output;
                         cmd.Parameters.Add("@Resultado", SqlDbType.Int).Direction = ParameterDirection.Output;
                         cmd.CommandType = CommandType.StoredProcedure;

@@ -38,10 +38,11 @@ GO
 -- LISTAR USUARIOS
 -- =============================================
 CREATE OR ALTER PROCEDURE [dbo].[sp_listar_usuarios]
+    @IncluirSuperadmin BIT = 1   -- 0 = ocultar usuarios con rol SUPERADMIN (para no-superadmins)
 AS
 BEGIN
     SET NOCOUNT ON;
-    SELECT 
+    SELECT
         u.id_usuario_admin,
         u.nombre,
         u.apellido,
@@ -52,6 +53,7 @@ BEGIN
         r.nombre AS nombre_rol
     FROM [dbo].[usuario_admin] u
     INNER JOIN [dbo].[rol] r ON r.id_rol = u.rol_id_rol
+    WHERE (@IncluirSuperadmin = 1 OR r.nombre <> 'SUPERADMIN')
 END
 GO
 
@@ -66,12 +68,21 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_crear_usuario]
     @estado      BIT,
     @rol_id_rol  INT,
     @Resultado   INT OUTPUT,
-    @Mensaje     VARCHAR(500) OUTPUT
+    @Mensaje     VARCHAR(500) OUTPUT,
+    @SolicitanteEsSuperadmin BIT = 0
 AS
 BEGIN
     SET NOCOUNT ON;
     SET @Resultado = 0;
     SET @Mensaje   = '';
+
+    -- Solo un SUPERADMIN puede asignar el rol SUPERADMIN
+    IF @SolicitanteEsSuperadmin = 0
+       AND EXISTS (SELECT 1 FROM [dbo].[rol] WHERE id_rol = @rol_id_rol AND nombre = 'SUPERADMIN')
+    BEGIN
+        SET @Mensaje = 'No tienes permiso para asignar el rol SUPERADMIN.';
+        RETURN;
+    END
 
     IF EXISTS (SELECT 1 FROM [dbo].[usuario_admin] WHERE usuario = @usuario)
     BEGIN
@@ -116,7 +127,8 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_editar_usuario]
     @estado           BIT,
     @rol_id_rol       INT,
     @Resultado        INT OUTPUT,
-    @Mensaje          VARCHAR(500) OUTPUT
+    @Mensaje          VARCHAR(500) OUTPUT,
+    @SolicitanteEsSuperadmin BIT = 0
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -126,6 +138,24 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM [dbo].[usuario_admin] WHERE id_usuario_admin = @id_usuario_admin)
     BEGIN
         SET @Mensaje = 'No existe un usuario con este ID.';
+        RETURN;
+    END
+
+    -- Solo un SUPERADMIN puede modificar a un usuario SUPERADMIN
+    IF @SolicitanteEsSuperadmin = 0
+       AND EXISTS (SELECT 1 FROM [dbo].[usuario_admin] u
+                   INNER JOIN [dbo].[rol] r ON r.id_rol = u.rol_id_rol
+                   WHERE u.id_usuario_admin = @id_usuario_admin AND r.nombre = 'SUPERADMIN')
+    BEGIN
+        SET @Mensaje = 'No tienes permiso para modificar a un usuario SUPERADMIN.';
+        RETURN;
+    END
+
+    -- ...y tampoco puede promover a nadie al rol SUPERADMIN
+    IF @SolicitanteEsSuperadmin = 0
+       AND EXISTS (SELECT 1 FROM [dbo].[rol] WHERE id_rol = @rol_id_rol AND nombre = 'SUPERADMIN')
+    BEGIN
+        SET @Mensaje = 'No tienes permiso para asignar el rol SUPERADMIN.';
         RETURN;
     END
 
@@ -177,7 +207,8 @@ GO
 CREATE OR ALTER PROCEDURE [dbo].[sp_eliminar_usuario]
     @id_usuario_admin INT,
     @Resultado        INT OUTPUT,
-    @Mensaje          VARCHAR(500) OUTPUT
+    @Mensaje          VARCHAR(500) OUTPUT,
+    @SolicitanteEsSuperadmin BIT = 0
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -187,6 +218,16 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM [dbo].[usuario_admin] WHERE id_usuario_admin = @id_usuario_admin)
     BEGIN
         SET @Mensaje = 'No existe un usuario con este ID.';
+        RETURN;
+    END
+
+    -- Solo un SUPERADMIN puede desactivar a un usuario SUPERADMIN
+    IF @SolicitanteEsSuperadmin = 0
+       AND EXISTS (SELECT 1 FROM [dbo].[usuario_admin] u
+                   INNER JOIN [dbo].[rol] r ON r.id_rol = u.rol_id_rol
+                   WHERE u.id_usuario_admin = @id_usuario_admin AND r.nombre = 'SUPERADMIN')
+    BEGIN
+        SET @Mensaje = 'No tienes permiso para desactivar a un usuario SUPERADMIN.';
         RETURN;
     END
 

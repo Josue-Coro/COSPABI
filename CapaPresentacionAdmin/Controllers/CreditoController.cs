@@ -32,6 +32,15 @@ namespace CapaPresentacionAdmin.Controllers
             }
         }
 
+        // Recibo del pago inicial de inscripcion (reutiliza la vista de recibo de Pago)
+        [ValidarPermisos(NombrePermiso = "Gestionar Credito Inscripcion")]
+        public ActionResult ImprimirReciboInscripcion(int idPago)
+        {
+            var recibo = new CN_Pago().ObtenerReciboInscripcion(idPago);
+            if (recibo == null) return RedirectToAction("Credito");
+            return View("~/Views/Pago/ImprimirRecibo.cshtml", recibo);
+        }
+
         [HttpGet]
         [ValidarPermisos(NombrePermiso = "Gestionar Credito Inscripcion")]
         public JsonResult Detalle(int idSocio)

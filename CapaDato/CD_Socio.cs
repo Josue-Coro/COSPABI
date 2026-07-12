@@ -129,9 +129,10 @@ namespace CapaDato
             return socio;
         }
 
-        public int Registrar(CM_Socio socio, int idCaja, string cajero, out string Mensaje)
+        public int Registrar(CM_Socio socio, int idCaja, string cajero, out string Mensaje, out int idPago)
         {
             int idGenerado = 0;
+            idPago = 0;
             Mensaje = string.Empty;
 
             try
@@ -162,17 +163,21 @@ namespace CapaDato
                     cmd.Parameters.AddWithValue("@cajero", cajero ?? "");
                     cmd.Parameters.Add("@Resultado", SqlDbType.Int).Direction = ParameterDirection.Output;
                     cmd.Parameters.Add("@Mensaje", SqlDbType.NVarChar, 500).Direction = ParameterDirection.Output;
+                    cmd.Parameters.Add("@IdPago", SqlDbType.Int).Direction = ParameterDirection.Output;
 
                     cn.Open();
                     cmd.ExecuteNonQuery();
 
                     idGenerado = Convert.ToInt32(cmd.Parameters["@Resultado"].Value);
                     Mensaje = cmd.Parameters["@Mensaje"].Value.ToString();
+                    idPago = cmd.Parameters["@IdPago"].Value == DBNull.Value
+                             ? 0 : Convert.ToInt32(cmd.Parameters["@IdPago"].Value);
                 }
             }
             catch (Exception ex)
             {
                 idGenerado = 0;
+                idPago = 0;
                 Mensaje = ex.Message;
             }
 
