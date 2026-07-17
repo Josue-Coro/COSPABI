@@ -77,6 +77,33 @@
             </div>
             <p id="msgCobro" class="hidden text-xs text-red-500"></p>
             <button id="btnCobrar" onclick="confirmarCobro()" class="w-full bg-green-600 hover:bg-green-700 text-white text-sm font-semibold py-2.5 rounded-xl">Confirmar cobro</button>
+            <button id="btnQr" onclick="generarQr()" class="w-full border border-blue-600 text-blue-600 hover:bg-blue-50 text-sm font-semibold py-2.5 rounded-xl">Cobrar con QR</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal QR (pasarela Libelula) -->
+<div id="modalQr" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div class="absolute inset-0 bg-black/40"></div>
+    <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
+        <div class="px-5 py-3 border-b border-gray-100 flex items-center justify-between">
+            <h3 class="text-base font-bold text-gray-800">Pago con QR</h3>
+            <button onclick="cerrarQr()" class="p-1 hover:bg-gray-100 rounded-lg text-gray-500">&times;</button>
+        </div>
+        <div class="px-5 py-4 text-center space-y-3">
+            <p class="text-sm text-gray-600" id="qrSocio"></p>
+            <p class="font-mono font-bold text-lg text-gray-800" id="qrTotal"></p>
+            <img id="qrImagen" src="" alt="Codigo QR de pago"
+                 class="mx-auto border border-gray-200 rounded-xl" style="max-width:240px">
+            <div id="qrEstado" class="text-sm">
+                <span class="inline-flex items-center gap-2 text-amber-600 font-semibold">
+                    <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+                    Esperando el pago...
+                </span>
+            </div>
+            <p class="text-xs text-gray-400">El QR queda vigente hasta que se pague o expire.
+               Si el socio ya pagó y no se refleja, usa "Verificar pago".</p>
+            <button onclick="verificarQr()" class="w-full border border-gray-300 text-gray-600 hover:bg-gray-50 text-sm font-semibold py-2 rounded-xl">Verificar pago</button>
         </div>
     </div>
 </div>
@@ -224,6 +251,69 @@
     }
 
     function cerrarCobro() { $('#modalCobro').addClass('hidden'); }
+
+    // ---- Cobro con QR (Libelula) ----
+    var qrIdPago = 0, qrTimer = null;
+
+    function generarQr() {
+        $('#btnQr').prop('disabled', true).text('Generando QR...');
+        $.post('@Url.Action("GenerarQr", "Pago")', { idAviso: cobroAviso }, function (res) {
+            $('#btnQr').prop('disabled', false).text('Cobrar con QR');
+            if (!res.exito || !res.qr) {
+                $('#msgCobro').text(res.mensaje || 'No se pudo generar el QR.').removeClass('hidden');
+                return;
+            }
+            qrIdPago = res.qr.id_pago;
+            $('#qrSocio').text($('#cobroSocio').text());
+            $('#qrTotal').text($('#cobroTotal').text());
+            if (res.qr.qr_url) {
+                $('#qrImagen').attr('src', res.qr.qr_url).removeClass('hidden');
+            } else {
+                $('#qrImagen').addClass('hidden');
+            }
+            cerrarCobro();
+            $('#modalQr').removeClass('hidden');
+            qrTimer = setInterval(consultarEstadoQr, 5000);
+        }).fail(function () {
+            $('#btnQr').prop('disabled', false).text('Cobrar con QR');
+            $('#msgCobro').text('Error de conexión.').removeClass('hidden');
+        });
+    }
+
+    function consultarEstadoQr() {
+        if (!qrIdPago) return;
+        $.get('@Url.Action("EstadoQr", "Pago")', { idPago: qrIdPago }, function (res) {
+            if (!res.exito) return;
+            if (res.estado === 'APROBADO') {
+                clearInterval(qrTimer); qrTimer = null;
+                $('#qrEstado').html('<span class="inline-flex items-center gap-2 text-green-700 font-semibold">' +
+                    '<span class="w-2 h-2 rounded-full bg-green-500"></span>¡Pago confirmado!</span>');
+                window.open('@Url.Action("ImprimirRecibo", "Pago")?idPago=' + qrIdPago, '_blank');
+                setTimeout(function () {
+                    cerrarQr();
+                    cargarPorCobrar(); cargarPagos(); cargarMiCaja();
+                }, 1500);
+            } else if (res.estado === 'EXPIRADO' || res.estado === 'RECHAZADO') {
+                clearInterval(qrTimer); qrTimer = null;
+                $('#qrEstado').html('<span class="text-red-600 font-semibold">El QR quedó ' + res.estado.toLowerCase() + '.</span>');
+            }
+        });
+    }
+
+    // Conciliacion puntual: pregunta a la pasarela por los pendientes
+    function verificarQr() {
+        $.post('@Url.Action("ConciliarQr", "Pago")', function (res) {
+            if (res.exito && res.confirmados > 0) consultarEstadoQr();
+            else if (res.mensaje) $('#qrEstado').append('<p class="text-xs text-gray-400 mt-1">' + res.mensaje + '</p>');
+        });
+    }
+
+    function cerrarQr() {
+        if (qrTimer) { clearInterval(qrTimer); qrTimer = null; }
+        qrIdPago = 0;
+        $('#modalQr').addClass('hidden');
+        cargarPorCobrar(); cargarPagos(); cargarMiCaja();
+    }
 
     // ---- Pagos de la caja ----
     function cargarPagos() {

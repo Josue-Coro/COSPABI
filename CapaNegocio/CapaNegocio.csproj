@@ -31,6 +31,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Newtonsoft.Json, Version=13.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\packages\Newtonsoft.Json.13.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -50,6 +53,7 @@
     <Compile Include="CN_CuentaSocio.cs" />
     <Compile Include="CN_Dashboard.cs" />
     <Compile Include="CN_Lectura.cs" />
+    <Compile Include="CN_Libelula.cs" />
     <Compile Include="CN_Login.cs" />
     <Compile Include="CN_LoginSocio.cs" />
     <Compile Include="CN_Medidor.cs" />
@@ -76,6 +80,9 @@
       <Project>{65a51b7b-9c38-49d0-8f7f-e4a01e6dbbf3}</Project>
       <Name>CapaModelo</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

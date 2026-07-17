@@ -2,6 +2,7 @@ using CapaModelo;
 using CapaNegocio;
 using CapaPresentacionAdmin.Filtros;
 using System;
+using System.Configuration;
 using System.Web.Mvc;
 
 namespace CapaPresentacionAdmin.Controllers
@@ -76,6 +77,100 @@ namespace CapaPresentacionAdmin.Controllers
                 bool ok = cnPago.RegistrarPago(idAviso, caja.id_caja, idMetodoPago, montoRecibido,
                                                u.id_usuario_admin, cajero, out int idPago, out string Mensaje);
                 return Json(new { exito = ok, mensaje = Mensaje, idPago = idPago });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { exito = false, mensaje = ex.Message });
+            }
+        }
+
+        // ---- Pago QR (pasarela Libelula) ------------------------------------
+
+        private static CN_Libelula CrearClienteLibelula()
+        {
+            return new CN_Libelula(
+                ConfigurationManager.AppSettings["Libelula.AppKey"],
+                ConfigurationManager.AppSettings["Libelula.UrlBase"]);
+        }
+
+        // URL publica del callback (en local: tunel ngrok, Secrets.config)
+        private string ObtenerCallbackUrl()
+        {
+            string baseUrl = ConfigurationManager.AppSettings["Libelula.CallbackUrl"];
+            if (string.IsNullOrWhiteSpace(baseUrl))
+                baseUrl = Url.Action("PagoExitoso", "Pago", null, Request.Url.Scheme);
+            return baseUrl;
+        }
+
+        [HttpPost]
+        [ValidarPermisos(NombrePermiso = "Gestionar Pago")]
+        public JsonResult GenerarQr(int idAviso)
+        {
+            try
+            {
+                var u = (CM_Usuario_Activo)Session["Usuario"];
+                var caja = cnCaja.ObtenerCajaAbierta(u.id_usuario_admin);
+                if (caja == null)
+                    return Json(new { exito = false, mensaje = "Debe abrir su caja antes de cobrar." });
+
+                string cajero = (u.nombre + " " + u.apellido).Trim();
+                bool ok = cnPago.GenerarPagoQr(idAviso, caja.id_caja, cajero, u.id_usuario_admin,
+                                               CrearClienteLibelula(), ObtenerCallbackUrl(),
+                                               out CM_PagoQrPendiente qr, out string Mensaje);
+                return Json(new { exito = ok, mensaje = Mensaje, qr });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { exito = false, mensaje = ex.Message });
+            }
+        }
+
+        [HttpGet]
+        [ValidarPermisos(NombrePermiso = "Gestionar Pago")]
+        public JsonResult EstadoQr(int idPago)
+        {
+            try
+            {
+                string estado = cnPago.ObtenerEstadoPago(idPago);
+                if (estado == null)
+                    return Json(new { exito = false, mensaje = "Pago no encontrado." }, JsonRequestBehavior.AllowGet);
+                return Json(new { exito = true, estado }, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                return Json(new { exito = false, mensaje = ex.Message }, JsonRequestBehavior.AllowGet);
+            }
+        }
+
+        // Callback publico de Libelula (PAGO EXITOSO): GET ?transaction_id=...
+        // Sin sesion ni permisos; la autenticidad se verifica reconsultando la
+        // deuda en la pasarela antes de aprobar (CN_Pago.ConfirmarPagoQr).
+        [HttpGet]
+        [AllowAnonymous]
+        public ContentResult PagoExitoso(string transaction_id)
+        {
+            try
+            {
+                bool ok = cnPago.ConfirmarPagoQr(transaction_id, CrearClienteLibelula(), out string mensaje);
+                Response.StatusCode = ok ? 200 : 400;
+                return Content(ok ? "OK" : mensaje, "text/plain");
+            }
+            catch (Exception)
+            {
+                Response.StatusCode = 500;
+                return Content("ERROR", "text/plain");
+            }
+        }
+
+        [HttpPost]
+        [ValidarPermisos(NombrePermiso = "Gestionar Pago")]
+        public JsonResult ConciliarQr()
+        {
+            try
+            {
+                var u = (CM_Usuario_Activo)Session["Usuario"];
+                int confirmados = cnPago.ConciliarPagosQr(CrearClienteLibelula(), u.id_usuario_admin, out string Mensaje);
+                return Json(new { exito = true, mensaje = Mensaje, confirmados });
             }
             catch (Exception ex)
             {

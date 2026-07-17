@@ -52,6 +52,7 @@
     <Compile Include="CM_CuentaSocio_Activo.cs" />
     <Compile Include="CM_Dashboard.cs" />
     <Compile Include="CM_Lectura.cs" />
+    <Compile Include="CM_Libelula.cs" />
     <Compile Include="CM_Medidor.cs" />
     <Compile Include="CM_MetodoPago.cs" />
     <Compile Include="CM_Notificacion.cs" />

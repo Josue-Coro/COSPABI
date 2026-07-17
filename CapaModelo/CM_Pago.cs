@@ -37,6 +37,42 @@ namespace CapaModelo
         public int?     codigo_fijo    { get; set; }
     }
 
+    // QR pendiente vigente de un aviso (pasarela Libelula)
+    public class CM_PagoQrPendiente
+    {
+        public int    id_pago        { get; set; }
+        public string id_transaccion { get; set; }
+        public string url_pasarela   { get; set; }
+        public string qr_url         { get; set; }
+    }
+
+    // Datos del aviso necesarios para registrar la deuda en Libelula
+    public class CM_DatosDeudaQr
+    {
+        public int     id_aviso       { get; set; }
+        public decimal total_aviso    { get; set; }
+        public string  estado         { get; set; }
+        public string  nombre_socio   { get; set; }
+        public int     codigo_fijo    { get; set; }
+        public string  nombre_periodo { get; set; }
+        public string  email          { get; set; }
+
+        public CM_PagoQrPendiente         Pendiente { get; set; }
+        public List<CM_ReciboPagoDetalle> Detalles  { get; set; }
+    }
+
+    // Pago QR registrado, leido por id_transaccion (verificacion del callback)
+    public class CM_PagoQr
+    {
+        public int     id_pago             { get; set; }
+        public string  identificador_deuda { get; set; }
+        public string  id_transaccion      { get; set; }
+        public string  estado_pago         { get; set; }
+        public decimal monto_pagado        { get; set; }
+        public int?    aviso_id_aviso      { get; set; }
+        public int?    caja_id_caja        { get; set; }
+    }
+
     public class CM_ReciboPagoDetalle
     {
         public string  concepto { get; set; }

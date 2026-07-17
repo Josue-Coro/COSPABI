@@ -90,6 +90,12 @@ BEGIN
 
         BEGIN TRAN;
 
+        -- Si habia un QR pendiente para este aviso, caduca (se cobro en efectivo)
+        UPDATE pago SET estado_pago = 'EXPIRADO'
+        WHERE aviso_id_aviso = @id_aviso
+          AND estado_pago    = 'PENDIENTE'
+          AND id_transaccion IS NOT NULL;
+
         INSERT INTO pago (fecha_pago, monto_pagado, cajero, estado_pago, aviso_id_aviso,
                           metodo_pago_id_metodo_pago, vuelto, caja_id_caja)
         VALUES (GETDATE(), @total, @cajero, 'APROBADO', @id_aviso,
