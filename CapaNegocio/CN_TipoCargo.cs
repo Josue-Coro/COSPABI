@@ -32,7 +32,7 @@ namespace CapaNegocio
             int idGenerado = cdtipo.Registrar(obj, idUsuario, out Mensaje);
 
             if (idGenerado > 0)
-                bitacora.Registrar("Registro de tipo de cargo: " + obj.nombre, idUsuario);
+                bitacora.Registrar("Registro de tipo de cargo: " + obj.nombre + (obj.automatico ? " (automático)" : ""), idUsuario);
 
             return idGenerado;
         }
@@ -55,7 +55,7 @@ namespace CapaNegocio
             bool resultado = cdtipo.Editar(obj, idUsuario, out Mensaje);
 
             if (resultado)
-                bitacora.Registrar("Edición de tipo de cargo: " + obj.nombre, idUsuario);
+                bitacora.Registrar("Edición de tipo de cargo: " + obj.nombre + (obj.automatico ? " (automático)" : ""), idUsuario);
 
             return resultado;
         }

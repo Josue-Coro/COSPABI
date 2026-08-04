@@ -74,4 +74,28 @@ namespace CapaModelo
         // Crédito de inscripción (0..1) — suma al total
         public decimal? monto_credito           { get; set; }
     }
+
+    // ---- HU22: Reporte de Morosidad ----
+
+    public class CM_MorosidadFila
+    {
+        public int      id_socio          { get; set; }
+        public string   nombre_socio      { get; set; }
+        public int      codigo_fijo       { get; set; }
+        public string   nombre_ruta       { get; set; }
+        public string   nombre_periodo    { get; set; }
+        public int      id_aviso          { get; set; }
+        public DateTime fecha_emision     { get; set; }
+        public DateTime fecha_vencimiento { get; set; }
+        public decimal  monto_adeudado    { get; set; }
+        public int      dias_mora         { get; set; }
+    }
+
+    public class CM_ReporteMorosidad
+    {
+        public List<CM_MorosidadFila> Avisos         { get; set; }
+        public int                    CantidadSocios { get; set; }
+        public int                    CantidadAvisos { get; set; }
+        public decimal                TotalAdeudado  { get; set; }
+    }
 }

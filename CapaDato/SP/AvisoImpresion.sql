@@ -120,3 +120,71 @@ GO
 
 
 --EXEC dbo.sp_imprimir_aviso 30;   -- usá un id_aviso que exista
+
+
+-- =============================================================================
+-- sp_marcar_aviso_impreso
+-- -----------------------------------------------------------------------------
+-- Avanza el aviso al estado IMPRESO de forma AUTOMATICA, al abrir la vista de
+-- impresion. Reemplaza el cambio manual de estado que hacia el select de la
+-- pantalla de Avisos (LECTURADO / IMPRESO).
+--
+-- Es idempotente y no lanza error: si el aviso ya esta IMPRESO, PAGADO o
+-- ANULADO simplemente no hace nada y devuelve @Resultado = 0. Solo avanza desde
+-- GENERADO o LECTURADO (LECTURADO queda por compatibilidad con avisos viejos;
+-- los nuevos nacen GENERADO y ya implican lectura registrada).
+--
+-- @Resultado = 1 -> el estado cambio realmente (la capa CN registra bitacora).
+-- @Resultado = 0 -> no habia nada que cambiar (o el aviso no existe).
+-- =============================================================================
+CREATE OR ALTER PROCEDURE dbo.sp_marcar_aviso_impreso
+    @id_aviso  INT,
+    @Resultado INT          OUTPUT,
+    @Mensaje   VARCHAR(500) OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET @Resultado = 0;
+    SET @Mensaje   = '';
+
+    BEGIN TRY
+        DECLARE @estado_actual VARCHAR(150);
+        SELECT @estado_actual = e.estado
+        FROM aviso a
+        INNER JOIN estado e ON e.id_estado = a.estado_id_estado
+        WHERE a.id_aviso = @id_aviso;
+
+        IF @estado_actual IS NULL
+        BEGIN
+            SET @Mensaje = 'Aviso no encontrado.';
+            RETURN;
+        END
+
+        IF @estado_actual NOT IN ('GENERADO', 'LECTURADO')
+        BEGIN
+            SET @Mensaje = 'El aviso ya estaba en estado ' + @estado_actual + '.';
+            RETURN;
+        END
+
+        DECLARE @id_impreso INT;
+        SELECT @id_impreso = id_estado FROM estado WHERE estado = 'IMPRESO';
+
+        IF @id_impreso IS NULL
+        BEGIN
+            SET @Mensaje = 'Tabla estado no inicializada (falta IMPRESO).';
+            RETURN;
+        END
+
+        UPDATE aviso
+        SET estado_id_estado = @id_impreso
+        WHERE id_aviso = @id_aviso;
+
+        SET @Resultado = 1;
+        SET @Mensaje   = 'Aviso marcado como IMPRESO.';
+    END TRY
+    BEGIN CATCH
+        SET @Resultado = 0;
+        SET @Mensaje   = ERROR_MESSAGE();
+    END CATCH
+END
+GO

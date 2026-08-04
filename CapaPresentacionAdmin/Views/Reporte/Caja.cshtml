@@ -1,8 +1,152 @@
-﻿
 @{
-    ViewBag.Title = "Caja";
+    ViewBag.Title = "Reporte de Caja";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<h2>Caja</h2>
+<style>
+    /* Al imprimir: solo el area del reporte, sin sidebar/header/filtros */
+    @@media print {
+        aside, header, #sidebarOverlay, .no-print { display: none !important; }
+        html, body { overflow: visible !important; height: auto !important; background: #fff !important; }
+        body > .flex { display: block !important; height: auto !important; overflow: visible !important; }
+        main { overflow: visible !important; padding: 0 !important; background: #fff !important; }
+        #areaReporte { box-shadow: none !important; border: none !important; }
+    }
+</style>
 
+<div class="p-6">
+    <div class="mb-6 no-print">
+        <h1 class="text-2xl font-bold text-gray-800">Reporte de Caja</h1>
+        <p class="text-sm text-gray-500 mt-1">Cobros realizados por rango de fechas y cajero</p>
+    </div>
+
+    <!-- Filtros -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-6 no-print">
+        <div class="flex flex-wrap items-end gap-3">
+            <div>
+                <label class="block text-xs font-medium text-gray-700 mb-1">Desde <span class="text-red-500">*</span></label>
+                <input type="date" id="fIni" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-700 mb-1">Hasta <span class="text-red-500">*</span></label>
+                <input type="date" id="fFin" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-700 mb-1">Cajero</label>
+                <select id="selCajero" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" style="min-width:180px">
+                    <option value="">Todos</option>
+                </select>
+            </div>
+            <button onclick="generar()" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-5 py-2 rounded-xl">Generar</button>
+            <button id="btnImprimir" onclick="window.print()" disabled
+                    class="border border-gray-300 text-gray-600 hover:bg-gray-50 text-sm font-semibold px-5 py-2 rounded-xl disabled:opacity-40">Imprimir / PDF</button>
+        </div>
+        <p id="msgError" class="hidden text-xs text-red-500 mt-2"></p>
+    </div>
+
+    <!-- Area imprimible -->
+    <div id="areaReporte" class="hidden bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+        <div class="text-center mb-4">
+            <h2 class="text-lg font-bold text-gray-800">COSPABI R.L. — Reporte de Caja</h2>
+            <p class="text-sm text-gray-500" id="lblRango"></p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4 mb-5">
+            <div class="bg-gray-50 rounded-xl p-4 text-center">
+                <p class="text-xs text-gray-400 uppercase font-semibold">Pagos registrados</p>
+                <p class="text-2xl font-bold text-gray-800" id="lblCantidad">0</p>
+            </div>
+            <div class="bg-gray-50 rounded-xl p-4 text-center">
+                <p class="text-xs text-gray-400 uppercase font-semibold">Total recaudado</p>
+                <p class="text-2xl font-bold text-green-700 font-mono" id="lblTotal">Bs. 0.00</p>
+            </div>
+        </div>
+
+        <div class="overflow-x-auto mb-5">
+            <table class="w-full text-sm">
+                <thead class="bg-gray-50 text-gray-500">
+                    <tr>
+                        <th class="px-3 py-2 text-left font-semibold uppercase text-xs">Fecha</th>
+                        <th class="px-3 py-2 text-left font-semibold uppercase text-xs">Cobro</th>
+                        <th class="px-3 py-2 text-left font-semibold uppercase text-xs">Socio</th>
+                        <th class="px-3 py-2 text-left font-semibold uppercase text-xs">Método</th>
+                        <th class="px-3 py-2 text-left font-semibold uppercase text-xs">Cajero</th>
+                        <th class="px-3 py-2 text-right font-semibold uppercase text-xs">Monto</th>
+                    </tr>
+                </thead>
+                <tbody id="tbodyPagos" class="divide-y divide-gray-100"></tbody>
+            </table>
+        </div>
+
+        <div class="max-w-sm">
+            <p class="text-xs font-semibold text-gray-500 uppercase mb-2">Desglose por método de pago</p>
+            <div id="listaMetodos" class="divide-y divide-gray-100 border border-gray-100 rounded-xl overflow-hidden"></div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+<script>
+    $(function () {
+        var hoy = new Date().toISOString().slice(0, 10);
+        $('#fIni').val(hoy); $('#fFin').val(hoy);
+        $.get('@Url.Action("Cajeros", "Reporte")', function (res) {
+            if (res.exito) $.each(res.cajeros, function (_, c) {
+                $('#selCajero').append('<option value="' + c.id_usuario_admin + '">' + c.nombre_completo + '</option>');
+            });
+        });
+    });
+
+    function fmt(n) { return (n == null ? 0 : n).toLocaleString('es-BO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+    function parseNet(v) { if (!v) return null; var m = /\/Date\((\d+)\)\//.exec(v); var d = m ? new Date(parseInt(m[1])) : new Date(v); return isNaN(d) ? null : d; }
+    function fhora(v) { var d = parseNet(v); return d ? d.toLocaleString('es-BO') : '-'; }
+
+    function generar() {
+        var fi = $('#fIni').val(), ff = $('#fFin').val();
+        $('#msgError').addClass('hidden');
+        if (!fi || !ff) { $('#msgError').text('Selecciona el rango de fechas.').removeClass('hidden'); return; }
+
+        $.get('@Url.Action("DatosCaja", "Reporte")',
+              { fechaInicio: fi, fechaFin: ff, idCajero: $('#selCajero').val() || null },
+              function (res) {
+            if (!res.exito) { $('#msgError').text(res.mensaje).removeClass('hidden'); return; }
+
+            var cajeroTxt = $('#selCajero option:selected').text();
+            $('#lblRango').text('Del ' + fi.split('-').reverse().join('/') + ' al ' + ff.split('-').reverse().join('/') +
+                                ' · Cajero: ' + cajeroTxt);
+            $('#lblCantidad').text(res.cantidadPagos);
+            $('#lblTotal').text('Bs. ' + fmt(res.totalRecaudado));
+
+            var tb = $('#tbodyPagos'); tb.empty();
+            if (!res.pagos.length) {
+                tb.html('<tr><td colspan="6" class="text-center py-6 text-gray-400">Sin cobros en el periodo seleccionado</td></tr>');
+            }
+            $.each(res.pagos, function (_, p) {
+                tb.append('<tr>' +
+                    '<td class="px-3 py-2 text-gray-600">' + fhora(p.fecha_pago) + '</td>' +
+                    '<td class="px-3 py-2 text-gray-600">' + (p.aviso_id_aviso ? 'Aviso #' + p.aviso_id_aviso : p.tipo_cobro) + '</td>' +
+                    '<td class="px-3 py-2 font-medium text-gray-800">' + (p.nombre_socio || '-') + (p.codigo_fijo ? ' (' + p.codigo_fijo + ')' : '') + '</td>' +
+                    '<td class="px-3 py-2 text-gray-600">' + p.nombre_metodo + '</td>' +
+                    '<td class="px-3 py-2 text-gray-600">' + p.cajero + '</td>' +
+                    '<td class="px-3 py-2 text-right font-mono font-semibold text-gray-800">Bs. ' + fmt(p.monto_pagado) + '</td>' +
+                    '</tr>');
+            });
+
+            var lm = $('#listaMetodos'); lm.empty();
+            if (!res.totalesMetodo.length) {
+                lm.html('<div class="px-4 py-2 text-sm text-gray-400">Sin datos</div>');
+            }
+            $.each(res.totalesMetodo, function (_, m) {
+                lm.append('<div class="flex items-center justify-between px-4 py-2 text-sm">' +
+                    '<span class="text-gray-600">' + m.nombre_metodo + ' <span class="text-xs text-gray-400">(' + m.cantidad + ')</span></span>' +
+                    '<span class="font-mono font-semibold text-gray-800">Bs. ' + fmt(m.total) + '</span></div>');
+            });
+
+            $('#areaReporte').removeClass('hidden');
+            $('#btnImprimir').prop('disabled', false);
+        }).fail(function () {
+            $('#msgError').text('Error de conexión.').removeClass('hidden');
+        });
+    }
+</script>
+}

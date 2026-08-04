@@ -47,4 +47,40 @@ namespace CapaModelo
         public int           TotalRegistros { get; set; }
         public List<CM_Caja> Cajas          { get; set; }
     }
+
+    // ---- HU21: Reporte de Caja ----
+
+    public class CM_ReporteCajaFila
+    {
+        public int      id_pago        { get; set; }
+        public DateTime fecha_pago     { get; set; }
+        public int?     aviso_id_aviso { get; set; }
+        public string   tipo_cobro     { get; set; }
+        public string   nombre_socio   { get; set; }
+        public int?     codigo_fijo    { get; set; }
+        public string   nombre_metodo  { get; set; }
+        public string   cajero         { get; set; }
+        public decimal  monto_pagado   { get; set; }
+    }
+
+    public class CM_ReporteCajaMetodo
+    {
+        public string  nombre_metodo { get; set; }
+        public int     cantidad      { get; set; }
+        public decimal total         { get; set; }
+    }
+
+    public class CM_ReporteCaja
+    {
+        public List<CM_ReporteCajaFila>   Pagos          { get; set; }
+        public List<CM_ReporteCajaMetodo> TotalesMetodo  { get; set; }
+        public int                        CantidadPagos  { get; set; }
+        public decimal                    TotalRecaudado { get; set; }
+    }
+
+    public class CM_CajeroFiltro
+    {
+        public int    id_usuario_admin { get; set; }
+        public string nombre_completo  { get; set; }
+    }
 }

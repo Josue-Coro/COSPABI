@@ -168,5 +168,94 @@ namespace CapaDato
             catch { resultado = null; }
             return resultado;
         }
+
+        // ---- HU21: Reporte de Caja ----
+
+        public CM_ReporteCaja ReporteCaja(DateTime fechaInicio, DateTime fechaFin, int? idCajero)
+        {
+            CM_ReporteCaja reporte = null;
+            try
+            {
+                using (SqlConnection cn = new SqlConnection(CD_Conexion.cn))
+                {
+                    SqlCommand cmd = new SqlCommand("dbo.sp_reporte_caja", cn);
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.Parameters.AddWithValue("@FechaInicio", fechaInicio.Date);
+                    cmd.Parameters.AddWithValue("@FechaFin", fechaFin.Date);
+                    cmd.Parameters.AddWithValue("@IdCajero", (object)idCajero ?? DBNull.Value);
+                    cn.Open();
+                    using (SqlDataReader dr = cmd.ExecuteReader())
+                    {
+                        reporte = new CM_ReporteCaja
+                        {
+                            Pagos         = new List<CM_ReporteCajaFila>(),
+                            TotalesMetodo = new List<CM_ReporteCajaMetodo>()
+                        };
+                        while (dr.Read())
+                        {
+                            reporte.Pagos.Add(new CM_ReporteCajaFila
+                            {
+                                id_pago        = Convert.ToInt32(dr["id_pago"]),
+                                fecha_pago     = Convert.ToDateTime(dr["fecha_pago"]),
+                                aviso_id_aviso = dr["aviso_id_aviso"] == DBNull.Value ? (int?)null : Convert.ToInt32(dr["aviso_id_aviso"]),
+                                tipo_cobro     = dr["tipo_cobro"].ToString(),
+                                nombre_socio   = dr["nombre_socio"] == DBNull.Value ? null : dr["nombre_socio"].ToString(),
+                                codigo_fijo    = dr["codigo_fijo"] == DBNull.Value ? (int?)null : Convert.ToInt32(dr["codigo_fijo"]),
+                                nombre_metodo  = dr["nombre_metodo"].ToString(),
+                                cajero         = dr["cajero"].ToString(),
+                                monto_pagado   = Convert.ToDecimal(dr["monto_pagado"])
+                            });
+                        }
+                        if (dr.NextResult())
+                        {
+                            while (dr.Read())
+                            {
+                                reporte.TotalesMetodo.Add(new CM_ReporteCajaMetodo
+                                {
+                                    nombre_metodo = dr["nombre_metodo"].ToString(),
+                                    cantidad      = Convert.ToInt32(dr["cantidad"]),
+                                    total         = Convert.ToDecimal(dr["total"])
+                                });
+                            }
+                        }
+                        if (dr.NextResult() && dr.Read())
+                        {
+                            reporte.CantidadPagos  = Convert.ToInt32(dr["cantidad_pagos"]);
+                            reporte.TotalRecaudado = Convert.ToDecimal(dr["total_recaudado"]);
+                        }
+                    }
+                }
+            }
+            catch { reporte = null; }
+            return reporte;
+        }
+
+        public List<CM_CajeroFiltro> ListarCajerosConCaja(bool solicitanteEsSuperadmin)
+        {
+            var lista = new List<CM_CajeroFiltro>();
+            try
+            {
+                using (SqlConnection cn = new SqlConnection(CD_Conexion.cn))
+                {
+                    SqlCommand cmd = new SqlCommand("dbo.sp_listar_cajeros_con_caja", cn);
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.Parameters.AddWithValue("@SolicitanteEsSuperadmin", solicitanteEsSuperadmin);
+                    cn.Open();
+                    using (SqlDataReader dr = cmd.ExecuteReader())
+                    {
+                        while (dr.Read())
+                        {
+                            lista.Add(new CM_CajeroFiltro
+                            {
+                                id_usuario_admin = Convert.ToInt32(dr["id_usuario_admin"]),
+                                nombre_completo  = dr["nombre_completo"].ToString()
+                            });
+                        }
+                    }
+                }
+            }
+            catch { lista = null; }
+            return lista;
+        }
     }
 }

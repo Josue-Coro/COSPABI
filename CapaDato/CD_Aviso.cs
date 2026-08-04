@@ -109,6 +109,31 @@ namespace CapaDato
             return ok;
         }
 
+        // Marca el aviso como IMPRESO al abrir la vista de impresion.
+        // Devuelve true solo si el estado cambio realmente (para la bitacora).
+        public bool MarcarImpreso(int idAviso, out string Mensaje)
+        {
+            bool ok = false;
+            Mensaje = string.Empty;
+            try
+            {
+                using (SqlConnection cn = new SqlConnection(CD_Conexion.cn))
+                {
+                    SqlCommand cmd = new SqlCommand("dbo.sp_marcar_aviso_impreso", cn);
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.Parameters.AddWithValue("@id_aviso", idAviso);
+                    cmd.Parameters.Add("@Resultado", SqlDbType.Int).Direction          = ParameterDirection.Output;
+                    cmd.Parameters.Add("@Mensaje",   SqlDbType.VarChar, 500).Direction = ParameterDirection.Output;
+                    cn.Open();
+                    cmd.ExecuteNonQuery();
+                    ok      = Convert.ToInt32(cmd.Parameters["@Resultado"].Value) > 0;
+                    Mensaje = cmd.Parameters["@Mensaje"].Value.ToString();
+                }
+            }
+            catch (Exception ex) { ok = false; Mensaje = ex.Message; }
+            return ok;
+        }
+
         public CM_Aviso ObtenerUltimoAviso(int idSocio)
         {
             CM_Aviso aviso = null;
@@ -363,6 +388,53 @@ namespace CapaDato
             }
             catch { lista = null; }
             return lista;
+        }
+
+        // ---- HU22: Reporte de Morosidad ----
+
+        public CM_ReporteMorosidad ReporteMorosidad(DateTime? fechaInicio, DateTime? fechaFin, int? idRuta)
+        {
+            CM_ReporteMorosidad reporte = null;
+            try
+            {
+                using (SqlConnection cn = new SqlConnection(CD_Conexion.cn))
+                {
+                    SqlCommand cmd = new SqlCommand("dbo.sp_reporte_morosidad", cn);
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.Parameters.AddWithValue("@FechaInicio", (object)fechaInicio ?? DBNull.Value);
+                    cmd.Parameters.AddWithValue("@FechaFin", (object)fechaFin ?? DBNull.Value);
+                    cmd.Parameters.AddWithValue("@IdRuta", (object)idRuta ?? DBNull.Value);
+                    cn.Open();
+                    using (SqlDataReader dr = cmd.ExecuteReader())
+                    {
+                        reporte = new CM_ReporteMorosidad { Avisos = new List<CM_MorosidadFila>() };
+                        while (dr.Read())
+                        {
+                            reporte.Avisos.Add(new CM_MorosidadFila
+                            {
+                                id_socio          = Convert.ToInt32(dr["id_socio"]),
+                                nombre_socio      = dr["nombre_socio"].ToString(),
+                                codigo_fijo       = Convert.ToInt32(dr["codigo_fijo"]),
+                                nombre_ruta       = dr["nombre_ruta"] == DBNull.Value ? null : dr["nombre_ruta"].ToString(),
+                                nombre_periodo    = dr["nombre_periodo"].ToString(),
+                                id_aviso          = Convert.ToInt32(dr["id_aviso"]),
+                                fecha_emision     = Convert.ToDateTime(dr["fecha_emision"]),
+                                fecha_vencimiento = Convert.ToDateTime(dr["fecha_vencimiento"]),
+                                monto_adeudado    = Convert.ToDecimal(dr["monto_adeudado"]),
+                                dias_mora         = Convert.ToInt32(dr["dias_mora"])
+                            });
+                        }
+                        if (dr.NextResult() && dr.Read())
+                        {
+                            reporte.CantidadSocios = Convert.ToInt32(dr["cantidad_socios"]);
+                            reporte.CantidadAvisos = Convert.ToInt32(dr["cantidad_avisos"]);
+                            reporte.TotalAdeudado  = Convert.ToDecimal(dr["total_adeudado"]);
+                        }
+                    }
+                }
+            }
+            catch { reporte = null; }
+            return reporte;
         }
     }
 }

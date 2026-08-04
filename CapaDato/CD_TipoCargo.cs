@@ -27,7 +27,8 @@ namespace CapaDato
                                 id_tipo = Convert.ToInt32(dr["id_tipo"]),
                                 nombre = dr["nombre"].ToString(),
                                 monto = Convert.ToDecimal(dr["monto"]),
-                                estado = Convert.ToBoolean(dr["estado"])
+                                estado = Convert.ToBoolean(dr["estado"]),
+                                automatico = Convert.ToBoolean(dr["automatico"])
                             });
                         }
                     }
@@ -54,6 +55,7 @@ namespace CapaDato
                         cmd.Parameters.AddWithValue("@nombre", obj.nombre);
                         cmd.Parameters.AddWithValue("@monto", obj.monto);
                         cmd.Parameters.AddWithValue("@estado", obj.estado);
+                        cmd.Parameters.AddWithValue("@automatico", obj.automatico);
                         cmd.Parameters.Add("@Resultado", SqlDbType.Int).Direction = ParameterDirection.Output;
                         cmd.Parameters.Add("@Mensaje", SqlDbType.VarChar, 500).Direction = ParameterDirection.Output;
 
@@ -88,6 +90,7 @@ namespace CapaDato
                         cmd.Parameters.AddWithValue("@nombre", obj.nombre);
                         cmd.Parameters.AddWithValue("@monto", obj.monto);
                         cmd.Parameters.AddWithValue("@estado", obj.estado);
+                        cmd.Parameters.AddWithValue("@automatico", obj.automatico);
                         cmd.Parameters.Add("@Resultado", SqlDbType.Int).Direction = ParameterDirection.Output;
                         cmd.Parameters.Add("@Mensaje", SqlDbType.VarChar, 500).Direction = ParameterDirection.Output;
 

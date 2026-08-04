@@ -1,0 +1,62 @@
+@{
+    ViewBag.Title = "Mis Pagos";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f1f5f9; }
+
+    .card-portal {
+        background: #fff; border-radius: 14px;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+        overflow: hidden; margin-bottom: 14px;
+    }
+    .card-portal-header {
+        background: #f8fafc; padding: 12px 18px;
+        border-bottom: 1px solid #e2e8f0;
+        font-size: 12px; font-weight: 700;
+        text-transform: uppercase; letter-spacing: 0.5px; color: #64748b;
+    }
+    .pago-fila {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 12px 18px; border-bottom: 1px solid #f1f5f9;
+    }
+    .pago-fila:last-child { border-bottom: none; }
+    .pago-fila .concepto { font-weight: 600; color: #1e293b; font-size: 14px; }
+    .pago-fila .detalle  { font-size: 12px; color: #94a3b8; margin-top: 2px; }
+    .pago-fila .monto    { font-weight: 700; color: #15803d; font-size: 15px; white-space: nowrap; }
+    .sin-datos { padding: 24px; text-align: center; color: #94a3b8; font-size: 14px; }
+</style>
+
+<div class="card-portal">
+    <div class="card-portal-header">Historial de pagos</div>
+    <div id="listaPagos">
+        <div class="sin-datos">Cargando...</div>
+    </div>
+</div>
+
+@section scripts {
+<script>
+    function fmt(n) { return (n == null ? 0 : n).toLocaleString('es-BO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+    function parseNet(v) { if (!v) return null; var m = /\/Date\((\d+)\)\//.exec(v); var d = m ? new Date(parseInt(m[1])) : new Date(v); return isNaN(d) ? null : d; }
+    function fhora(v) { var d = parseNet(v); return d ? d.toLocaleString('es-BO') : '-'; }
+
+    $(function () {
+        $.get('@Url.Action("ListarPagos", "Portal")', function (res) {
+            var cont = $('#listaPagos'); cont.empty();
+            if (!res.exito || !res.pagos.length) {
+                cont.html('<div class="sin-datos">Aún no tienes pagos registrados.</div>');
+                return;
+            }
+            $.each(res.pagos, function (_, p) {
+                cont.append(
+                    '<div class="pago-fila">' +
+                    '<div><div class="concepto">' + p.concepto + '</div>' +
+                    '<div class="detalle">' + fhora(p.fecha_pago) + ' · ' + p.nombre_metodo + '</div></div>' +
+                    '<div class="monto">Bs. ' + fmt(p.monto_pagado) + '</div>' +
+                    '</div>');
+            });
+        });
+    });
+</script>
+}

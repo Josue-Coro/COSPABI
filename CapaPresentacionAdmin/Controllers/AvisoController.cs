@@ -96,6 +96,11 @@ namespace CapaPresentacionAdmin.Controllers
         [ValidarPermisos(NombrePermiso = "Gestionar Avisos")]
         public ActionResult ImprimirAviso(int idAviso)
         {
+            // El estado IMPRESO se marca solo al abrir esta vista (antes de leer los
+            // datos, para que el documento salga ya con el estado actualizado).
+            var oUsuario = (CM_Usuario_Activo)Session["Usuario"];
+            cnAviso.MarcarImpreso(idAviso, oUsuario.id_usuario_admin, out string _);
+
             var datos = cnAviso.ObtenerParaImpresion(idAviso);
             if (datos == null)
                 return HttpNotFound("Aviso no encontrado.");
@@ -115,22 +120,6 @@ namespace CapaPresentacionAdmin.Controllers
             {
                 var oUsuario = (CM_Usuario_Activo)Session["Usuario"];
                 bool ok      = cnAviso.AnularAviso(idAviso, oUsuario.id_usuario_admin, out string Mensaje);
-                return Json(new { exito = ok, mensaje = Mensaje });
-            }
-            catch (Exception ex)
-            {
-                return Json(new { exito = false, mensaje = ex.Message });
-            }
-        }
-
-        [HttpPost]
-        [ValidarPermisos(NombrePermiso = "Gestionar Avisos")]
-        public JsonResult CambiarEstado(int idAviso, int idEstado)
-        {
-            try
-            {
-                var oUsuario = (CM_Usuario_Activo)Session["Usuario"];
-                bool ok      = cnAviso.CambiarEstado(idAviso, idEstado, oUsuario.id_usuario_admin, out string Mensaje);
                 return Json(new { exito = ok, mensaje = Mensaje });
             }
             catch (Exception ex)

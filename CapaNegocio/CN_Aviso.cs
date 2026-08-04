@@ -41,6 +41,18 @@ namespace CapaNegocio
             return ok;
         }
 
+        // Marcado automatico al imprimir. No devuelve error a la vista: si el aviso
+        // ya estaba IMPRESO/PAGADO/ANULADO simplemente no cambia nada.
+        public bool MarcarImpreso(int idAviso, int idUsuario, out string Mensaje)
+        {
+            Mensaje = string.Empty;
+            if (idAviso <= 0) { Mensaje = "Aviso no valido."; return false; }
+            bool ok = cdAviso.MarcarImpreso(idAviso, out Mensaje);
+            if (ok)
+                cnBitacora.Registrar("Imprimió el aviso " + idAviso + " (estado -> IMPRESO)", idUsuario);
+            return ok;
+        }
+
         public bool ExisteAvisoActivo(int idSocio, int idPeriodo)
         {
             return cdAviso.ExisteAvisoActivo(idSocio, idPeriodo);
@@ -74,6 +86,28 @@ namespace CapaNegocio
         public List<CM_Estado> ListarEstados()
         {
             return cdAviso.ListarEstados();
+        }
+
+        // ---- HU22: Reporte de Morosidad ----
+
+        public CM_ReporteMorosidad ReporteMorosidad(System.DateTime? fechaInicio, System.DateTime? fechaFin,
+                                                    int? idRuta, int idUsuario, out string Mensaje)
+        {
+            Mensaje = string.Empty;
+            if (fechaInicio.HasValue && fechaFin.HasValue && fechaFin < fechaInicio)
+            {
+                Mensaje = "La fecha final no puede ser menor a la inicial.";
+                return null;
+            }
+
+            var reporte = cdAviso.ReporteMorosidad(fechaInicio, fechaFin, idRuta);
+            if (reporte == null)
+            {
+                Mensaje = "Error al generar el reporte de morosidad.";
+                return null;
+            }
+            cnBitacora.Registrar("Genero el reporte de morosidad", idUsuario);
+            return reporte;
         }
     }
 }

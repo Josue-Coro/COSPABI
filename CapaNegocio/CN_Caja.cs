@@ -45,5 +45,33 @@ namespace CapaNegocio
         {
             return cdCaja.Listar(idUsuario, pagina, tamanoPagina);
         }
+
+        // ---- HU21: Reporte de Caja ----
+
+        public CM_ReporteCaja ReporteCaja(System.DateTime fechaInicio, System.DateTime fechaFin,
+                                          int? idCajero, int idUsuario, out string Mensaje)
+        {
+            Mensaje = string.Empty;
+            if (fechaFin < fechaInicio)
+            {
+                Mensaje = "La fecha final no puede ser menor a la inicial.";
+                return null;
+            }
+
+            var reporte = cdCaja.ReporteCaja(fechaInicio, fechaFin, idCajero);
+            if (reporte == null)
+            {
+                Mensaje = "Error al generar el reporte de caja.";
+                return null;
+            }
+            cnBitacora.Registrar("Genero el reporte de caja (" +
+                fechaInicio.ToString("dd/MM/yyyy") + " - " + fechaFin.ToString("dd/MM/yyyy") + ")", idUsuario);
+            return reporte;
+        }
+
+        public System.Collections.Generic.List<CM_CajeroFiltro> ListarCajerosConCaja(bool solicitanteEsSuperadmin)
+        {
+            return cdCaja.ListarCajerosConCaja(solicitanteEsSuperadmin);
+        }
     }
 }

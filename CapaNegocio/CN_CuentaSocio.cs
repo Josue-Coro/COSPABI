@@ -113,5 +113,38 @@ namespace CapaNegocio
 
             return resultado;
         }
+
+        // ---- Portal del Socio (HU18/HU19) — solo lectura sobre datos propios ----
+
+        public CM_PortalResumen ObtenerResumenPortal(int idSocio)
+        {
+            return idSocio > 0 ? cdCuenta.ObtenerResumenPortal(idSocio) : null;
+        }
+
+        public System.Collections.Generic.List<CM_PortalAviso> ListarAvisosPortal(int idSocio)
+        {
+            return idSocio > 0 ? cdCuenta.ListarAvisosPortal(idSocio) : null;
+        }
+
+        public System.Collections.Generic.List<CM_PortalPago> ListarPagosPortal(int idSocio)
+        {
+            return idSocio > 0 ? cdCuenta.ListarPagosPortal(idSocio) : null;
+        }
+
+        public System.Collections.Generic.List<CM_PortalNotificacion> ListarNotificacionesPortal(int idSocio)
+        {
+            return idSocio > 0 ? cdCuenta.ListarNotificacionesPortal(idSocio) : null;
+        }
+
+        public bool MarcarNotificacionLeida(int idNotificacionSocio, int idSocio, out string Mensaje)
+        {
+            Mensaje = string.Empty;
+            if (idNotificacionSocio <= 0 || idSocio <= 0)
+            {
+                Mensaje = "Notificacion invalida.";
+                return false;
+            }
+            return cdCuenta.MarcarNotificacionLeida(idNotificacionSocio, idSocio, out Mensaje);
+        }
     }
 }

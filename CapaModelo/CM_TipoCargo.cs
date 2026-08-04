@@ -13,5 +13,7 @@
         public string nombre { get; set; }
         public decimal monto { get; set; }
         public bool estado { get; set; }
+        // Migración 12: si es true, el cargo se estampa solo en cada aviso al generarlo.
+        public bool automatico { get; set; }
     }
 }

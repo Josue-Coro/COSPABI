@@ -32,6 +32,23 @@ namespace CapaPresentacionAdmin.Controllers
             return Json(new { exito = false, mensaje = "Error al listar notificaciones" }, JsonRequestBehavior.AllowGet);
         }
 
+        // RF-27: recordatorios automaticos de avisos por vencer
+        [HttpPost]
+        [ValidarPermisos(NombrePermiso = "Gestionar Notificaciones")]
+        public JsonResult GenerarRecordatorios(int diasAntes = 3)
+        {
+            try
+            {
+                var u = (CM_Usuario_Activo)Session["Usuario"];
+                int generados = cnNotificacion.GenerarRecordatoriosVencimiento(diasAntes, u.id_usuario_admin, out string mensaje);
+                return Json(new { exito = true, generados, mensaje });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { exito = false, mensaje = ex.Message });
+            }
+        }
+
         [HttpPost]
         [ValidarPermisos(NombrePermiso = "Gestionar Notificaciones")]
         public JsonResult Guardar(CM_Notificacion obj)

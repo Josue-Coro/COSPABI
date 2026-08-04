@@ -246,5 +246,29 @@ namespace CapaDato
             }
             return resultado;
         }
+
+        // RF-27: recordatorios automaticos de vencimiento
+        public int GenerarRecordatoriosVencimiento(int diasAntes, out string Mensaje)
+        {
+            int generados = 0;
+            Mensaje = string.Empty;
+            try
+            {
+                using (SqlConnection cn = new SqlConnection(CD_Conexion.cn))
+                {
+                    SqlCommand cmd = new SqlCommand("dbo.sp_generar_notificaciones_vencimiento", cn);
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.Parameters.AddWithValue("@DiasAntes", diasAntes);
+                    cmd.Parameters.Add("@Resultado", SqlDbType.Int).Direction          = ParameterDirection.Output;
+                    cmd.Parameters.Add("@Mensaje",   SqlDbType.NVarChar, 500).Direction = ParameterDirection.Output;
+                    cn.Open();
+                    cmd.ExecuteNonQuery();
+                    generados = Convert.ToInt32(cmd.Parameters["@Resultado"].Value);
+                    Mensaje   = cmd.Parameters["@Mensaje"].Value.ToString();
+                }
+            }
+            catch (Exception ex) { generados = 0; Mensaje = ex.Message; }
+            return generados;
+        }
     }
 }

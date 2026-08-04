@@ -1,0 +1,85 @@
+@{
+    ViewBag.Title = "Notificaciones";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f1f5f9; }
+
+    .card-portal {
+        background: #fff; border-radius: 14px;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+        overflow: hidden; margin-bottom: 14px;
+    }
+    .card-portal-header {
+        background: #f8fafc; padding: 12px 18px;
+        border-bottom: 1px solid #e2e8f0;
+        font-size: 12px; font-weight: 700;
+        text-transform: uppercase; letter-spacing: 0.5px; color: #64748b;
+    }
+    .notif {
+        padding: 14px 18px; border-bottom: 1px solid #f1f5f9;
+        cursor: pointer; transition: background .15s;
+    }
+    .notif:hover { background: #f8fafc; }
+    .notif:last-child { border-bottom: none; }
+    .notif.no-leida { border-left: 4px solid #2563eb; background: #f8faff; }
+    .notif .titulo { font-weight: 700; color: #1e293b; font-size: 14px; }
+    .notif .mensaje { font-size: 13px; color: #475569; margin-top: 4px; white-space: pre-line; }
+    .notif .meta { font-size: 11px; color: #94a3b8; margin-top: 6px; }
+    .badge-tipo {
+        font-size: 10px; font-weight: 700; text-transform: uppercase;
+        padding: 2px 8px; border-radius: 20px; background: #eef2ff; color: #4338ca;
+        margin-left: 6px;
+    }
+    .badge-nueva {
+        font-size: 10px; font-weight: 700;
+        padding: 2px 8px; border-radius: 20px; background: #dbeafe; color: #1d4ed8;
+        margin-left: 6px;
+    }
+    .sin-datos { padding: 24px; text-align: center; color: #94a3b8; font-size: 14px; }
+</style>
+
+<div class="card-portal">
+    <div class="card-portal-header">Mis notificaciones</div>
+    <div id="listaNotif">
+        <div class="sin-datos">Cargando...</div>
+    </div>
+</div>
+
+@section scripts {
+<script>
+    function parseNet(v) { if (!v) return null; var m = /\/Date\((\d+)\)\//.exec(v); var d = m ? new Date(parseInt(m[1])) : new Date(v); return isNaN(d) ? null : d; }
+    function ffecha(v) { var d = parseNet(v); return d ? d.toLocaleDateString('es-BO') : '-'; }
+
+    function cargar() {
+        $.get('@Url.Action("ListarNotificaciones", "Portal")', function (res) {
+            var cont = $('#listaNotif'); cont.empty();
+            if (!res.exito || !res.notificaciones.length) {
+                cont.html('<div class="sin-datos">No tienes notificaciones.</div>');
+                return;
+            }
+            $.each(res.notificaciones, function (_, n) {
+                var div = $('<div class="notif' + (n.leido ? '' : ' no-leida') + '">' +
+                    '<div class="titulo">' + n.titulo +
+                    '<span class="badge-tipo">' + n.tipo + '</span>' +
+                    (n.leido ? '' : '<span class="badge-nueva">NUEVA</span>') + '</div>' +
+                    '<div class="mensaje">' + n.mensaje + '</div>' +
+                    '<div class="meta">Publicada: ' + ffecha(n.fecha_publicacion) +
+                    (n.leido && n.fecha_lectura ? ' · Leída: ' + ffecha(n.fecha_lectura) : '') + '</div>' +
+                    '</div>');
+                if (!n.leido) {
+                    div.on('click', function () {
+                        $.post('@Url.Action("MarcarLeida", "Portal")',
+                               { idNotificacionSocio: n.id_notificacion_socio },
+                               function () { cargar(); });
+                    });
+                }
+                cont.append(div);
+            });
+        });
+    }
+
+    $(cargar);
+</script>
+}

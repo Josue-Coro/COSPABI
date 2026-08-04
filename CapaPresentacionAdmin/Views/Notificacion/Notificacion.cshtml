@@ -8,13 +8,22 @@
         <h1 class="text-xl font-semibold text-gray-800">Notificaciones</h1>
         <p class="text-sm text-gray-400 mt-0.5">Administra las notificaciones del sistema</p>
     </div>
-    <button onclick="abrirModal()"
-            class="btn-primary inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white">
-        <svg style="width:16px;height:16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-        </svg>
-        Nueva Notificación
-    </button>
+    <div class="flex items-center gap-2">
+        <button id="btnRecordatorios" onclick="generarRecordatorios()"
+                class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold border border-amber-300 text-amber-700 hover:bg-amber-50">
+            <svg style="width:16px;height:16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            Recordatorios de vencimiento
+        </button>
+        <button onclick="abrirModal()"
+                class="btn-primary inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white">
+            <svg style="width:16px;height:16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            </svg>
+            Nueva Notificación
+        </button>
+    </div>
 </div>
 
 <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
@@ -371,6 +380,19 @@
                     }
                 });
             }
+        }
+
+        // RF-27: recordatorios automaticos para avisos que vencen pronto
+        function generarRecordatorios() {
+            $('#btnRecordatorios').prop('disabled', true);
+            $.post('@Url.Action("GenerarRecordatorios", "Notificacion")', { diasAntes: 3 }, function (res) {
+                $('#btnRecordatorios').prop('disabled', false);
+                mostrarToast(res.mensaje || 'Proceso terminado.', res.exito ? 'success' : 'error');
+                if (res.exito && res.generados > 0) cargarDatos();
+            }).fail(function () {
+                $('#btnRecordatorios').prop('disabled', false);
+                mostrarToast('Error de conexión.', 'error');
+            });
         }
 
         function mostrarToast(msg, tipo) {

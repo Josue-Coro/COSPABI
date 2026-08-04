@@ -45,6 +45,45 @@ BEGIN
     BEGIN TRY
         BEGIN TRAN;
 
+        -- 0) Estampar los cargos automaticos (tipo_cargo.automatico = 1) a los socios
+        --    que van a recibir aviso en este periodo. VA ANTES del INSERT del aviso:
+        --    total_aviso es una foto inmutable, si el cargo se creara despues el aviso
+        --    no lo incluiria pero el detalle si lo listaria (descuadre).
+        --    El monto sale de tipo_cargo.monto, asi la cooperativa lo cambia desde la UI.
+        INSERT INTO cargo_extra
+            (monto, descripcion, fecha_registro, estado,
+             tipo_cargo_id_tipo, socio_id_socio, periodo_id_periodo)
+        SELECT DISTINCT
+            CAST(tc.monto AS DECIMAL(30,2)),
+            tc.nombre,
+            CAST(GETDATE() AS DATE),
+            'PENDIENTE',
+            tc.id_tipo,
+            s.id_socio,
+            @id_periodo
+        FROM lectura l
+        INNER JOIN socio s ON s.medidor_id_medidor = l.medidor_id_medidor
+        CROSS JOIN tipo_cargo tc
+        WHERE l.periodo_id_periodo = @id_periodo
+          AND (@id_ruta IS NULL OR s.ruta_id_ruta = @id_ruta)
+          AND tc.automatico = 1
+          AND tc.estado     = 1
+          -- solo socios que efectivamente recibiran aviso ahora
+          AND NOT EXISTS (
+              SELECT 1 FROM aviso a
+              WHERE a.socio_id_socio     = s.id_socio
+                AND a.periodo_id_periodo = @id_periodo
+                AND a.estado_id_estado <> (SELECT id_estado FROM estado WHERE estado = 'ANULADO')
+          )
+          -- no duplicar si el cargo ya existe (registrado a mano o en una corrida anterior)
+          AND NOT EXISTS (
+              SELECT 1 FROM cargo_extra ce
+              WHERE ce.socio_id_socio     = s.id_socio
+                AND ce.periodo_id_periodo = @id_periodo
+                AND ce.tipo_cargo_id_tipo = tc.id_tipo
+                AND ce.estado <> 'ANULADO'
+          );
+
         -- 1) Crear los avisos del periodo. total_aviso = consumo + SUMA(cargos) + cuota_credito
         INSERT INTO aviso (
             fecha_emision, fecha_vencimiento,

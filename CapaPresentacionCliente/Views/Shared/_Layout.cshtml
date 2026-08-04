@@ -1,40 +1,164 @@
 ﻿<!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@ViewBag.Title - Mi aplicación ASP.NET</title>
+    <title>@ViewBag.Title - Portal del Socio COSPABI</title>
     @Styles.Render("~/Content/css")
     @Scripts.Render("~/bundles/modernizr")
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --azul-oscuro: #1c2434;
+            --fondo: #f1f5f9;
+            --texto: #1e293b;
+            --texto-suave: #94a3b8;
+        }
+        html, body { height: 100%; }
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: var(--fondo);
+            color: var(--texto);
+            display: flex; flex-direction: column; min-height: 100vh;
+        }
+
+        /* ---- Navbar ---- */
+        .navbar-portal {
+            background: var(--azul-oscuro);
+            padding: 10px 0;
+        }
+        .navbar-portal .navbar-brand {
+            display: flex; align-items: center; gap: 9px;
+            font-weight: 800; font-size: 17px; color: #fff; letter-spacing: 0.2px;
+        }
+        .brand-icono {
+            width: 34px; height: 34px; border-radius: 10px;
+            background: linear-gradient(135deg, #38bdf8, #2563eb);
+            display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+        }
+        .brand-sub { display: block; font-size: 10px; font-weight: 500; color: rgba(255,255,255,0.45); letter-spacing: 0.5px; }
+        .navbar-portal .nav-link {
+            color: rgba(255,255,255,0.65);
+            font-size: 14px; font-weight: 600;
+            padding: 8px 14px !important; border-radius: 10px;
+            transition: color .15s, background .15s;
+            position: relative;
+        }
+        .navbar-portal .nav-link:hover { color: #fff; background: rgba(255,255,255,0.06); }
+        .navbar-portal .nav-link.activo { color: #fff; background: rgba(56,189,248,0.15); }
+        .badge-notif {
+            position: absolute; top: 3px; right: 3px;
+            min-width: 17px; height: 17px; padding: 0 4px;
+            border-radius: 9px; background: #ef4444; color: #fff;
+            font-size: 10px; font-weight: 800; line-height: 17px; text-align: center;
+        }
+        .chip-usuario {
+            display: flex; align-items: center; gap: 8px;
+            color: rgba(255,255,255,0.85); font-size: 13px; font-weight: 600;
+            padding: 6px 6px 6px 14px;
+        }
+        .chip-avatar {
+            width: 30px; height: 30px; border-radius: 50%;
+            background: rgba(56,189,248,0.2); color: #7dd3fc;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 12px; font-weight: 800;
+        }
+        .btn-salir {
+            color: #fca5a5; font-size: 13px; font-weight: 600;
+            padding: 7px 14px; border-radius: 10px; text-decoration: none;
+            transition: background .15s, color .15s;
+        }
+        .btn-salir:hover { background: rgba(239,68,68,0.15); color: #fecaca; }
+        .navbar-toggler { border-color: rgba(255,255,255,0.2); }
+
+        /* ---- Contenido ---- */
+        .contenido-portal { flex: 1; width: 100%; max-width: 960px; margin: 0 auto; padding: 22px 16px 40px; }
+
+        /* ---- Footer ---- */
+        .footer-portal {
+            background: #fff; border-top: 1px solid #e2e8f0;
+            padding: 14px 16px; text-align: center;
+            font-size: 12px; color: var(--texto-suave);
+        }
+        .footer-portal b { color: #475569; }
+    </style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-dark bg-dark">
-        <div class="container">
-            @Html.ActionLink("Nombre de la aplicación", "Index", "Home", new { area = "" }, new { @class = "navbar-brand" })
-            <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" title="Alternar navegación" aria-controls="navbarSupportedContent"
-                    aria-expanded="false" aria-label="Toggle navigation">
+    @{
+        var rutaActual = (ViewContext.RouteData.Values["controller"] + "/" + ViewContext.RouteData.Values["action"]).ToLower();
+        Func<string, string> activo = r => rutaActual == r.ToLower() ? "nav-link activo" : "nav-link";
+        var nombreSocio = Session["NombreSocio"] as string;
+        var iniciales = "S";
+        if (!string.IsNullOrWhiteSpace(nombreSocio))
+        {
+            var partes = nombreSocio.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            iniciales = partes[0].Substring(0, 1).ToUpper() + (partes.Length > 1 ? partes[1].Substring(0, 1).ToUpper() : "");
+        }
+    }
+
+    <nav class="navbar navbar-expand-md navbar-dark navbar-portal">
+        <div class="container" style="max-width:960px">
+            <a class="navbar-brand" href="@Url.Action("Index", "Home")">
+                <span class="brand-icono">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="#fff">
+                        <path d="M12 2.5c-3.5 4.4-7 8.2-7 12a7 7 0 0 0 14 0c0-3.8-3.5-7.6-7-12z"/>
+                    </svg>
+                </span>
+                <span>COSPABI R.L.<span class="brand-sub">PORTAL DEL SOCIO</span></span>
+            </a>
+            <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navPortal"
+                    aria-controls="navPortal" aria-expanded="false" aria-label="Alternar navegación">
                 <span class="navbar-toggler-icon"></span>
             </button>
-            <div class="collapse navbar-collapse d-sm-inline-flex justify-content-between">
-                <ul class="navbar-nav flex-grow-1">
-                    <li>@Html.ActionLink("Inicio", "Index", "Home", new { area = "" }, new { @class = "nav-link" })</li>
-                    <li>@Html.ActionLink("Acerca de", "About", "Home", new { area = "" }, new { @class = "nav-link" })</li>
-                    <li>@Html.ActionLink("Contacto", "Contact", "Home", new { area = "" }, new { @class = "nav-link" })</li>
+            <div class="collapse navbar-collapse" id="navPortal">
+                <ul class="navbar-nav me-auto mb-2 mb-md-0 mt-2 mt-md-0">
+                    <li class="nav-item"><a class="@activo("Home/Index")" href="@Url.Action("Index", "Home")">Inicio</a></li>
+                    <li class="nav-item"><a class="@activo("Portal/Avisos")" href="@Url.Action("Avisos", "Portal")">Mis Avisos</a></li>
+                    <li class="nav-item"><a class="@activo("Portal/Pagos")" href="@Url.Action("Pagos", "Portal")">Mis Pagos</a></li>
+                    <li class="nav-item">
+                        <a class="@activo("Portal/Notificaciones")" href="@Url.Action("Notificaciones", "Portal")">
+                            Notificaciones<span id="badgeNotif" class="badge-notif" style="display:none"></span>
+                        </a>
+                    </li>
+                    <li class="nav-item"><a class="@activo("Perfil/Index")" href="@Url.Action("Index", "Perfil")">Mi Perfil</a></li>
                 </ul>
+                @if (nombreSocio != null)
+                {
+                    <div class="d-flex align-items-center">
+                        <span class="chip-usuario">
+                            <span class="chip-avatar">@iniciales</span>
+                            <span class="d-none d-lg-inline">@nombreSocio</span>
+                        </span>
+                        <a class="btn-salir" href="@Url.Action("CerrarSesion", "Login")">Salir</a>
+                    </div>
+                }
             </div>
         </div>
     </nav>
-    <div class="container body-content">
+
+    <main class="contenido-portal">
         @RenderBody()
-        <hr />
-        <footer>
-            <p>&copy; @DateTime.Now.Year - Mi aplicación ASP.NET</p>
-        </footer>
-    </div>
+    </main>
+
+    <footer class="footer-portal">
+        &copy; @DateTime.Now.Year <b>Cooperativa de Agua Potable COSPABI R.L.</b> &middot; Portal del Socio
+    </footer>
 
     @Scripts.Render("~/bundles/jquery")
     @Scripts.Render("~/bundles/bootstrap")
+    <script>
+        // Contador de notificaciones sin leer en la barra de navegación
+        $(function () {
+            $.get('@Url.Action("Resumen", "Portal")', function (res) {
+                if (res && res.exito && res.resumen && res.resumen.notificaciones_sin_leer > 0) {
+                    $('#badgeNotif').text(res.resumen.notificaciones_sin_leer).show();
+                }
+            });
+        });
+    </script>
     @RenderSection("scripts", required: false)
 </body>
 </html>

@@ -128,6 +128,9 @@ BEGIN
 
         COMMIT;
 
+        -- RF-27: notificacion automatica al portal del socio (best-effort)
+        EXEC dbo.sp_notificar_pago_confirmado @id_pago;
+
         SET @Resultado = @id_pago;
         SET @Mensaje   = 'Pago registrado correctamente. Vuelto: Bs. ' + CONVERT(VARCHAR, CAST(@vuelto AS DECIMAL(30,2)));
     END TRY

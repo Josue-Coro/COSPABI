@@ -189,5 +189,161 @@ namespace CapaDato
             }
             return resultado;
         }
+
+        // ---- Portal del Socio (HU18/HU19) ----
+
+        public CM_PortalResumen ObtenerResumenPortal(int idSocio)
+        {
+            CM_PortalResumen resumen = null;
+            try
+            {
+                using (SqlConnection cn = new SqlConnection(CD_Conexion.cn))
+                {
+                    SqlCommand cmd = new SqlCommand("dbo.sp_portal_resumen_socio", cn);
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.Parameters.AddWithValue("@id_socio", idSocio);
+                    cn.Open();
+                    using (SqlDataReader dr = cmd.ExecuteReader())
+                    {
+                        if (dr.Read())
+                        {
+                            resumen = new CM_PortalResumen
+                            {
+                                deuda_total             = Convert.ToDecimal(dr["deuda_total"]),
+                                avisos_pendientes       = Convert.ToInt32(dr["avisos_pendientes"]),
+                                avisos_vencidos         = Convert.ToInt32(dr["avisos_vencidos"]),
+                                notificaciones_sin_leer = Convert.ToInt32(dr["notificaciones_sin_leer"])
+                            };
+                        }
+                    }
+                }
+            }
+            catch { resumen = null; }
+            return resumen;
+        }
+
+        public List<CM_PortalAviso> ListarAvisosPortal(int idSocio)
+        {
+            var lista = new List<CM_PortalAviso>();
+            try
+            {
+                using (SqlConnection cn = new SqlConnection(CD_Conexion.cn))
+                {
+                    SqlCommand cmd = new SqlCommand("dbo.sp_portal_avisos_socio", cn);
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.Parameters.AddWithValue("@id_socio", idSocio);
+                    cn.Open();
+                    using (SqlDataReader dr = cmd.ExecuteReader())
+                    {
+                        while (dr.Read())
+                        {
+                            lista.Add(new CM_PortalAviso
+                            {
+                                id_aviso          = Convert.ToInt32(dr["id_aviso"]),
+                                nombre_periodo    = dr["nombre_periodo"].ToString(),
+                                fecha_emision     = Convert.ToDateTime(dr["fecha_emision"]),
+                                fecha_vencimiento = Convert.ToDateTime(dr["fecha_vencimiento"]),
+                                consumo_m3        = dr["consumo_m3"] == DBNull.Value ? (decimal?)null : Convert.ToDecimal(dr["consumo_m3"]),
+                                total_aviso       = Convert.ToDecimal(dr["total_aviso"]),
+                                deuda_actual      = Convert.ToDecimal(dr["deuda_actual"]),
+                                estado            = dr["estado"].ToString(),
+                                vencido           = Convert.ToInt32(dr["vencido"]) == 1
+                            });
+                        }
+                    }
+                }
+            }
+            catch { lista = null; }
+            return lista;
+        }
+
+        public List<CM_PortalPago> ListarPagosPortal(int idSocio)
+        {
+            var lista = new List<CM_PortalPago>();
+            try
+            {
+                using (SqlConnection cn = new SqlConnection(CD_Conexion.cn))
+                {
+                    SqlCommand cmd = new SqlCommand("dbo.sp_portal_pagos_socio", cn);
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.Parameters.AddWithValue("@id_socio", idSocio);
+                    cn.Open();
+                    using (SqlDataReader dr = cmd.ExecuteReader())
+                    {
+                        while (dr.Read())
+                        {
+                            lista.Add(new CM_PortalPago
+                            {
+                                id_pago        = Convert.ToInt32(dr["id_pago"]),
+                                fecha_pago     = Convert.ToDateTime(dr["fecha_pago"]),
+                                monto_pagado   = Convert.ToDecimal(dr["monto_pagado"]),
+                                nombre_metodo  = dr["nombre_metodo"].ToString(),
+                                aviso_id_aviso = dr["aviso_id_aviso"] == DBNull.Value ? (int?)null : Convert.ToInt32(dr["aviso_id_aviso"]),
+                                concepto       = dr["concepto"].ToString()
+                            });
+                        }
+                    }
+                }
+            }
+            catch { lista = null; }
+            return lista;
+        }
+
+        public List<CM_PortalNotificacion> ListarNotificacionesPortal(int idSocio)
+        {
+            var lista = new List<CM_PortalNotificacion>();
+            try
+            {
+                using (SqlConnection cn = new SqlConnection(CD_Conexion.cn))
+                {
+                    SqlCommand cmd = new SqlCommand("dbo.sp_portal_notificaciones_socio", cn);
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.Parameters.AddWithValue("@id_socio", idSocio);
+                    cn.Open();
+                    using (SqlDataReader dr = cmd.ExecuteReader())
+                    {
+                        while (dr.Read())
+                        {
+                            lista.Add(new CM_PortalNotificacion
+                            {
+                                id_notificacion_socio = Convert.ToInt32(dr["id_notificacion_socio"]),
+                                titulo                = dr["titulo"].ToString(),
+                                mensaje               = dr["mensaje"].ToString(),
+                                tipo                  = dr["tipo"].ToString(),
+                                fecha_publicacion     = Convert.ToDateTime(dr["fecha_publicacion"]),
+                                leido                 = Convert.ToBoolean(dr["leido"]),
+                                fecha_lectura         = dr["fecha_lectura"] == DBNull.Value ? (DateTime?)null : Convert.ToDateTime(dr["fecha_lectura"])
+                            });
+                        }
+                    }
+                }
+            }
+            catch { lista = null; }
+            return lista;
+        }
+
+        public bool MarcarNotificacionLeida(int idNotificacionSocio, int idSocio, out string Mensaje)
+        {
+            bool ok = false;
+            Mensaje = string.Empty;
+            try
+            {
+                using (SqlConnection cn = new SqlConnection(CD_Conexion.cn))
+                {
+                    SqlCommand cmd = new SqlCommand("dbo.sp_portal_marcar_notificacion_leida", cn);
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.Parameters.AddWithValue("@id_notificacion_socio", idNotificacionSocio);
+                    cmd.Parameters.AddWithValue("@id_socio", idSocio);
+                    cmd.Parameters.Add("@Resultado", SqlDbType.Int).Direction          = ParameterDirection.Output;
+                    cmd.Parameters.Add("@Mensaje",   SqlDbType.NVarChar, 500).Direction = ParameterDirection.Output;
+                    cn.Open();
+                    cmd.ExecuteNonQuery();
+                    ok      = Convert.ToInt32(cmd.Parameters["@Resultado"].Value) > 0;
+                    Mensaje = cmd.Parameters["@Mensaje"].Value.ToString();
+                }
+            }
+            catch (Exception ex) { ok = false; Mensaje = ex.Message; }
+            return ok;
+        }
     }
 }

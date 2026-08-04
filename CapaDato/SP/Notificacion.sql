@@ -236,3 +236,104 @@ END
 GO
 
 
+
+-- ══════════════════════════════════════════════════════════════════
+-- RF-27: Notificaciones AUTOMATICAS al portal del socio
+-- ══════════════════════════════════════════════════════════════════
+
+-- Confirmacion de pago: se invoca desde sp_registrar_pago_aviso y
+-- sp_confirmar_pago_qr (despues del COMMIT; si falla no afecta el cobro).
+CREATE OR ALTER PROCEDURE dbo.sp_notificar_pago_confirmado
+    @id_pago INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    BEGIN TRY
+        DECLARE @id_socio INT, @monto DECIMAL(30,2), @periodo VARCHAR(50), @id_aviso INT;
+        SELECT @id_socio = a.socio_id_socio, @monto = p.monto_pagado,
+               @periodo = per.periodo, @id_aviso = a.id_aviso
+        FROM pago p
+        INNER JOIN aviso a     ON a.id_aviso    = p.aviso_id_aviso
+        INNER JOIN periodo per ON per.id_periodo = a.periodo_id_periodo
+        WHERE p.id_pago = @id_pago;
+
+        IF @id_socio IS NULL RETURN;   -- pago sin aviso (inscripcion): sin notificacion
+
+        DECLARE @id_notif INT;
+        INSERT INTO notificacion (titulo, mensaje, tipo, fecha_publicacion, estado)
+        VALUES ('Pago confirmado',
+                'Tu pago de Bs. ' + CONVERT(VARCHAR, @monto) +
+                ' del aviso del periodo ' + @periodo +
+                ' fue registrado correctamente. [Aviso #' + CAST(@id_aviso AS VARCHAR) + ']',
+                'Pago', CAST(GETDATE() AS DATE), 1);
+        SET @id_notif = CAST(SCOPE_IDENTITY() AS INT);
+
+        INSERT INTO notificacion_socio (fecha_lectura, leido, notificacion_id_notificacion, socio_id_socio)
+        VALUES (CAST(GETDATE() AS DATE), 0, @id_notif, @id_socio);
+    END TRY
+    BEGIN CATCH
+        -- best-effort: una notificacion fallida nunca debe romper un cobro
+    END CATCH
+END
+GO
+
+-- Recordatorios de vencimiento: un aviso no pagado que vence dentro de
+-- @DiasAntes dias genera UNA notificacion al socio (no se repite: se
+-- detecta por la marca [Aviso #id] con tipo 'Vencimiento').
+CREATE OR ALTER PROCEDURE dbo.sp_generar_notificaciones_vencimiento
+    @DiasAntes INT           = 3,
+    @Resultado INT           OUTPUT,   -- cantidad de recordatorios generados
+    @Mensaje   NVARCHAR(500) OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET @Resultado = 0;
+    SET @Mensaje   = '';
+    BEGIN TRY
+        DECLARE @hoy DATE = CAST(GETDATE() AS DATE);
+
+        DECLARE @porVencer TABLE (id_aviso INT, id_socio INT, periodo VARCHAR(50),
+                                  vence DATE, deuda DECIMAL(30,2));
+        INSERT INTO @porVencer
+        SELECT a.id_aviso, a.socio_id_socio, per.periodo, a.fecha_vencimiento, a.deuda_actual
+        FROM aviso a
+        INNER JOIN estado  e   ON e.id_estado    = a.estado_id_estado
+        INNER JOIN periodo per ON per.id_periodo = a.periodo_id_periodo
+        WHERE e.estado NOT IN ('PAGADO', 'ANULADO')
+          AND a.fecha_vencimiento BETWEEN @hoy AND DATEADD(DAY, @DiasAntes, @hoy)
+          AND NOT EXISTS (SELECT 1 FROM notificacion n
+                          WHERE n.tipo = 'Vencimiento'
+                            AND n.mensaje LIKE '%[[]Aviso #' + CAST(a.id_aviso AS VARCHAR) + ']%');
+
+        DECLARE @id_aviso INT, @id_socio INT, @periodo VARCHAR(50),
+                @vence DATE, @deuda DECIMAL(30,2), @id_notif INT;
+        DECLARE cur CURSOR LOCAL FAST_FORWARD FOR
+            SELECT id_aviso, id_socio, periodo, vence, deuda FROM @porVencer;
+        OPEN cur;
+        FETCH NEXT FROM cur INTO @id_aviso, @id_socio, @periodo, @vence, @deuda;
+        WHILE @@FETCH_STATUS = 0
+        BEGIN
+            INSERT INTO notificacion (titulo, mensaje, tipo, fecha_publicacion, estado)
+            VALUES ('Aviso proximo a vencer',
+                    'Tu aviso del periodo ' + @periodo + ' vence el ' +
+                    CONVERT(VARCHAR, @vence, 103) + '. Deuda: Bs. ' +
+                    CONVERT(VARCHAR, @deuda) + '. [Aviso #' + CAST(@id_aviso AS VARCHAR) + ']',
+                    'Vencimiento', @hoy, 1);
+            SET @id_notif = CAST(SCOPE_IDENTITY() AS INT);
+
+            INSERT INTO notificacion_socio (fecha_lectura, leido, notificacion_id_notificacion, socio_id_socio)
+            VALUES (@hoy, 0, @id_notif, @id_socio);
+
+            SET @Resultado = @Resultado + 1;
+            FETCH NEXT FROM cur INTO @id_aviso, @id_socio, @periodo, @vence, @deuda;
+        END
+        CLOSE cur; DEALLOCATE cur;
+
+        SET @Mensaje = CAST(@Resultado AS VARCHAR) + ' recordatorio(s) de vencimiento generado(s).';
+    END TRY
+    BEGIN CATCH
+        SET @Resultado = 0;
+        SET @Mensaje   = ERROR_MESSAGE();
+    END CATCH
+END
+GO

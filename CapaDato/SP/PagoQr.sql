@@ -238,6 +238,9 @@ BEGIN
 
         COMMIT;
 
+        -- RF-27: notificacion automatica al portal del socio (best-effort)
+        EXEC dbo.sp_notificar_pago_confirmado @id_pago;
+
         SET @Resultado = @id_pago;
         SET @Mensaje   = 'Pago QR confirmado correctamente.';
     END TRY

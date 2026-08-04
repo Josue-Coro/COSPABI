@@ -102,5 +102,21 @@ namespace CapaNegocio
         {
             return cdNotificacion.ListarSociosAsignados(idNotificacion);
         }
+
+        // RF-27: genera recordatorios para avisos que vencen en los proximos dias
+        public int GenerarRecordatoriosVencimiento(int diasAntes, int idUsuarioSesion, out string Mensaje)
+        {
+            Mensaje = string.Empty;
+            if (diasAntes < 1 || diasAntes > 30)
+            {
+                Mensaje = "Los dias de anticipacion deben estar entre 1 y 30.";
+                return 0;
+            }
+
+            int generados = cdNotificacion.GenerarRecordatoriosVencimiento(diasAntes, out Mensaje);
+            if (generados > 0)
+                cnBitacora.Registrar("Genero " + generados + " recordatorio(s) de vencimiento", idUsuarioSesion);
+            return generados;
+        }
     }
 }
