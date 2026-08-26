@@ -1,0 +1,256 @@
+/* source(none) apaga la deteccion automatica: sin ella Tailwind rastrearia
+   tambien Scripts/ y Content/ (jquery, bootstrap) y colaria clases fantasma.
+   Las clases del portal viven en las vistas Razor y en portal.js. */
+@import "tailwindcss" source(none);
+
+@source "../Views/**/*.cshtml";
+@source "../Scripts/portal.js";
+
+/* ============================================================
+   Plus Jakarta Sans autoalojada (fuente variable, 200-800).
+   No se carga desde Google: la CSP del Web.config solo permite
+   font-src 'self', y ademas el portal debe verse igual sin internet.
+   ============================================================ */
+@font-face {
+    font-family: 'Plus Jakarta Sans';
+    font-style: normal;
+    font-weight: 200 800;
+    font-display: swap;
+    src: url('../fonts/plus-jakarta-sans-latin.woff2') format('woff2');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+                   U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+                   U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+    font-family: 'Plus Jakarta Sans';
+    font-style: normal;
+    font-weight: 200 800;
+    font-display: swap;
+    src: url('../fonts/plus-jakarta-sans-latin-ext.woff2') format('woff2');
+    unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF,
+                   U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020,
+                   U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+/* ============================================================
+   Design tokens del portal.
+   Traduccion a Tailwind v4 (@theme) del tailwind.config v3 que
+   traian los mockups: los nombres de clase quedan identicos
+   (bg-primary-container, text-headline-lg, p-card-padding...).
+   ============================================================ */
+@theme {
+    /* -- Marca / primarios -- */
+    --color-primary: #006e2f;
+    --color-primary-50: #f0fdf4;
+    --color-primary-100: #dcfce7;
+    --color-primary-500: #22c55e;
+    --color-primary-600: #16a34a;
+    --color-primary-700: #15803d;
+    --color-primary-container: #22c55e;
+    --color-on-primary: #ffffff;
+    --color-on-primary-container: #004b1e;
+    --color-primary-fixed: #6bff8f;
+    --color-primary-fixed-dim: #4ae176;
+    --color-on-primary-fixed: #002109;
+    --color-on-primary-fixed-variant: #005321;
+    --color-inverse-primary: #4ae176;
+    --color-surface-tint: #006e2f;
+
+    /* -- Secundarios -- */
+    --color-secondary: #565e71;
+    --color-secondary-container: #d8dff5;
+    --color-on-secondary: #ffffff;
+    --color-on-secondary-container: #5b6375;
+    --color-secondary-fixed: #dbe2f8;
+    --color-secondary-fixed-dim: #bec6dc;
+    --color-on-secondary-fixed: #131c2b;
+    --color-on-secondary-fixed-variant: #3f4758;
+
+    /* -- Terciarios -- */
+    --color-tertiary: #9e4036;
+    --color-tertiary-container: #ff8b7c;
+    --color-on-tertiary: #ffffff;
+    --color-on-tertiary-container: #76231b;
+    --color-tertiary-fixed: #ffdad5;
+    --color-tertiary-fixed-dim: #ffb4a9;
+    --color-on-tertiary-fixed: #410001;
+    --color-on-tertiary-fixed-variant: #7f2a21;
+
+    /* -- Superficies -- */
+    --color-background: #f3fcef;
+    --color-on-background: #161d16;
+    --color-surface: #f3fcef;
+    --color-surface-bright: #f3fcef;
+    --color-surface-dim: #d4ddd0;
+    --color-surface-variant: #dce5d9;
+    --color-surface-container-lowest: #ffffff;
+    --color-surface-container-low: #edf6ea;
+    --color-surface-container: #e8f0e4;
+    --color-surface-container-high: #e2ebde;
+    --color-surface-container-highest: #dce5d9;
+    --color-on-surface: #161d16;
+    --color-on-surface-variant: #3d4a3d;
+    --color-inverse-surface: #2a322a;
+    --color-inverse-on-surface: #ebf3e7;
+
+    /* -- Contornos -- */
+    --color-outline: #6d7b6c;
+    --color-outline-variant: #bccbb9;
+
+    /* -- Estado / semaforo -- */
+    --color-error: #ba1a1a;
+    --color-error-red: #dc2626;
+    --color-error-container: #ffdad6;
+    --color-on-error: #ffffff;
+    --color-on-error-container: #93000a;
+    --color-warning-yellow: #eab308;
+
+    /* -- Neutro de fondo de pagina -- */
+    --color-slate-100: #f1f5f9;
+    --color-sidebar-hover: #2d3a4e;
+
+    /* -- Espaciado con nombre -- */
+    --spacing-stack-sm: 0.5rem;
+    --spacing-stack-md: 1rem;
+    --spacing-gutter-grid: 1.5rem;
+    --spacing-card-padding: 1.5rem;
+    --spacing-margin-page: 2rem;
+
+    /* -- Familias (todas Plus Jakarta Sans; los mockups combinan
+          font-<rol> con text-<rol>, se respetan ambos) -- */
+    --font-sans: "Plus Jakarta Sans", "Segoe UI", system-ui, sans-serif;
+    --font-headline-lg: "Plus Jakarta Sans", "Segoe UI", system-ui, sans-serif;
+    --font-headline-lg-mobile: "Plus Jakarta Sans", "Segoe UI", system-ui, sans-serif;
+    --font-headline-md: "Plus Jakarta Sans", "Segoe UI", system-ui, sans-serif;
+    --font-body-md: "Plus Jakarta Sans", "Segoe UI", system-ui, sans-serif;
+    --font-label-sm: "Plus Jakarta Sans", "Segoe UI", system-ui, sans-serif;
+    --font-caption: "Plus Jakarta Sans", "Segoe UI", system-ui, sans-serif;
+    --font-nav-link: "Plus Jakarta Sans", "Segoe UI", system-ui, sans-serif;
+
+    /* -- Escala tipografica -- */
+    --text-headline-lg: 32px;
+    --text-headline-lg--line-height: 1.2;
+    --text-headline-lg--letter-spacing: -0.02em;
+    --text-headline-lg--font-weight: 700;
+
+    --text-headline-lg-mobile: 24px;
+    --text-headline-lg-mobile--line-height: 1.2;
+    --text-headline-lg-mobile--font-weight: 700;
+
+    --text-headline-md: 24px;
+    --text-headline-md--line-height: 1.3;
+    --text-headline-md--font-weight: 600;
+
+    /* Los mockups usan text-headline-md-mobile (marca de la topbar)
+       sin haberlo declarado en su config; aqui si existe. */
+    --text-headline-md-mobile: 20px;
+    --text-headline-md-mobile--line-height: 1.3;
+    --text-headline-md-mobile--font-weight: 700;
+
+    --text-body-md: 16px;
+    --text-body-md--line-height: 1.6;
+    --text-body-md--font-weight: 400;
+
+    --text-label-sm: 14px;
+    --text-label-sm--line-height: 1.4;
+    --text-label-sm--font-weight: 500;
+
+    --text-caption: 12px;
+    --text-caption--line-height: 1;
+    --text-caption--font-weight: 400;
+
+    --text-nav-link: 13.5px;
+    --text-nav-link--line-height: 1;
+    --text-nav-link--font-weight: 500;
+}
+
+/* ============================================================
+   Componentes recurrentes del design system.
+   ============================================================ */
+@layer components {
+    /* Tarjeta del bento grid: elevacion 1 + realce al pasar el mouse */
+    .bento-card {
+        box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .bento-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.08);
+    }
+
+    /* Boton principal: el degradado verde de todos los mockups */
+    .gradient-primary {
+        background: linear-gradient(135deg, var(--color-primary-container) 0%, var(--color-primary-700) 100%);
+    }
+
+    /* Elevacion 1 con contorno, para tarjetas planas (login, listados) */
+    .elevation-1 {
+        box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05);
+        border: 1px solid var(--color-outline-variant);
+    }
+
+    /* Iconos del sprite SVG: heredan color y tamano del contenedor.
+       Sustituyen a Material Symbols, que exigiria traer una fuente
+       de iconos entera para las ~25 que usa el portal. */
+    .ic {
+        width: 1.5rem;
+        height: 1.5rem;
+        flex-shrink: 0;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 1.8;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+    }
+}
+
+/* ============================================================
+   Animaciones (aqui y no en las vistas: un @keyframes literal
+   dentro de un .cshtml rompe el parser de Razor).
+   ============================================================ */
+@keyframes portal-scale-in {
+    0%   { transform: scale(0);   opacity: 0; }
+    60%  { transform: scale(1.1); opacity: 1; }
+    100% { transform: scale(1);   opacity: 1; }
+}
+
+@keyframes portal-fade-in-up {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes portal-spin {
+    to { transform: rotate(360deg); }
+}
+
+.animate-scale-in {
+    animation: portal-scale-in 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+.animate-fade-in-up {
+    animation: portal-fade-in-up 0.45s ease-out forwards;
+}
+
+.animate-spin-slow {
+    animation: portal-spin 0.9s linear infinite;
+}
+
+@keyframes portal-shake {
+    0%, 100% { transform: translateX(0); }
+    25%, 75% { transform: translateX(-4px); }
+    50%      { transform: translateX(4px); }
+}
+
+.shake {
+    animation: portal-shake 0.32s ease both;
+}
+
+.delay-100 { animation-delay: 0.1s; }
+.delay-200 { animation-delay: 0.2s; }
+
+/* Barra de desplazamiento discreta, como en los mockups */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--color-surface-dim); border-radius: 4px; }

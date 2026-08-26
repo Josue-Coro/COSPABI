@@ -112,7 +112,9 @@ namespace CapaDato
 
         // ---- Pago QR (pasarela Libelula) ------------------------------------
 
-        public CM_DatosDeudaQr ObtenerDatosDeudaQr(int idAviso)
+        // idSocio: solo lo manda el portal del socio. El SP entonces exige que el
+        // aviso sea de ese socio y devuelve vacio si no lo es (aqui: null).
+        public CM_DatosDeudaQr ObtenerDatosDeudaQr(int idAviso, int? idSocio = null)
         {
             CM_DatosDeudaQr datos = null;
             try
@@ -122,6 +124,7 @@ namespace CapaDato
                     SqlCommand cmd = new SqlCommand("dbo.sp_datos_deuda_qr", cn);
                     cmd.CommandType = CommandType.StoredProcedure;
                     cmd.Parameters.AddWithValue("@id_aviso", idAviso);
+                    cmd.Parameters.AddWithValue("@id_socio", (object)idSocio ?? DBNull.Value);
                     cn.Open();
                     using (SqlDataReader dr = cmd.ExecuteReader())
                     {
@@ -262,9 +265,18 @@ namespace CapaDato
             return ok;
         }
 
-        public string ObtenerEstadoPago(int idPago)
+        public string ObtenerEstadoPago(int idPago, int? idSocio = null)
         {
-            string estado = null;
+            var pago = ObtenerEstadoPagoQr(idPago, idSocio);
+            return pago == null ? null : pago.estado_pago;
+        }
+
+        // Estado + id_transaccion de un pago. Con idSocio informado solo responde
+        // si el pago es de ese socio: el portal nunca recibe la transaccion desde
+        // el navegador, la resuelve aqui a partir del id del pago.
+        public CM_PagoQr ObtenerEstadoPagoQr(int idPago, int? idSocio = null)
+        {
+            CM_PagoQr pago = null;
             try
             {
                 using (SqlConnection cn = new SqlConnection(CD_Conexion.cn))
@@ -272,15 +284,25 @@ namespace CapaDato
                     SqlCommand cmd = new SqlCommand("dbo.sp_estado_pago_qr", cn);
                     cmd.CommandType = CommandType.StoredProcedure;
                     cmd.Parameters.AddWithValue("@id_pago", idPago);
+                    cmd.Parameters.AddWithValue("@id_socio", (object)idSocio ?? DBNull.Value);
                     cn.Open();
                     using (SqlDataReader dr = cmd.ExecuteReader())
                     {
-                        if (dr.Read()) estado = dr["estado_pago"].ToString();
+                        if (dr.Read())
+                        {
+                            pago = new CM_PagoQr
+                            {
+                                id_pago        = Convert.ToInt32(dr["id_pago"]),
+                                estado_pago    = dr["estado_pago"].ToString(),
+                                id_transaccion = dr["id_transaccion"] == DBNull.Value ? null : dr["id_transaccion"].ToString(),
+                                aviso_id_aviso = dr["aviso_id_aviso"] == DBNull.Value ? (int?)null : Convert.ToInt32(dr["aviso_id_aviso"])
+                            };
+                        }
                     }
                 }
             }
-            catch { estado = null; }
-            return estado;
+            catch { pago = null; }
+            return pago;
         }
 
         public List<CM_PagoQr> ListarPagosQrPendientes()

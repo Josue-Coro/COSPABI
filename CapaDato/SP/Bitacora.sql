@@ -1,23 +1,33 @@
 USE [COSPABIRL1]
 GO
 
-SELECT [id_bitacora]
-      ,[accion]
-      ,[fecha]
-      ,[hora]
-      ,[usuario_admin_id_usuario_admin]
-  FROM [dbo].[bitacora]
+-- =============================================================================
+-- BITACORA (registro de auditoria).
+-- bitacora.usuario_admin_id_usuario_admin es NOT NULL con FK a usuario_admin,
+-- asi que toda accion auditada necesita un usuario. Las acciones que nacen en
+-- el portal del socio no tienen usuario humano: para esos casos la capa de
+-- negocio manda @IdUsuario = 0 y aqui se resuelve al usuario SISTEMA
+-- (Migracion 13), en vez de perder el registro por una FK invalida.
+-- =============================================================================
 
-GO
-
-CREATE PROCEDURE dbo.sp_registrar_bitacora
+CREATE OR ALTER PROCEDURE dbo.sp_registrar_bitacora
 (
-    @Accion VARCHAR(255),
+    @Accion    VARCHAR(255),
     @IdUsuario INT
 )
 AS
 BEGIN
     SET NOCOUNT ON;
+
+    -- Sin usuario humano (portal del socio, procesos automaticos) -> SISTEMA
+    IF @IdUsuario IS NULL OR @IdUsuario <= 0
+       OR NOT EXISTS (SELECT 1 FROM usuario_admin WHERE id_usuario_admin = @IdUsuario)
+        SELECT @IdUsuario = (SELECT TOP 1 id_usuario_admin
+                             FROM usuario_admin WHERE usuario = 'SISTEMA');
+
+    -- Si ni siquiera existe SISTEMA no se inserta: la auditoria se pierde,
+    -- pero jamas se rompe la operacion que la origino.
+    IF @IdUsuario IS NULL RETURN;
 
     INSERT INTO bitacora (accion, fecha, hora, usuario_admin_id_usuario_admin)
     VALUES (
@@ -29,8 +39,7 @@ BEGIN
 END
 GO
 
-
-CREATE PROCEDURE [dbo].[sp_listar_bitacora]
+CREATE OR ALTER PROCEDURE [dbo].[sp_listar_bitacora]
     @fecha_inicio DATE     = NULL,
     @fecha_fin    DATE     = NULL,
     @id_usuario   INT      = NULL

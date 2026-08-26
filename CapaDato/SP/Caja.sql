@@ -1,4 +1,4 @@
-USE [COSPABIRL1]
+﻿USE [COSPABIRL1]
 GO
 
 -- =============================================================================
@@ -68,10 +68,15 @@ END
 GO
 
 -- 3. Cerrar caja --------------------------------------------------------------
+--    Solo el cajero dueno de la caja puede cerrarla. Sin esta guarda cualquier
+--    usuario con el permiso 'Gestionar Caja' cerraba la caja de otro cajero
+--    mandando otro @id_caja desde el navegador (IDOR).
 CREATE OR ALTER PROCEDURE dbo.sp_cerrar_caja
-    @id_caja   INT,
-    @Resultado INT           OUTPUT,   -- 1 ok | 0 error
-    @Mensaje   NVARCHAR(500) OUTPUT
+    @id_caja       INT,
+    @id_usuario    INT,                    -- cajero de la sesion (dueno esperado)
+    @es_superadmin BIT           = 0,      -- SUPERADMIN puede cerrar cualquier caja
+    @Resultado     INT           OUTPUT,   -- 1 ok | 0 error
+    @Mensaje       NVARCHAR(500) OUTPUT
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -79,6 +84,13 @@ BEGIN
     SET @Mensaje   = '';
     BEGIN TRY
         IF NOT EXISTS (SELECT 1 FROM caja WHERE id_caja = @id_caja)
+        BEGIN SET @Mensaje = 'Caja no encontrada.'; RETURN; END
+
+        -- Mismo mensaje que 'no encontrada': no revelar que la caja existe.
+        IF @es_superadmin = 0
+           AND NOT EXISTS (SELECT 1 FROM caja
+                           WHERE id_caja = @id_caja
+                             AND usuario_admin_id_usuario_admin = @id_usuario)
         BEGIN SET @Mensaje = 'Caja no encontrada.'; RETURN; END
 
         IF NOT EXISTS (SELECT 1 FROM caja WHERE id_caja = @id_caja AND estado = 1)
@@ -108,10 +120,31 @@ GO
 --    Result set 1: cabecera (fondo, total, efectivo cobrado)
 --    Result set 2: total por metodo de pago
 CREATE OR ALTER PROCEDURE dbo.sp_arqueo_caja
-    @id_caja INT
+    @id_caja       INT,
+    @id_usuario    INT,           -- cajero de la sesion (dueno esperado)
+    @es_superadmin BIT = 0        -- SUPERADMIN puede arquear cualquier caja
 AS
 BEGIN
     SET NOCOUNT ON;
+
+    -- Guarda de propiedad: sin ella el arqueo (y el reporte impreso que lo usa)
+    -- exponia los montos y el detalle de pagos de la caja de otro cajero.
+    IF @es_superadmin = 0
+       AND NOT EXISTS (SELECT 1 FROM caja
+                       WHERE id_caja = @id_caja
+                         AND usuario_admin_id_usuario_admin = @id_usuario)
+    BEGIN
+        SELECT TOP 0 c.id_caja, c.fecha, c.hora_apertura, c.hora_cierre, c.estado,
+                     c.monto_apertura,
+                     CAST(0 AS DECIMAL(30,2)) AS total_cobrado,
+                     CAST(0 AS DECIMAL(30,2)) AS efectivo_cobrado
+        FROM caja c;
+        SELECT TOP 0 mp.metodo,
+                     CAST(0 AS DECIMAL(30,2)) AS total,
+                     CAST(0 AS INT)           AS cantidad
+        FROM metodo_pago mp;
+        RETURN;
+    END
 
     SELECT
         c.id_caja, c.fecha, c.hora_apertura, c.hora_cierre, c.estado,

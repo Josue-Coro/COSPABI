@@ -34,11 +34,6 @@ namespace CapaNegocio
                 Mensaje = "El nombre del socio es obligatorio.";
                 return 0;
             }
-            //if (!CN_Recursos.EsNombreValido(socio.nombre_socio))
-            //{
-            //    Mensaje = "El nombre del socio solo puede contener letras y espacios (sin números).";
-            //    return 0;
-            //}
             if (socio.cliente_id_cliente <= 0)
             {
                 Mensaje = "Debe seleccionar un cliente.";
@@ -107,11 +102,6 @@ namespace CapaNegocio
                 Mensaje = "El nombre del socio es obligatorio.";
                 return false;
             }
-            //if (!CN_Recursos.EsNombreValido(socio.nombre_socio))
-            //{
-            //    Mensaje = "El nombre del socio solo puede contener letras y espacios (sin números).";
-            //    return false;
-            //}
             if (socio.medidor_id_medidor.HasValue && socio.medidor_id_medidor.Value <= 0)
             {
                 socio.medidor_id_medidor = null;

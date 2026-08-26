@@ -45,7 +45,8 @@
         TienePermiso("Visualizar Bitacora");
     bool tieneReporte =
         TienePermiso("Generar Reporte Caja") ||
-        TienePermiso("Generar Reporte Morosidad") ;
+        TienePermiso("Generar Reporte Morosidad") ||
+        TienePermiso("Generar Reporte Pagos Sistema") ;
 
     // Iniciales del usuario para el avatar
     var nombreSesion = Session["NombreUsuario"] as string ?? "AD";
@@ -61,8 +62,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@ViewBag.Title - COSPABI R.L.</title>
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     <link href="~/Content/app.css" rel="stylesheet" />
 
@@ -402,6 +401,12 @@
                     if (TienePermiso("Generar Reporte Morosidad"))
                     {
                         @Html.ActionLink("Reporte de Morosidad", "Morosidad", "Reporte",
+                            new { area = "" },
+                            new { @class = "nav-link" })
+                    }
+                    if (TienePermiso("Generar Reporte Pagos Sistema"))
+                    {
+                        @Html.ActionLink("Reporte de Pagos del Sistema", "PagosSistema", "Reporte",
                             new { area = "" },
                             new { @class = "nav-link" })
                     }

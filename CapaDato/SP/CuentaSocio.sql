@@ -1,9 +1,20 @@
 USE [COSPABIRL1]
+GO
+
+-- =============================================================================
+-- CUENTA DE SOCIO (credenciales del portal, 1:1 con socio).
+-- Regla de negocio: una cuenta de portal solo puede crearse si el cliente
+-- (persona) detras del socio tiene email. El portal ofrece pagar el aviso con
+-- QR y la pasarela Libelula EXIGE el email del cliente para registrar la
+-- deuda; sin el, el socio entraria a un portal donde el boton de pagar falla
+-- siempre. Se valida al registrar y al reasignar la cuenta a otro socio.
+-- =============================================================================
+
 
 -- ══════════════════════════════════════════
 -- LISTAR con paginación y búsqueda
 -- ══════════════════════════════════════════
-CREATE PROCEDURE dbo.sp_listar_cuenta_socio
+CREATE OR ALTER PROCEDURE dbo.sp_listar_cuenta_socio
 (
     @Busqueda     VARCHAR(250) = '',
     @Pagina       INT          = 1,
@@ -42,7 +53,7 @@ GO
 -- ══════════════════════════════════════════
 -- OBTENER por ID
 -- ══════════════════════════════════════════
-CREATE PROCEDURE dbo.sp_obtener_cuenta_socio
+CREATE OR ALTER PROCEDURE dbo.sp_obtener_cuenta_socio
 (
     @IdCuentaSocio INT
 )
@@ -64,7 +75,7 @@ GO
 -- ══════════════════════════════════════════
 -- REGISTRAR
 -- ══════════════════════════════════════════
-CREATE PROCEDURE dbo.sp_registrar_cuenta_socio
+CREATE OR ALTER PROCEDURE dbo.sp_registrar_cuenta_socio
 (
     @Usuario        VARCHAR(150),
     @Contrasena     VARCHAR(500),
@@ -83,6 +94,21 @@ BEGIN
     IF EXISTS (SELECT 1 FROM cuenta_socio WHERE socio_id_socio = @IdSocio)
     BEGIN
         SELECT 0 AS Resultado, 'El socio ya tiene una cuenta asignada.' AS Mensaje;
+        RETURN;
+    END
+
+    -- El portal ofrece pago por QR y la pasarela exige el email del cliente
+    IF NOT EXISTS (
+        SELECT 1
+        FROM socio s
+        INNER JOIN cliente c ON c.id_cliente = s.cliente_id_cliente
+        WHERE s.id_socio = @IdSocio
+          AND c.email IS NOT NULL
+          AND LTRIM(RTRIM(c.email)) <> ''
+    )
+    BEGIN
+        SELECT 0 AS Resultado,
+               'El socio no tiene email registrado. Registre el email en el módulo Clientes antes de crearle una cuenta del portal.' AS Mensaje;
         RETURN;
     END
 
@@ -108,7 +134,7 @@ GO
 -- ══════════════════════════════════════════
 -- EDITAR
 -- ══════════════════════════════════════════
-CREATE PROCEDURE dbo.sp_editar_cuenta_socio
+CREATE OR ALTER PROCEDURE dbo.sp_editar_cuenta_socio
 (
     @IdCuentaSocio  INT,
     @Usuario        VARCHAR(150),
@@ -128,6 +154,21 @@ BEGIN
     IF EXISTS (SELECT 1 FROM cuenta_socio WHERE socio_id_socio = @IdSocio AND id_cuenta_socio <> @IdCuentaSocio)
     BEGIN
         SELECT 0 AS Resultado, 'El socio ya tiene una cuenta asignada diferente.' AS Mensaje;
+        RETURN;
+    END
+
+    -- El portal ofrece pago por QR y la pasarela exige el email del cliente
+    IF NOT EXISTS (
+        SELECT 1
+        FROM socio s
+        INNER JOIN cliente c ON c.id_cliente = s.cliente_id_cliente
+        WHERE s.id_socio = @IdSocio
+          AND c.email IS NOT NULL
+          AND LTRIM(RTRIM(c.email)) <> ''
+    )
+    BEGIN
+        SELECT 0 AS Resultado,
+               'El socio no tiene email registrado. Registre el email en el módulo Clientes antes de crearle una cuenta del portal.' AS Mensaje;
         RETURN;
     END
 
@@ -154,7 +195,7 @@ GO
 -- ══════════════════════════════════════════
 -- CAMBIAR ESTADO
 -- ══════════════════════════════════════════
-CREATE PROCEDURE dbo.sp_cambiar_estado_cuenta_socio
+CREATE OR ALTER PROCEDURE dbo.sp_cambiar_estado_cuenta_socio
 (
     @IdCuentaSocio INT
 )

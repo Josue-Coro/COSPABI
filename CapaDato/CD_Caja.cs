@@ -1,4 +1,4 @@
-using CapaModelo;
+﻿using CapaModelo;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -32,7 +32,7 @@ namespace CapaDato
             return idCaja;
         }
 
-        public bool CerrarCaja(int idCaja, out string Mensaje)
+        public bool CerrarCaja(int idCaja, int idUsuario, bool esSuperadmin, out string Mensaje)
         {
             bool ok = false;
             Mensaje = string.Empty;
@@ -43,6 +43,8 @@ namespace CapaDato
                     SqlCommand cmd = new SqlCommand("dbo.sp_cerrar_caja", cn);
                     cmd.CommandType = CommandType.StoredProcedure;
                     cmd.Parameters.AddWithValue("@id_caja", idCaja);
+                    cmd.Parameters.AddWithValue("@id_usuario", idUsuario);
+                    cmd.Parameters.AddWithValue("@es_superadmin", esSuperadmin);
                     cmd.Parameters.Add("@Resultado", SqlDbType.Int).Direction          = ParameterDirection.Output;
                     cmd.Parameters.Add("@Mensaje",   SqlDbType.NVarChar, 500).Direction = ParameterDirection.Output;
                     cn.Open();
@@ -87,7 +89,7 @@ namespace CapaDato
             return caja;
         }
 
-        public CM_CajaArqueo ObtenerArqueo(int idCaja)
+        public CM_CajaArqueo ObtenerArqueo(int idCaja, int idUsuario, bool esSuperadmin)
         {
             CM_CajaArqueo arqueo = null;
             try
@@ -97,6 +99,8 @@ namespace CapaDato
                     SqlCommand cmd = new SqlCommand("dbo.sp_arqueo_caja", cn);
                     cmd.CommandType = CommandType.StoredProcedure;
                     cmd.Parameters.AddWithValue("@id_caja", idCaja);
+                    cmd.Parameters.AddWithValue("@id_usuario", idUsuario);
+                    cmd.Parameters.AddWithValue("@es_superadmin", esSuperadmin);
                     cn.Open();
                     SqlDataReader dr = cmd.ExecuteReader();
                     if (dr.Read())
@@ -170,6 +174,70 @@ namespace CapaDato
         }
 
         // ---- HU21: Reporte de Caja ----
+
+        // Pagos aprobados que no pasaron por caja (el socio los pago desde el
+        // portal). Mismo formato de 3 resultsets que sp_reporte_caja.
+        public CM_ReportePagosSistema ReportePagosSistema(DateTime fechaInicio, DateTime fechaFin)
+        {
+            CM_ReportePagosSistema reporte = null;
+            try
+            {
+                using (SqlConnection cn = new SqlConnection(CD_Conexion.cn))
+                {
+                    SqlCommand cmd = new SqlCommand("dbo.sp_reporte_pagos_sistema", cn);
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.Parameters.AddWithValue("@FechaInicio", fechaInicio.Date);
+                    cmd.Parameters.AddWithValue("@FechaFin", fechaFin.Date);
+                    cn.Open();
+                    using (SqlDataReader dr = cmd.ExecuteReader())
+                    {
+                        reporte = new CM_ReportePagosSistema
+                        {
+                            Pagos         = new List<CM_ReportePagoSistemaFila>(),
+                            TotalesMetodo = new List<CM_ReporteCajaMetodo>()
+                        };
+                        while (dr.Read())
+                        {
+                            reporte.Pagos.Add(new CM_ReportePagoSistemaFila
+                            {
+                                id_pago            = Convert.ToInt32(dr["id_pago"]),
+                                fecha_pago         = Convert.ToDateTime(dr["fecha_pago"]),
+                                aviso_id_aviso     = dr["aviso_id_aviso"] == DBNull.Value ? (int?)null : Convert.ToInt32(dr["aviso_id_aviso"]),
+                                tipo_cobro         = dr["tipo_cobro"].ToString(),
+                                nombre_socio       = dr["nombre_socio"] == DBNull.Value ? null : dr["nombre_socio"].ToString(),
+                                codigo_fijo        = dr["codigo_fijo"] == DBNull.Value ? (int?)null : Convert.ToInt32(dr["codigo_fijo"]),
+                                nombre_periodo     = dr["nombre_periodo"] == DBNull.Value ? null : dr["nombre_periodo"].ToString(),
+                                nombre_metodo      = dr["nombre_metodo"].ToString(),
+                                id_transaccion     = dr["id_transaccion"] == DBNull.Value ? null : dr["id_transaccion"].ToString(),
+                                codigo_recaudacion = dr["codigo_recaudacion"] == DBNull.Value ? null : dr["codigo_recaudacion"].ToString(),
+                                forma_pago         = dr["forma_pago"] == DBNull.Value ? null : dr["forma_pago"].ToString(),
+                                monto_pagado       = Convert.ToDecimal(dr["monto_pagado"])
+                            });
+                        }
+                        if (dr.NextResult())
+                        {
+                            while (dr.Read())
+                            {
+                                reporte.TotalesMetodo.Add(new CM_ReporteCajaMetodo
+                                {
+                                    nombre_metodo = dr["nombre_metodo"].ToString(),
+                                    cantidad      = Convert.ToInt32(dr["cantidad"]),
+                                    total         = Convert.ToDecimal(dr["total"])
+                                });
+                            }
+                        }
+                        if (dr.NextResult() && dr.Read())
+                        {
+                            reporte.CantidadPagos  = Convert.ToInt32(dr["cantidad_pagos"]);
+                            reporte.TotalRecaudado = Convert.ToDecimal(dr["total_recaudado"]);
+                            reporte.QrSinCobrar    = Convert.ToInt32(dr["qr_sin_cobrar"]);
+                        }
+                    }
+                }
+            }
+            catch { reporte = null; }
+            return reporte;
+        }
 
         public CM_ReporteCaja ReporteCaja(DateTime fechaInicio, DateTime fechaFin, int? idCajero)
         {

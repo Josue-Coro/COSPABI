@@ -1,4 +1,4 @@
-using CapaModelo;
+﻿using CapaModelo;
 using CapaNegocio;
 using CapaPresentacionAdmin.Filtros;
 using System;
@@ -10,6 +10,13 @@ namespace CapaPresentacionAdmin.Controllers
     public class CajaController : Controller
     {
         private readonly CN_Caja cnCaja = new CN_Caja();
+
+        // El SUPERADMIN supervisa cualquier caja; el resto solo la suya.
+        private bool EsSuperadmin()
+        {
+            var u = Session["Usuario"] as CM_Usuario_Activo;
+            return u != null && (u.nombre_rol ?? "").ToUpper() == "SUPERADMIN";
+        }
 
         // GET: Caja
         [ValidarPermisos(NombrePermiso = "Gestionar Caja")]
@@ -57,7 +64,7 @@ namespace CapaPresentacionAdmin.Controllers
             try
             {
                 var u = (CM_Usuario_Activo)Session["Usuario"];
-                bool ok = cnCaja.CerrarCaja(idCaja, u.id_usuario_admin, out string Mensaje);
+                bool ok = cnCaja.CerrarCaja(idCaja, u.id_usuario_admin, EsSuperadmin(), out string Mensaje);
                 return Json(new { exito = ok, mensaje = Mensaje });
             }
             catch (Exception ex)
@@ -72,8 +79,11 @@ namespace CapaPresentacionAdmin.Controllers
         {
             try
             {
-                var arqueo = cnCaja.ObtenerArqueo(idCaja);
-                return Json(new { exito = arqueo != null, arqueo }, JsonRequestBehavior.AllowGet);
+                var u = (CM_Usuario_Activo)Session["Usuario"];
+                var arqueo = cnCaja.ObtenerArqueo(idCaja, u.id_usuario_admin, EsSuperadmin());
+                if (arqueo == null)
+                    return Json(new { exito = false, mensaje = "Caja no encontrada." }, JsonRequestBehavior.AllowGet);
+                return Json(new { exito = true, arqueo }, JsonRequestBehavior.AllowGet);
             }
             catch (Exception ex)
             {
@@ -103,9 +113,12 @@ namespace CapaPresentacionAdmin.Controllers
         [ValidarPermisos(NombrePermiso = "Gestionar Caja")]
         public ActionResult Reporte(int idCaja)
         {
-            var arqueo = cnCaja.ObtenerArqueo(idCaja);
+            var u = (CM_Usuario_Activo)Session["Usuario"];
+            var arqueo = cnCaja.ObtenerArqueo(idCaja, u.id_usuario_admin, EsSuperadmin());
             if (arqueo == null)
             {
+                // Tambien es la respuesta cuando la caja existe pero es de otro
+                // cajero: no confirmamos su existencia.
                 return HttpNotFound("La caja especificada no fue encontrada.");
             }
 

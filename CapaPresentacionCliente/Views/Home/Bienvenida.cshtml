@@ -1,0 +1,455 @@
+﻿@using System.Linq
+@{
+    Layout = null;
+    ViewBag.Title = "COSPABI R.L.";
+
+    // ============================================================
+    // DATOS DE LA COOPERATIVA — lo unico que hay que editar aqui.
+    // Lo que se deje vacio no se pinta, para no publicar contactos
+    // ni cifras que no esten confirmadas.
+    // ============================================================
+    var direccion = "Comunidad El Bisito, Municipio de Cotoca — Provincia Andrés Ibáñez, Santa Cruz, Bolivia";
+    var telefono  = "";   // pendiente de confirmar
+    var correo    = "";   // pendiente de confirmar
+
+    // Anios de servicio calculados desde la fundacion (julio de 1998),
+    // para que la cifra no quede desactualizada con el tiempo.
+    var fundacion = new DateTime(1998, 7, 1);
+    var anios = DateTime.Today.Year - fundacion.Year;
+    if (DateTime.Today < fundacion.AddYears(anios)) { anios--; }
+
+    var indicadores = new[]
+    {
+        new { Icono = "clock", Cifra = anios.ToString(),   Texto = "Años de servicio" },
+        new { Icono = "users", Cifra = "62",               Texto = "Socios fundadores" },
+        new { Icono = "pin",   Cifra = "Cotoca",           Texto = "Santa Cruz, Bolivia" }
+    };
+
+    var hayIndicadores = indicadores.Any(i => !string.IsNullOrWhiteSpace(i.Cifra));
+    var hayContacto    = !string.IsNullOrWhiteSpace(direccion)
+                      || !string.IsNullOrWhiteSpace(telefono)
+                      || !string.IsNullOrWhiteSpace(correo);
+
+    var urlPortal = Url.Action("Login", "Login");
+}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>COSPABI R.L. — Agua potable para nuestra comunidad</title>
+    <link rel="icon" href="~/favicon.ico" />
+    <link href="~/Content/app.css?v=@Recursos.AppCss()" rel="stylesheet" />
+</head>
+<body class="bg-surface-container-lowest text-on-background font-sans antialiased">
+
+    @* Mismo sprite que el resto del portal, recortado a lo que usa esta pagina *@
+    <svg width="0" height="0" class="hidden" aria-hidden="true" focusable="false">
+        <defs>
+            <symbol id="ic-drop" viewBox="0 0 24 24"><path d="M12 2.7 7.05 7.65a7 7 0 1 0 9.9 0z" /></symbol>
+            <symbol id="ic-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3.5 2" /></symbol>
+            <symbol id="ic-users" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.9" /><path d="M16 3.1a4 4 0 0 1 0 7.8" /></symbol>
+            <symbol id="ic-shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /><path d="m9 12 2 2 4-4" /></symbol>
+            <symbol id="ic-receipt" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><path d="M14 2v6h6" /><path d="M9 13h6" /><path d="M9 17h6" /></symbol>
+            <symbol id="ic-qr" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><path d="M14 14h3v3h-3z" /><path d="M21 14v3" /><path d="M18 21h3" /><path d="M14 21h1" /></symbol>
+            <symbol id="ic-gauge" viewBox="0 0 24 24"><path d="M12 14 8.5 9.5" /><path d="M3.3 17a9 9 0 1 1 17.4 0z" /></symbol>
+            <symbol id="ic-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5" /></symbol>
+            <symbol id="ic-check-circle" viewBox="0 0 24 24"><path d="M22 11.1V12a10 10 0 1 1-5.9-9.1" /><path d="m9 11 3 3L22 4" /></symbol>
+            <symbol id="ic-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></symbol>
+            <symbol id="ic-login" viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" /><path d="m10 17 5-5-5-5" /><path d="M15 12H3" /></symbol>
+            <symbol id="ic-menu" viewBox="0 0 24 24"><path d="M4 6h16" /><path d="M4 12h16" /><path d="M4 18h16" /></symbol>
+            <symbol id="ic-close" viewBox="0 0 24 24"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></symbol>
+            <symbol id="ic-pin" viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z" /><circle cx="12" cy="10" r="3" /></symbol>
+            <symbol id="ic-phone" viewBox="0 0 24 24"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.2a2 2 0 0 1 2.1-.5c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z" /></symbol>
+            <symbol id="ic-mail" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2" /><path d="m2 7 10 6 10-6" /></symbol>
+            <symbol id="ic-flag" viewBox="0 0 24 24"><path d="M4 22V4" /><path d="M4 4h13l-2.5 4L17 12H4z" /></symbol>
+        </defs>
+    </svg>
+
+    @* ================= Barra de navegacion ================= *@
+    <nav id="navbar" class="fixed top-0 inset-x-0 z-50 bg-surface-container-lowest/90 backdrop-blur-md border-b border-surface-container-high transition-all duration-300">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-20">
+
+                <a href="#inicio" class="flex items-center gap-2.5 shrink-0">
+                    <span class="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center text-on-primary">
+                        <svg class="ic w-6 h-6" style="fill:currentColor;stroke:none"><use href="#ic-drop"></use></svg>
+                    </span>
+                    <span class="font-headline-md text-headline-md text-primary tracking-tight">COSPABI</span>
+                </a>
+
+                <div class="hidden md:flex items-center gap-8">
+                    <a href="#servicios" class="font-nav-link text-nav-link text-secondary hover:text-primary transition-colors">Servicios</a>
+                    <a href="#nosotros" class="font-nav-link text-nav-link text-secondary hover:text-primary transition-colors">Nosotros</a>
+                    @if (hayContacto)
+                    {
+                        <a href="#contacto" class="font-nav-link text-nav-link text-secondary hover:text-primary transition-colors">Contacto</a>
+                    }
+                    <a href="@urlPortal" class="inline-flex items-center gap-2 px-6 py-2.5 rounded-full gradient-primary text-on-primary font-label-sm text-label-sm font-semibold shadow-sm hover:opacity-90 hover:-translate-y-0.5 transition-all duration-200">
+                        Entrar al portal
+                        <svg class="ic w-[18px] h-[18px]"><use href="#ic-login"></use></svg>
+                    </a>
+                </div>
+
+                <button type="button" id="btnMenu" aria-controls="menuMovil" aria-expanded="false"
+                        class="md:hidden w-10 h-10 flex items-center justify-center rounded-lg text-secondary hover:text-primary hover:bg-surface-container transition-colors">
+                    <span class="sr-only">Abrir menú</span>
+                    <svg id="iconoMenu" class="ic"><use href="#ic-menu"></use></svg>
+                    <svg id="iconoCerrar" class="ic hidden"><use href="#ic-close"></use></svg>
+                </button>
+            </div>
+        </div>
+
+        <div id="menuMovil" class="md:hidden hidden bg-surface-container-lowest border-b border-surface-container-high">
+            <div class="px-4 pt-2 pb-6 flex flex-col gap-1">
+                <a href="#servicios" class="menu-link block font-nav-link text-nav-link text-secondary hover:text-primary hover:bg-surface-container p-3 rounded-lg transition-colors">Servicios</a>
+                <a href="#nosotros" class="menu-link block font-nav-link text-nav-link text-secondary hover:text-primary hover:bg-surface-container p-3 rounded-lg transition-colors">Nosotros</a>
+                @if (hayContacto)
+                {
+                    <a href="#contacto" class="menu-link block font-nav-link text-nav-link text-secondary hover:text-primary hover:bg-surface-container p-3 rounded-lg transition-colors">Contacto</a>
+                }
+                <a href="@urlPortal" class="mt-3 block w-full text-center px-6 py-3 rounded-xl gradient-primary text-on-primary font-label-sm text-label-sm font-semibold shadow-sm">
+                    Entrar al portal
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    @* ================= Hero ================= *@
+    <section id="inicio" class="relative pt-32 pb-20 lg:pt-44 lg:pb-28 overflow-hidden bg-surface">
+        <div class="absolute inset-0 bg-gradient-to-br from-primary-50 via-surface to-surface-container-high pointer-events-none"></div>
+        <div class="absolute -top-32 -right-24 w-[28rem] h-[28rem] bg-primary-container/25 rounded-full blur-[120px] pointer-events-none"></div>
+        <div class="absolute -bottom-40 -left-24 w-[24rem] h-[24rem] bg-primary-700/15 rounded-full blur-[120px] pointer-events-none"></div>
+
+        <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid lg:grid-cols-2 gap-12 lg:gap-8 items-center">
+
+                <div class="max-w-2xl">
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary-50 text-primary-700 border border-primary/20 font-label-sm text-label-sm mb-6">
+                        <svg class="ic w-4 h-4"><use href="#ic-pin"></use></svg>
+                        Cotoca, Santa Cruz &middot; desde 1998
+                    </span>
+
+                    <h1 class="font-headline-lg-mobile text-headline-lg-mobile md:font-headline-lg md:text-headline-lg text-on-surface mb-6 md:text-[44px] md:leading-[1.1]">
+                        Agua potable,<br class="hidden md:block" />
+                        <span class="text-primary">vida para nuestra comunidad.</span>
+                    </h1>
+
+                    <p class="font-body-md text-body-md text-on-surface-variant mb-8 max-w-lg">
+                        Consulta tus avisos de cobranza, revisa tu consumo y paga en línea con QR desde
+                        cualquier dispositivo. Todo tu servicio de agua, en un solo lugar.
+                    </p>
+
+                    <div class="flex flex-col sm:flex-row gap-4">
+                        <a href="@urlPortal" class="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl gradient-primary text-on-primary font-label-sm text-label-sm font-semibold shadow-[0_4px_14px_0_rgba(34,197,94,0.39)] hover:shadow-[0_6px_20px_rgba(34,197,94,0.3)] hover:-translate-y-1 transition-all duration-300">
+                            Acceder al portal de socios
+                            <svg class="ic w-5 h-5"><use href="#ic-arrow-right"></use></svg>
+                        </a>
+                        <a href="#nosotros" class="inline-flex items-center justify-center px-8 py-4 rounded-xl border-2 border-surface-container-high text-secondary font-label-sm text-label-sm font-semibold hover:bg-surface-container-low hover:text-on-surface transition-all duration-300">
+                            Conoce nuestra historia
+                        </a>
+                    </div>
+                </div>
+
+                @* Maqueta del portal: puro CSS, sin imagenes externas *@
+                <div class="relative hidden lg:block">
+                    <div class="absolute -inset-4 bg-primary-50 rounded-[2rem] blur-xl opacity-60"></div>
+                    <div class="relative bg-surface-container-lowest rounded-xl shadow-xl border border-surface-container-high p-8">
+
+                        <div class="flex justify-between items-center mb-8 border-b border-surface-container-low pb-4">
+                            <div>
+                                <h2 class="font-headline-md text-headline-md-mobile text-on-surface">Portal del socio</h2>
+                                <p class="font-caption text-caption text-secondary mt-1">Gestión transparente</p>
+                            </div>
+                            <span class="w-12 h-12 rounded-full bg-primary-50 flex items-center justify-center text-primary">
+                                <svg class="ic"><use href="#ic-gauge"></use></svg>
+                            </span>
+                        </div>
+
+                        <div class="flex flex-col gap-4">
+                            <div class="flex items-center gap-4 p-4 rounded-xl bg-surface-container-low/50 border border-surface-container-low">
+                                <span class="w-10 h-10 rounded-lg bg-surface-container-lowest shadow-sm flex items-center justify-center text-primary">
+                                    <svg class="ic w-5 h-5"><use href="#ic-receipt"></use></svg>
+                                </span>
+                                <span class="flex-1">
+                                    <span class="block h-2 w-24 bg-surface-variant rounded-full mb-2"></span>
+                                    <span class="block h-2 w-16 bg-surface-variant/50 rounded-full"></span>
+                                </span>
+                                <span class="w-8 h-8 rounded-full bg-primary-50 flex items-center justify-center text-primary">
+                                    <svg class="ic w-4 h-4"><use href="#ic-check"></use></svg>
+                                </span>
+                            </div>
+
+                            <div class="flex items-center gap-4 p-4 rounded-xl bg-surface-container-low/50 border border-surface-container-low">
+                                <span class="w-10 h-10 rounded-lg bg-surface-container-lowest shadow-sm flex items-center justify-center text-primary">
+                                    <svg class="ic w-5 h-5"><use href="#ic-drop"></use></svg>
+                                </span>
+                                <span class="flex-1">
+                                    <span class="block h-2 w-32 bg-surface-variant rounded-full mb-2"></span>
+                                    <span class="block h-2 w-20 bg-surface-variant/50 rounded-full"></span>
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="absolute -right-6 -bottom-6 bg-surface-container-lowest p-4 rounded-xl shadow-lg border border-surface-container-high flex items-center gap-3 -rotate-2">
+                            <span class="w-10 h-10 rounded-full bg-primary-50 flex items-center justify-center text-primary">
+                                <svg class="ic w-5 h-5"><use href="#ic-qr"></use></svg>
+                            </span>
+                            <span>
+                                <span class="block font-label-sm text-label-sm text-on-surface font-semibold">Pago con QR</span>
+                                <span class="block font-caption text-caption text-secondary">Desde tu banco, 24/7</span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    @* ================= Indicadores ================= *@
+    @if (hayIndicadores)
+    {
+        <section class="py-12 bg-surface-container-lowest border-y border-surface-container-high">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-8">
+                    @foreach (var ind in indicadores.Where(i => !string.IsNullOrWhiteSpace(i.Cifra)))
+                    {
+                        <div class="text-center px-4">
+                            <span class="inline-flex w-12 h-12 rounded-full bg-primary-50 items-center justify-center text-primary mb-3">
+                                <svg class="ic"><use href="#ic-@ind.Icono"></use></svg>
+                            </span>
+                            <p class="font-headline-md text-headline-md text-on-surface">@ind.Cifra</p>
+                            <p class="font-body-md text-label-sm text-secondary mt-1">@ind.Texto</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </section>
+    }
+
+    @* ================= Servicios ================= *@
+    <section id="servicios" class="py-20 bg-surface-container-lowest">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="max-w-2xl mb-12">
+                <h2 class="font-headline-md text-headline-md md:font-headline-lg md:text-headline-lg text-on-surface mb-3">
+                    Lo que puedes hacer en el portal
+                </h2>
+                <p class="font-body-md text-body-md text-on-surface-variant">
+                    El portal del socio reemplaza la fila en oficina para lo más frecuente.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-gutter-grid">
+
+                <article class="bento-card bg-surface-container-lowest rounded-xl border border-outline-variant/40 p-card-padding">
+                    <span class="inline-flex w-12 h-12 rounded-xl bg-primary-50 items-center justify-center text-primary mb-5">
+                        <svg class="ic"><use href="#ic-receipt"></use></svg>
+                    </span>
+                    <h3 class="font-headline-md text-headline-md-mobile text-on-surface mb-2">Tus avisos de cobranza</h3>
+                    <p class="font-body-md text-label-sm text-on-surface-variant">
+                        Consulta el historial completo período por período: total, consumo en m³,
+                        fecha de vencimiento y qué queda por pagar.
+                    </p>
+                </article>
+
+                <article class="bento-card bg-surface-container-lowest rounded-xl border border-outline-variant/40 p-card-padding">
+                    <span class="inline-flex w-12 h-12 rounded-xl bg-primary-50 items-center justify-center text-primary mb-5">
+                        <svg class="ic"><use href="#ic-qr"></use></svg>
+                    </span>
+                    <h3 class="font-headline-md text-headline-md-mobile text-on-surface mb-2">Pago en línea con QR</h3>
+                    <p class="font-body-md text-label-sm text-on-surface-variant">
+                        Genera el código QR de tu aviso y págalo desde la app de tu banco.
+                        El pago se acredita en tu cuenta sin pasar por caja.
+                    </p>
+                </article>
+
+                <article class="bento-card bg-surface-container-lowest rounded-xl border border-outline-variant/40 p-card-padding">
+                    <span class="inline-flex w-12 h-12 rounded-xl bg-primary-50 items-center justify-center text-primary mb-5">
+                        <svg class="ic"><use href="#ic-gauge"></use></svg>
+                    </span>
+                    <h3 class="font-headline-md text-headline-md-mobile text-on-surface mb-2">Tu consumo y tus datos</h3>
+                    <p class="font-body-md text-label-sm text-on-surface-variant">
+                        Revisa la evolución de tu consumo, tus pagos registrados y las
+                        notificaciones que publica la cooperativa.
+                    </p>
+                </article>
+
+            </div>
+        </div>
+    </section>
+
+    @* ================= Nosotros / historia ================= *@
+    <section id="nosotros" class="py-20 bg-surface border-y border-surface-container-high">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
+            <div class="max-w-3xl mb-12">
+                <h2 class="font-headline-md text-headline-md md:font-headline-lg md:text-headline-lg text-on-surface mb-4">
+                    Nuestra historia
+                </h2>
+                <p class="font-body-md text-body-md text-on-surface-variant mb-4">
+                    La Cooperativa de Agua Potable <b class="text-on-surface">COSPABI</b> tiene sus raíces en la
+                    organización comunitaria de la provincia Andrés Ibáñez. Fue fundada en <b class="text-on-surface">julio de 1998</b>,
+                    gracias a la gestión y coordinación de las autoridades de las Organizaciones Territoriales
+                    de Base (OTB), cuya presidencia estaba entonces a cargo del Sr. Valerio Morales, representante
+                    de la comunidad El Bisito, en el Municipio de Cotoca, Departamento de Santa Cruz.
+                </p>
+                <p class="font-body-md text-body-md text-on-surface-variant mb-4">
+                    En sus inicios se constituyó como una asociación guiada por un Comité de Agua encargado de la
+                    afiliación de los socios fundadores, presidido por el Sr. Marcelino Fajardo Flores. COSPABI
+                    empezó a operar con <b class="text-on-surface">62 afiliados</b>, quienes sentaron los cimientos
+                    de la entidad prestadora de servicios que hoy es vital para la zona.
+                </p>
+                <p class="font-body-md text-body-md text-on-surface-variant">
+                    Desde 1998 el número de socios no ha dejado de crecer. Ese mismo crecimiento es el que
+                    impulsa hoy la modernización de su gestión administrativa, de la que este portal forma parte.
+                </p>
+            </div>
+
+            @* Linea de tiempo *@
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-gutter-grid">
+
+                <div class="bg-surface-container-lowest rounded-xl border border-outline-variant/40 p-card-padding relative">
+                    <span class="inline-flex w-10 h-10 rounded-lg bg-primary-50 items-center justify-center text-primary mb-4">
+                        <svg class="ic w-5 h-5"><use href="#ic-flag"></use></svg>
+                    </span>
+                    <p class="font-caption text-caption text-primary font-bold uppercase tracking-wider mb-1">Julio 1998</p>
+                    <h3 class="font-label-sm text-label-sm font-bold text-on-surface mb-2">Fundación</h3>
+                    <p class="font-caption text-caption text-on-surface-variant leading-relaxed">
+                        Las OTB de la provincia Andrés Ibáñez impulsan la creación de la cooperativa
+                        en la comunidad El Bisito.
+                    </p>
+                </div>
+
+                <div class="bg-surface-container-lowest rounded-xl border border-outline-variant/40 p-card-padding">
+                    <span class="inline-flex w-10 h-10 rounded-lg bg-primary-50 items-center justify-center text-primary mb-4">
+                        <svg class="ic w-5 h-5"><use href="#ic-users"></use></svg>
+                    </span>
+                    <p class="font-caption text-caption text-primary font-bold uppercase tracking-wider mb-1">Los inicios</p>
+                    <h3 class="font-label-sm text-label-sm font-bold text-on-surface mb-2">62 socios fundadores</h3>
+                    <p class="font-caption text-caption text-on-surface-variant leading-relaxed">
+                        Un Comité de Agua, presidido por el Sr. Marcelino Fajardo Flores, se hace cargo
+                        del proceso de afiliación.
+                    </p>
+                </div>
+
+                <div class="bg-surface-container-lowest rounded-xl border border-outline-variant/40 p-card-padding">
+                    <span class="inline-flex w-10 h-10 rounded-lg bg-primary-50 items-center justify-center text-primary mb-4">
+                        <svg class="ic w-5 h-5"><use href="#ic-gauge"></use></svg>
+                    </span>
+                    <p class="font-caption text-caption text-primary font-bold uppercase tracking-wider mb-1">Hoy</p>
+                    <h3 class="font-label-sm text-label-sm font-bold text-on-surface mb-2">@anios años de servicio</h3>
+                    <p class="font-caption text-caption text-on-surface-variant leading-relaxed">
+                        Lectura de medidores, facturación por categoría y pago en línea, con cada socio
+                        viendo su propia cuenta desde este portal.
+                    </p>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    @* ================= Pie ================= *@
+    <footer id="contacto" class="bg-surface-container border-t border-surface-container-high pt-16 pb-8">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
+
+                <div class="col-span-1 md:col-span-2">
+                    <div class="flex items-center gap-2.5 mb-4">
+                        <span class="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center text-on-primary">
+                            <svg class="ic w-6 h-6" style="fill:currentColor;stroke:none"><use href="#ic-drop"></use></svg>
+                        </span>
+                        <span class="font-headline-md text-headline-md text-on-surface tracking-tight">COSPABI R.L.</span>
+                    </div>
+                    <p class="font-body-md text-body-md text-secondary max-w-sm">
+                        Cooperativa de Agua Potable comprometida con brindar un servicio continuo
+                        y de calidad a la comunidad, desde 1998.
+                    </p>
+                </div>
+
+                @if (hayContacto)
+                {
+                    <div>
+                        <h3 class="font-label-sm text-label-sm text-on-surface font-semibold mb-4 uppercase tracking-wider">Contacto</h3>
+                        <ul class="flex flex-col gap-3">
+                            @if (!string.IsNullOrWhiteSpace(direccion))
+                            {
+                                <li class="flex items-start gap-3 text-secondary">
+                                    <svg class="ic w-5 h-5 mt-0.5 shrink-0"><use href="#ic-pin"></use></svg>
+                                    <span class="font-body-md text-label-sm">@direccion</span>
+                                </li>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(telefono))
+                            {
+                                <li class="flex items-center gap-3 text-secondary">
+                                    <svg class="ic w-5 h-5 shrink-0"><use href="#ic-phone"></use></svg>
+                                    <span class="font-body-md text-label-sm">@telefono</span>
+                                </li>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(correo))
+                            {
+                                <li class="flex items-center gap-3 text-secondary">
+                                    <svg class="ic w-5 h-5 shrink-0"><use href="#ic-mail"></use></svg>
+                                    <span class="font-body-md text-label-sm break-all">@correo</span>
+                                </li>
+                            }
+                        </ul>
+                    </div>
+                }
+
+                <div>
+                    <h3 class="font-label-sm text-label-sm text-on-surface font-semibold mb-4 uppercase tracking-wider">Portal del socio</h3>
+                    <p class="font-body-md text-label-sm text-secondary mb-4">
+                        Accede con el usuario que te entregó la cooperativa.
+                    </p>
+                    <a href="@urlPortal" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-surface-variant bg-surface-container-lowest text-primary font-label-sm text-label-sm font-semibold hover:bg-primary-50 transition-colors">
+                        Iniciar sesión
+                        <svg class="ic w-[18px] h-[18px]"><use href="#ic-login"></use></svg>
+                    </a>
+                </div>
+
+            </div>
+
+            <div class="pt-8 border-t border-surface-container-high text-center">
+                <p class="font-caption text-caption text-secondary">
+                    &copy; @DateTime.Now.Year Cooperativa de Agua Potable COSPABI R.L. &middot; Todos los derechos reservados.
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        (function () {
+            var btn = document.getElementById('btnMenu');
+            var menu = document.getElementById('menuMovil');
+            var iconoMenu = document.getElementById('iconoMenu');
+            var iconoCerrar = document.getElementById('iconoCerrar');
+            var navbar = document.getElementById('navbar');
+
+            function alternarMenu(abrir) {
+                btn.setAttribute('aria-expanded', abrir ? 'true' : 'false');
+                menu.classList.toggle('hidden', !abrir);
+                iconoMenu.classList.toggle('hidden', abrir);
+                iconoCerrar.classList.toggle('hidden', !abrir);
+            }
+
+            btn.addEventListener('click', function () {
+                alternarMenu(btn.getAttribute('aria-expanded') !== 'true');
+            });
+
+            // Al tocar un enlace del menu movil, cerrarlo
+            Array.prototype.forEach.call(menu.querySelectorAll('.menu-link'), function (a) {
+                a.addEventListener('click', function () { alternarMenu(false); });
+            });
+
+            window.addEventListener('scroll', function () {
+                var bajo = window.scrollY > 10;
+                navbar.classList.toggle('shadow-sm', bajo);
+                navbar.classList.toggle('border-transparent', bajo);
+                navbar.classList.toggle('border-surface-container-high', !bajo);
+            });
+        })();
+    </script>
+
+</body>
+</html>

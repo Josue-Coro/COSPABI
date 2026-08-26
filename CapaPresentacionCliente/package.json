@@ -1,0 +1,16 @@
+{
+  "name": "capapresentacioncliente",
+  "version": "1.0.0",
+  "description": "Portal del Socio COSPABI - hoja de estilos Tailwind",
+  "private": true,
+  "scripts": {
+    "build:css": "tailwindcss -i ./Content/tailwind.css -o ./Content/app.css",
+    "watch:css": "tailwindcss -i ./Content/tailwind.css -o ./Content/app.css --watch"
+  },
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.3.0",
+    "tailwindcss": "^4.2.4"
+  }
+}

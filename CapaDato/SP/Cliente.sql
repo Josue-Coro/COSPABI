@@ -131,6 +131,22 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
+    -- Se guarda ya normalizado: el email viaja tal cual a Libelula como
+    -- email_cliente, y un espacio al inicio o al final rompe el registro
+    -- de la deuda. NULLIF deja en NULL lo que solo tenia espacios.
+    SET @Email = NULLIF(LTRIM(RTRIM(@Email)), '');
+
+    -- Email obligatorio. La regla tambien esta en CN_Cliente, pero se repite
+    -- aqui para que ninguna ruta pueda esquivarla: sin email el socio no puede
+    -- tener cuenta de portal (sp_registrar_cuenta_socio lo rechaza) ni pagar
+    -- con QR (la pasarela exige el correo del cliente).
+    IF @Email IS NULL
+    BEGIN
+        SET @Resultado = 0;
+        SET @Mensaje   = 'El email es obligatorio (requerido para pagos por QR).';
+        RETURN;
+    END
+
     IF EXISTS (SELECT 1 FROM cliente WHERE ci = @CI)
     BEGIN
         SET @Resultado = 0;
@@ -139,7 +155,7 @@ BEGIN
     END
 
     -- Email único (se usa como referencia para pagos QR)
-    IF EXISTS (SELECT 1 FROM cliente WHERE LTRIM(RTRIM(email)) = LTRIM(RTRIM(@Email)))
+    IF EXISTS (SELECT 1 FROM cliente WHERE LTRIM(RTRIM(email)) = @Email)
     BEGIN
         SET @Resultado = 0;
         SET @Mensaje   = 'El email ya está registrado en otro cliente.';
@@ -191,6 +207,18 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
+    -- Mismo criterio que en el alta: normalizar y exigir email. Editar no puede
+    -- ser la puerta de atras para dejar sin correo a una persona que ya lo tenia
+    -- (si tiene cuenta de portal, se quedaria sin poder pagar con QR).
+    SET @Email = NULLIF(LTRIM(RTRIM(@Email)), '');
+
+    IF @Email IS NULL
+    BEGIN
+        SET @Resultado = 0;
+        SET @Mensaje   = 'El email es obligatorio (requerido para pagos por QR).';
+        RETURN;
+    END
+
     IF EXISTS (SELECT 1 FROM cliente WHERE ci = @CI AND id_cliente <> @IdCliente)
     BEGIN
         SET @Resultado = 0;
@@ -200,7 +228,7 @@ BEGIN
 
     -- Email único en OTRO cliente (se usa como referencia para pagos QR)
     IF EXISTS (SELECT 1 FROM cliente
-               WHERE LTRIM(RTRIM(email)) = LTRIM(RTRIM(@Email))
+               WHERE LTRIM(RTRIM(email)) = @Email
                  AND id_cliente <> @IdCliente)
     BEGIN
         SET @Resultado = 0;

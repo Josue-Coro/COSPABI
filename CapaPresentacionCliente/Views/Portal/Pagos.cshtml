@@ -1,62 +1,119 @@
-@{
+﻿@{
     ViewBag.Title = "Mis Pagos";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<style>
-    body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f1f5f9; }
+<header class="mb-6 md:mb-8">
+    <h1 class="font-headline-lg-mobile text-headline-lg-mobile md:font-headline-lg md:text-headline-lg text-on-surface mb-1">Historial de pagos</h1>
+    <p class="font-body-md text-body-md text-on-surface-variant">Consulta el registro de tus pagos a la cooperativa.</p>
+</header>
 
-    .card-portal {
-        background: #fff; border-radius: 14px;
-        box-shadow: 0 1px 4px rgba(0,0,0,0.07);
-        overflow: hidden; margin-bottom: 14px;
-    }
-    .card-portal-header {
-        background: #f8fafc; padding: 12px 18px;
-        border-bottom: 1px solid #e2e8f0;
-        font-size: 12px; font-weight: 700;
-        text-transform: uppercase; letter-spacing: 0.5px; color: #64748b;
-    }
-    .pago-fila {
-        display: flex; align-items: center; justify-content: space-between;
-        padding: 12px 18px; border-bottom: 1px solid #f1f5f9;
-    }
-    .pago-fila:last-child { border-bottom: none; }
-    .pago-fila .concepto { font-weight: 600; color: #1e293b; font-size: 14px; }
-    .pago-fila .detalle  { font-size: 12px; color: #94a3b8; margin-top: 2px; }
-    .pago-fila .monto    { font-weight: 700; color: #15803d; font-size: 15px; white-space: nowrap; }
-    .sin-datos { padding: 24px; text-align: center; color: #94a3b8; font-size: 14px; }
-</style>
+<div class="max-w-3xl">
 
-<div class="card-portal">
-    <div class="card-portal-header">Historial de pagos</div>
-    <div id="listaPagos">
-        <div class="sin-datos">Cargando...</div>
-    </div>
+    @* ---------------- Resumen ---------------- *@
+    <section class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+
+        <div class="bg-surface-container-lowest border border-outline-variant/40 rounded-xl p-4 shadow-[0_4px_6px_-1px_rgba(0,0,0,0.05)] flex flex-col justify-between">
+            <div class="flex items-center gap-2 mb-3 text-on-surface-variant">
+                <svg class="ic w-[18px] h-[18px]"><use href="#ic-check-circle"></use></svg>
+                <span class="font-label-sm text-label-sm">Estado actual</span>
+            </div>
+            <span id="chipEstado" class="self-start px-2 py-1 rounded font-label-sm text-label-sm font-bold uppercase bg-slate-100 text-on-surface-variant">…</span>
+        </div>
+
+        <div class="bg-surface-container-lowest border border-outline-variant/40 rounded-xl p-4 shadow-[0_4px_6px_-1px_rgba(0,0,0,0.05)] flex flex-col justify-between">
+            <div class="flex items-center gap-2 mb-3 text-on-surface-variant">
+                <svg class="ic w-[18px] h-[18px]"><use href="#ic-card"></use></svg>
+                <span class="font-label-sm text-label-sm">Último pago</span>
+            </div>
+            <div>
+                <p id="ultimoMonto" class="font-headline-md text-headline-md text-on-surface">--</p>
+                <p id="ultimaFecha" class="font-caption text-caption text-on-surface-variant mt-1">Sin registros</p>
+            </div>
+        </div>
+
+        <div class="bg-surface-container-lowest border border-outline-variant/40 rounded-xl p-4 shadow-[0_4px_6px_-1px_rgba(0,0,0,0.05)] flex flex-col justify-between">
+            <div class="flex items-center gap-2 mb-3 text-on-surface-variant">
+                <svg class="ic w-[18px] h-[18px]"><use href="#ic-chart"></use></svg>
+                <span class="font-label-sm text-label-sm">Total pagado</span>
+            </div>
+            <div>
+                <p id="totalPagado" class="font-headline-md text-headline-md text-primary-700">--</p>
+                <p id="numPagos" class="font-caption text-caption text-on-surface-variant mt-1">Sin registros</p>
+            </div>
+        </div>
+
+    </section>
+
+    @* ---------------- Lista de pagos ---------------- *@
+    <section id="listaPagos" class="flex flex-col gap-3">
+        <p class="font-body-md text-label-sm text-on-surface-variant">Cargando…</p>
+    </section>
+
 </div>
 
 @section scripts {
-<script>
-    function fmt(n) { return (n == null ? 0 : n).toLocaleString('es-BO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
-    function parseNet(v) { if (!v) return null; var m = /\/Date\((\d+)\)\//.exec(v); var d = m ? new Date(parseInt(m[1])) : new Date(v); return isNaN(d) ? null : d; }
-    function fhora(v) { var d = parseNet(v); return d ? d.toLocaleString('es-BO') : '-'; }
+    <script>
+        // Un icono distinto segun como se pago, para reconocer la fila de un vistazo
+        function iconoMetodo(metodo) {
+            var m = (metodo || '').toUpperCase();
+            if (m.indexOf('QR') >= 0)        return 'ic-qr';
+            if (m.indexOf('EFECTIVO') >= 0)  return 'ic-wallet';
+            if (m.indexOf('TRANSFER') >= 0)  return 'ic-chart';
+            return 'ic-card';
+        }
 
-    $(function () {
-        $.get('@Url.Action("ListarPagos", "Portal")', function (res) {
-            var cont = $('#listaPagos'); cont.empty();
-            if (!res.exito || !res.pagos.length) {
-                cont.html('<div class="sin-datos">Aún no tienes pagos registrados.</div>');
-                return;
-            }
-            $.each(res.pagos, function (_, p) {
-                cont.append(
-                    '<div class="pago-fila">' +
-                    '<div><div class="concepto">' + p.concepto + '</div>' +
-                    '<div class="detalle">' + fhora(p.fecha_pago) + ' · ' + p.nombre_metodo + '</div></div>' +
-                    '<div class="monto">Bs. ' + fmt(p.monto_pagado) + '</div>' +
-                    '</div>');
+        $(function () {
+            $.get('@Url.Action("Resumen", "Portal")', function (res) {
+                if (!res.exito) return;
+                var alDia = res.resumen.avisos_pendientes === 0;
+                $('#chipEstado')
+                    .text(alDia ? 'Al día' : 'Con deuda')
+                    .attr('class', 'self-start px-2 py-1 rounded font-label-sm text-label-sm font-bold uppercase ' +
+                                   (alDia ? 'bg-primary-50 text-primary-700' : 'bg-error-container text-on-error-container'));
+            });
+
+            $.get('@Url.Action("ListarPagos", "Portal")', function (res) {
+                var cont = $('#listaPagos');
+                cont.empty();
+
+                if (!res.exito || !res.pagos || !res.pagos.length) {
+                    cont.html(
+                        '<div class="bg-surface-container-lowest border border-outline-variant/40 rounded-xl p-10 text-center text-on-surface-variant">' +
+                            '<svg class="ic w-12 h-12 mx-auto mb-3 opacity-40"><use href="#ic-card"></use></svg>' +
+                            '<p class="font-body-md text-body-md">Aún no tienes pagos registrados.</p>' +
+                        '</div>');
+                    return;
+                }
+
+                var pagos = res.pagos;
+                var total = pagos.reduce(function (s, p) { return s + (p.monto_pagado || 0); }, 0);
+                $('#totalPagado').text(Portal.bs(total));
+                $('#numPagos').text(pagos.length + (pagos.length === 1 ? ' pago registrado' : ' pagos registrados'));
+                $('#ultimoMonto').text(Portal.bs(pagos[0].monto_pagado));
+                $('#ultimaFecha').text(Portal.ffechaLarga(pagos[0].fecha_pago));
+
+                $.each(pagos, function (_, p) {
+                    cont.append(
+                        '<article class="bento-card bg-surface-container-lowest border border-outline-variant/40 rounded-xl p-4 flex items-center justify-between gap-4">' +
+                            '<div class="flex items-center gap-4 min-w-0">' +
+                                '<span class="w-12 h-12 rounded-full bg-primary-50 text-primary-700 flex items-center justify-center shrink-0">' +
+                                    '<svg class="ic w-6 h-6"><use href="#' + iconoMetodo(p.nombre_metodo) + '"></use></svg>' +
+                                '</span>' +
+                                '<div class="min-w-0">' +
+                                    '<p class="font-label-sm text-label-sm font-semibold text-on-surface truncate">' + Portal.esc(p.concepto) + '</p>' +
+                                    '<p class="font-caption text-caption text-on-surface-variant mt-1">' +
+                                        Portal.fhora(p.fecha_pago) + ' · ' + Portal.esc(p.nombre_metodo) +
+                                    '</p>' +
+                                '</div>' +
+                            '</div>' +
+                            '<div class="text-right shrink-0">' +
+                                '<p class="font-body-md text-body-md font-bold text-primary-700 whitespace-nowrap">' + Portal.bs(p.monto_pagado) + '</p>' +
+                                '<p class="font-caption text-caption text-on-surface-variant font-mono mt-1">#' + p.id_pago + '</p>' +
+                            '</div>' +
+                        '</article>');
+                });
             });
         });
-    });
-</script>
+    </script>
 }

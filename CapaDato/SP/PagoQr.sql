@@ -22,10 +22,20 @@ GO
 --    Resultset 1: cabecera (incluye email del cliente y QR pendiente si existe).
 --    Resultset 2: detalle de la deuda (concepto, subtotal), igual que el recibo.
 CREATE OR ALTER PROCEDURE dbo.sp_datos_deuda_qr
-    @id_aviso INT
+    @id_aviso INT,
+    @id_socio INT = NULL   -- portal del socio: dueno esperado del aviso
 AS
 BEGIN
     SET NOCOUNT ON;
+
+    -- Cuando la llamada viene del portal, el id del aviso lo elige el
+    -- navegador: se exige que el aviso sea del socio de la sesion o no se
+    -- devuelve nada (la capa de negocio lo trata como 'aviso no encontrado').
+    -- El admin no manda @id_socio y conserva el acceso a cualquier aviso.
+    IF @id_socio IS NOT NULL
+       AND NOT EXISTS (SELECT 1 FROM aviso
+                       WHERE id_aviso = @id_aviso AND socio_id_socio = @id_socio)
+        RETURN;
 
     SELECT
         a.id_aviso,
@@ -252,13 +262,23 @@ BEGIN
 END
 GO
 
--- 5. Estado actual de un pago (polling desde la pantalla de cobro) ------------
+-- 5. Estado actual de un pago (polling desde la pantalla de cobro y desde el
+--    portal del socio). Devuelve tambien id_transaccion para que el portal
+--    pueda pedir la verificacion contra la pasarela sin recibirla del
+--    navegador. Con @id_socio informado, solo responde por los pagos de ese
+--    socio; el admin no lo manda y ve cualquier pago.
 CREATE OR ALTER PROCEDURE dbo.sp_estado_pago_qr
-    @id_pago INT
+    @id_pago INT,
+    @id_socio INT = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
-    SELECT id_pago, estado_pago FROM pago WHERE id_pago = @id_pago;
+
+    SELECT p.id_pago, p.estado_pago, p.id_transaccion, p.aviso_id_aviso
+    FROM pago p
+    LEFT JOIN aviso a ON a.id_aviso = p.aviso_id_aviso
+    WHERE p.id_pago = @id_pago
+      AND (@id_socio IS NULL OR a.socio_id_socio = @id_socio);
 END
 GO
 

@@ -1,85 +1,104 @@
-@{
+﻿@{
     ViewBag.Title = "Notificaciones";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<style>
-    body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f1f5f9; }
+<div class="max-w-3xl">
 
-    .card-portal {
-        background: #fff; border-radius: 14px;
-        box-shadow: 0 1px 4px rgba(0,0,0,0.07);
-        overflow: hidden; margin-bottom: 14px;
-    }
-    .card-portal-header {
-        background: #f8fafc; padding: 12px 18px;
-        border-bottom: 1px solid #e2e8f0;
-        font-size: 12px; font-weight: 700;
-        text-transform: uppercase; letter-spacing: 0.5px; color: #64748b;
-    }
-    .notif {
-        padding: 14px 18px; border-bottom: 1px solid #f1f5f9;
-        cursor: pointer; transition: background .15s;
-    }
-    .notif:hover { background: #f8fafc; }
-    .notif:last-child { border-bottom: none; }
-    .notif.no-leida { border-left: 4px solid #2563eb; background: #f8faff; }
-    .notif .titulo { font-weight: 700; color: #1e293b; font-size: 14px; }
-    .notif .mensaje { font-size: 13px; color: #475569; margin-top: 4px; white-space: pre-line; }
-    .notif .meta { font-size: 11px; color: #94a3b8; margin-top: 6px; }
-    .badge-tipo {
-        font-size: 10px; font-weight: 700; text-transform: uppercase;
-        padding: 2px 8px; border-radius: 20px; background: #eef2ff; color: #4338ca;
-        margin-left: 6px;
-    }
-    .badge-nueva {
-        font-size: 10px; font-weight: 700;
-        padding: 2px 8px; border-radius: 20px; background: #dbeafe; color: #1d4ed8;
-        margin-left: 6px;
-    }
-    .sin-datos { padding: 24px; text-align: center; color: #94a3b8; font-size: 14px; }
-</style>
+    <header class="flex items-end justify-between gap-4 mb-6 md:mb-8">
+        <div>
+            <h1 class="font-headline-lg-mobile text-headline-lg-mobile md:font-headline-lg md:text-headline-lg text-on-surface mb-1">Notificaciones</h1>
+            <p class="font-body-md text-body-md text-on-surface-variant">Mantente al día con tu cooperativa.</p>
+        </div>
+        <span id="chipNuevas" class="hidden shrink-0 font-label-sm text-label-sm bg-surface-container-high text-on-surface px-3 py-1.5 rounded-full border border-outline-variant/60"></span>
+    </header>
 
-<div class="card-portal">
-    <div class="card-portal-header">Mis notificaciones</div>
-    <div id="listaNotif">
-        <div class="sin-datos">Cargando...</div>
+    <div id="listaNotif" class="flex flex-col gap-3">
+        <p class="font-body-md text-label-sm text-on-surface-variant">Cargando…</p>
     </div>
+
 </div>
 
 @section scripts {
-<script>
-    function parseNet(v) { if (!v) return null; var m = /\/Date\((\d+)\)\//.exec(v); var d = m ? new Date(parseInt(m[1])) : new Date(v); return isNaN(d) ? null : d; }
-    function ffecha(v) { var d = parseNet(v); return d ? d.toLocaleDateString('es-BO') : '-'; }
+    <script>
+        // El tipo lo define el administrador al publicar; se usa solo para
+        // elegir icono y color, nunca se inyecta como HTML.
+        function estiloTipo(tipo) {
+            var t = (tipo || '').toUpperCase();
+            if (t.indexOf('PAGO') >= 0)         return { icono: 'ic-check-circle', fondo: 'bg-primary-50',            color: 'text-primary-700',        barra: 'bg-primary' };
+            if (t.indexOf('VENCIM') >= 0 ||
+                t.indexOf('RECORD') >= 0 ||
+                t.indexOf('MORA') >= 0)         return { icono: 'ic-warning',      fondo: 'bg-warning-yellow/10',     color: 'text-warning-yellow',     barra: 'bg-warning-yellow' };
+            if (t.indexOf('AVISO') >= 0 ||
+                t.indexOf('COBRO') >= 0)        return { icono: 'ic-receipt',      fondo: 'bg-secondary-container',   color: 'text-on-secondary-container', barra: 'bg-primary' };
+            if (t.indexOf('CORTE') >= 0 ||
+                t.indexOf('MANTEN') >= 0)       return { icono: 'ic-settings',     fondo: 'bg-error-container/60',    color: 'text-on-error-container', barra: 'bg-error-red' };
+            return { icono: 'ic-megaphone', fondo: 'bg-slate-100', color: 'text-secondary', barra: 'bg-primary' };
+        }
 
-    function cargar() {
-        $.get('@Url.Action("ListarNotificaciones", "Portal")', function (res) {
-            var cont = $('#listaNotif'); cont.empty();
-            if (!res.exito || !res.notificaciones.length) {
-                cont.html('<div class="sin-datos">No tienes notificaciones.</div>');
-                return;
-            }
-            $.each(res.notificaciones, function (_, n) {
-                var div = $('<div class="notif' + (n.leido ? '' : ' no-leida') + '">' +
-                    '<div class="titulo">' + n.titulo +
-                    '<span class="badge-tipo">' + n.tipo + '</span>' +
-                    (n.leido ? '' : '<span class="badge-nueva">NUEVA</span>') + '</div>' +
-                    '<div class="mensaje">' + n.mensaje + '</div>' +
-                    '<div class="meta">Publicada: ' + ffecha(n.fecha_publicacion) +
-                    (n.leido && n.fecha_lectura ? ' · Leída: ' + ffecha(n.fecha_lectura) : '') + '</div>' +
-                    '</div>');
-                if (!n.leido) {
-                    div.on('click', function () {
-                        $.post('@Url.Action("MarcarLeida", "Portal")',
-                               { idNotificacionSocio: n.id_notificacion_socio },
-                               function () { cargar(); });
-                    });
+        function cargar() {
+            $.get('@Url.Action("ListarNotificaciones", "Portal")', function (res) {
+                var cont = $('#listaNotif');
+                cont.empty();
+
+                if (!res.exito || !res.notificaciones || !res.notificaciones.length) {
+                    $('#chipNuevas').addClass('hidden');
+                    cont.html(
+                        '<div class="bg-surface-container-lowest border border-outline-variant/40 rounded-xl p-10 text-center text-on-surface-variant">' +
+                            '<svg class="ic w-12 h-12 mx-auto mb-3 opacity-40"><use href="#ic-bell"></use></svg>' +
+                            '<p class="font-body-md text-body-md">No tienes notificaciones.</p>' +
+                        '</div>');
+                    return;
                 }
-                cont.append(div);
-            });
-        });
-    }
 
-    $(cargar);
-</script>
+                var nuevas = res.notificaciones.filter(function (n) { return !n.leido; }).length;
+                $('#chipNuevas')
+                    .text(nuevas === 0 ? 'Todas leídas' : (nuevas === 1 ? '1 nueva' : nuevas + ' nuevas'))
+                    .toggleClass('hidden', false);
+
+                $.each(res.notificaciones, function (_, n) {
+                    var e = estiloTipo(n.tipo);
+                    var nueva = !n.leido;
+
+                    var card = $(
+                        '<article class="bg-surface-container-lowest rounded-xl border border-outline-variant/40 p-4 pl-5 flex gap-4 items-start shadow-sm relative overflow-hidden transition-shadow duration-200' +
+                            (nueva ? ' cursor-pointer hover:shadow-[0_8px_15px_-3px_rgba(0,0,0,0.06)]' : ' opacity-80') + '">' +
+                            (nueva ? '<span class="absolute left-0 top-0 w-1.5 h-full ' + e.barra + '"></span>' : '') +
+                            '<span class="w-12 h-12 rounded-full flex items-center justify-center shrink-0 ' + e.fondo + ' ' + e.color + '">' +
+                                '<svg class="ic w-6 h-6"><use href="#' + e.icono + '"></use></svg>' +
+                            '</span>' +
+                            '<div class="flex-1 min-w-0">' +
+                                '<div class="flex justify-between items-baseline gap-3 mb-1">' +
+                                    '<h2 class="font-label-sm text-label-sm text-on-surface ' + (nueva ? 'font-bold' : 'font-medium') + '">' +
+                                        Portal.esc(n.titulo) +
+                                    '</h2>' +
+                                    '<span class="font-caption text-caption shrink-0 ' + (nueva ? 'text-primary font-medium' : 'text-on-surface-variant') + '">' +
+                                        Portal.ffechaLarga(n.fecha_publicacion) +
+                                    '</span>' +
+                                '</div>' +
+                                '<p class="font-body-md text-label-sm leading-relaxed text-on-surface-variant whitespace-pre-line">' + Portal.esc(n.mensaje) + '</p>' +
+                                '<div class="flex items-center gap-2 mt-3">' +
+                                    '<span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-surface-container text-on-surface-variant">' + Portal.esc(n.tipo) + '</span>' +
+                                    (nueva
+                                        ? '<span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-primary-50 text-primary-700">Nueva · toca para marcar leída</span>'
+                                        : (n.fecha_lectura ? '<span class="font-caption text-caption text-on-surface-variant">Leída el ' + Portal.ffecha(n.fecha_lectura) + '</span>' : '')) +
+                                '</div>' +
+                            '</div>' +
+                        '</article>');
+
+                    if (nueva) {
+                        card.on('click', function () {
+                            $.post('@Url.Action("MarcarLeida", "Portal")',
+                                   { idNotificacionSocio: n.id_notificacion_socio },
+                                   function () { cargar(); });
+                        });
+                    }
+
+                    cont.append(card);
+                });
+            });
+        }
+
+        $(cargar);
+    </script>
 }

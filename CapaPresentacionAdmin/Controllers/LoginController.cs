@@ -24,6 +24,9 @@ namespace CapaPresentacionAdmin.Controllers
 
             if (oUsuario != null)
             {
+                // Sesion nueva para la sesion autenticada: si el atacante fijo un
+                // id de sesion antes del login, ese id queda inservible.
+                Session.Clear();
                 Session["Usuario"] = oUsuario;
                 Session["NombreUsuario"] = oUsuario.nombre + " " + oUsuario.apellido;
                 Session["RolUsuario"] = oUsuario.nombre_rol;

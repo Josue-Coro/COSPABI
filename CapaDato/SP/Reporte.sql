@@ -11,6 +11,10 @@ GO
 --    RS1: detalle de cobros (aviso o inscripcion) APROBADOS del periodo.
 --    RS2: totales por metodo de pago.
 --    RS3: resumen (cantidad de pagos y total recaudado).
+--    Cubre UNICAMENTE el dinero que entro por una caja. Un pago del portal
+--    del socio se aprueba sin caja (caja_id_caja NULL) y, al no filtrar por
+--    cajero, se colaba aqui mezclado con el efectivo de ventanilla; ahora
+--    tiene su propio reporte en sp_reporte_pagos_sistema.
 CREATE OR ALTER PROCEDURE dbo.sp_reporte_caja
     @FechaInicio DATE,
     @FechaFin    DATE,
@@ -42,6 +46,7 @@ BEGIN
         WHERE ci.pago_id_pago = p.id_pago
     ) si
     WHERE p.estado_pago = 'APROBADO'
+      AND p.caja_id_caja IS NOT NULL          -- excluye los pagos del portal
       AND CAST(p.fecha_pago AS DATE) BETWEEN @FechaInicio AND @FechaFin
       AND (@IdCajero IS NULL OR c.usuario_admin_id_usuario_admin = @IdCajero)
     ORDER BY p.fecha_pago;
@@ -54,6 +59,7 @@ BEGIN
     INNER JOIN metodo_pago mp ON mp.id_metodo_pago = p.metodo_pago_id_metodo_pago
     LEFT  JOIN caja c ON c.id_caja = p.caja_id_caja
     WHERE p.estado_pago = 'APROBADO'
+      AND p.caja_id_caja IS NOT NULL          -- excluye los pagos del portal
       AND CAST(p.fecha_pago AS DATE) BETWEEN @FechaInicio AND @FechaFin
       AND (@IdCajero IS NULL OR c.usuario_admin_id_usuario_admin = @IdCajero)
     GROUP BY mp.metodo
@@ -65,8 +71,82 @@ BEGIN
     FROM pago p
     LEFT JOIN caja c ON c.id_caja = p.caja_id_caja
     WHERE p.estado_pago = 'APROBADO'
+      AND p.caja_id_caja IS NOT NULL          -- excluye los pagos del portal
       AND CAST(p.fecha_pago AS DATE) BETWEEN @FechaInicio AND @FechaFin
       AND (@IdCajero IS NULL OR c.usuario_admin_id_usuario_admin = @IdCajero);
+END
+GO
+
+-- 1b. Reporte de PAGOS DEL SISTEMA -------------------------------------------
+--     Cobros aprobados que no pasaron por ninguna caja: el socio los pago solo
+--     desde el portal con QR. Misma forma que sp_reporte_caja (3 resultsets)
+--     para que la vista pueda leerse igual.
+--     RS1: detalle.  RS2: totales por metodo.  RS3: resumen + QR sin cobrar.
+CREATE OR ALTER PROCEDURE dbo.sp_reporte_pagos_sistema
+    @FechaInicio DATE,
+    @FechaFin    DATE
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        p.id_pago,
+        p.fecha_pago,
+        p.aviso_id_aviso,
+        CASE WHEN p.aviso_id_aviso IS NULL THEN 'Inscripcion' ELSE 'Aviso' END AS tipo_cobro,
+        ISNULL(s.nombre_socio, si.nombre_socio) AS nombre_socio,
+        ISNULL(s.codigo_fijo,  si.codigo_fijo)  AS codigo_fijo,
+        per.periodo        AS nombre_periodo,
+        mp.metodo          AS nombre_metodo,
+        p.id_transaccion,
+        p.codigo_recaudacion,
+        p.forma_pago,
+        p.monto_pagado
+    FROM pago p
+    INNER JOIN metodo_pago mp ON mp.id_metodo_pago = p.metodo_pago_id_metodo_pago
+    LEFT  JOIN aviso   a   ON a.id_aviso    = p.aviso_id_aviso
+    LEFT  JOIN periodo per ON per.id_periodo = a.periodo_id_periodo
+    LEFT  JOIN socio   s   ON s.id_socio    = a.socio_id_socio
+    OUTER APPLY (
+        SELECT TOP 1 s2.nombre_socio, s2.codigo_fijo
+        FROM credito_inscripcion ci
+        INNER JOIN socio s2 ON s2.id_socio = ci.socio_id_socio
+        WHERE ci.pago_id_pago = p.id_pago
+    ) si
+    WHERE p.estado_pago  = 'APROBADO'
+      AND p.caja_id_caja IS NULL
+      AND CAST(p.fecha_pago AS DATE) BETWEEN @FechaInicio AND @FechaFin
+    ORDER BY p.fecha_pago;
+
+    SELECT
+        mp.metodo AS nombre_metodo,
+        COUNT(*)  AS cantidad,
+        SUM(p.monto_pagado) AS total
+    FROM pago p
+    INNER JOIN metodo_pago mp ON mp.id_metodo_pago = p.metodo_pago_id_metodo_pago
+    WHERE p.estado_pago  = 'APROBADO'
+      AND p.caja_id_caja IS NULL
+      AND CAST(p.fecha_pago AS DATE) BETWEEN @FechaInicio AND @FechaFin
+    GROUP BY mp.metodo
+    ORDER BY total DESC;
+
+    -- Resumen. 'qr_sin_cobrar' son los QR generados en el periodo que nadie
+    -- llego a pagar (siguen PENDIENTE o ya vencieron): no son plata, pero
+    -- dicen cuanta gente abandono el pago a medio camino.
+    SELECT
+        COUNT(*)                      AS cantidad_pagos,
+        ISNULL(SUM(p.monto_pagado),0) AS total_recaudado,
+        (SELECT COUNT(*)
+         FROM pago q
+         WHERE q.caja_id_caja IS NULL
+           AND q.id_transaccion IS NOT NULL
+           AND q.estado_pago IN ('PENDIENTE', 'EXPIRADO')
+           AND CAST(q.fecha_pago AS DATE) BETWEEN @FechaInicio AND @FechaFin)
+                                      AS qr_sin_cobrar
+    FROM pago p
+    WHERE p.estado_pago  = 'APROBADO'
+      AND p.caja_id_caja IS NULL
+      AND CAST(p.fecha_pago AS DATE) BETWEEN @FechaInicio AND @FechaFin;
 END
 GO
 

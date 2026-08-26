@@ -11,19 +11,6 @@ namespace CapaDato
 {
     public class CD_Rol
     {
-        /*--listar roles sp
-        create procedure [dbo].[sp_listar_roles]
-        AS
-        BEGIN
-            SET NOCOUNT ON;
-
-            SELECT [id_rol]
-                  ,[nombre]
-                  ,[descripcion]
-                  ,[estado]
-              FROM [dbo].[rol]
-        END
-        go*/
         public List<CM_Rol> Listar(bool incluirSuperadmin = true)
         {
             List<CM_Rol> lista = new List<CM_Rol>();
@@ -56,31 +43,6 @@ namespace CapaDato
             }
             return lista;
         }
-        /*--crear rol sp 
-        create procedure [dbo].[sp_crear_rol]
-            @nombre nvarchar(100),
-            @descripcion nvarchar(255),
-            @estado bit,
-            @Resultado INT OUTPUT,
-            @Mensaje VARCHAR(500) OUTPUT
-        as
-        begin
-            SET NOCOUNT ON;
-            SET @Resultado = 0;
-            SET @Mensaje = '';
-
-            -- Validar que el nombre no esté duplicado
-            IF NOT EXISTS (SELECT 1 FROM [dbo].[rol] WHERE nombre = @nombre)
-            BEGIN
-                INSERT INTO [dbo].[rol] (nombre, descripcion, estado)
-                VALUES (@nombre, @descripcion, @estado);
-                SET @Resultado = SCOPE_IDENTITY();
-                SET @Mensaje = 'Rol registrado correctamente.';
-            END
-            ELSE
-                SET @Mensaje = 'Ya existe un rol con este nombre.';
-    
-        end*/
         //crae rol
         public int Registrar(CM_Rol obj, int idUsuario, out string Mensaje)
         {
@@ -116,32 +78,6 @@ namespace CapaDato
             return idGenerado;
         }
 
-        /*--editar rol sp
-        create procedure [dbo].[sp_editar_rol]
-            @id_rol int,
-            @nombre nvarchar(100),
-            @descripcion nvarchar(255),
-            @estado bit,
-            @Resultado INT OUTPUT,
-            @Mensaje VARCHAR(500) OUTPUT
-        AS
-        BEGIN
-            SET NOCOUNT ON;
-            SET @Resultado = 0;
-            SET @Mensaje = '';
-            IF NOT EXISTS (SELECT 1 FROM [dbo].[rol] WHERE nombre = @nombre)
-            BEGIN
-                  UPDATE [dbo].[rol]
-                  SET nombre = @nombre, descripcion = @descripcion, estado = @estado
-                  WHERE id_rol = @id_rol;
-
-                  SET @Resultado = 1;
-                  SET @Mensaje = 'Rol actualizado correctamente.';
-             END
-             ELSE
-                  SET @Mensaje = 'Ya existe un rol con este nombre.';
-        END
-        */
         public bool Editar(CM_Rol obj, int idUsuario, bool solicitanteEsSuperadmin, out string Mensaje)
         {
             bool resultado = false;
@@ -175,29 +111,6 @@ namespace CapaDato
             }
             return resultado;
         }
-        /*--eliminar rol sp
-        create procedure [dbo].[sp_eliminar_rol]
-            @id_rol int,
-            @Resultado INT OUTPUT,
-            @Mensaje VARCHAR(500) OUTPUT
-        AS
-        BEGIN
-            SET NOCOUNT ON;
-            SET @Resultado = 0;
-            SET @Mensaje = '';
-            IF EXISTS (SELECT 1 FROM [dbo].[rol] WHERE id_rol = @id_rol)
-            BEGIN
-                UPDATE [dbo].[rol]
-                SET estado = 0
-                WHERE id_rol = @id_rol;
-
-                SET @Resultado = 1;
-                SET @Mensaje = 'Rol eliminado correctamente.';
-            END
-            ELSE
-                SET @Mensaje = 'No existe un rol con este ID.';
-        END
-        */
         public bool Eliminar(int id_rol, int idUsuario, bool solicitanteEsSuperadmin, out string Mensaje)
         {
             bool resultado = false;

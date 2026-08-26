@@ -73,6 +73,45 @@ namespace CapaPresentacionAdmin.Controllers
             }
         }
 
+        // ---- Reporte de pagos del sistema (cobrados por el portal del socio) ----
+
+        [ValidarPermisos(NombrePermiso = "Generar Reporte Pagos Sistema")]
+        public ActionResult PagosSistema()
+        {
+            return View();
+        }
+
+        [HttpGet]
+        [ValidarPermisos(NombrePermiso = "Generar Reporte Pagos Sistema")]
+        public JsonResult DatosPagosSistema(string fechaInicio, string fechaFin)
+        {
+            try
+            {
+                if (!DateTime.TryParse(fechaInicio, out DateTime fi) ||
+                    !DateTime.TryParse(fechaFin, out DateTime ff))
+                    return Json(new { exito = false, mensaje = "Debe indicar un rango de fechas valido." }, JsonRequestBehavior.AllowGet);
+
+                var u = (CM_Usuario_Activo)Session["Usuario"];
+                var reporte = cnCaja.ReportePagosSistema(fi, ff, u.id_usuario_admin, out string Mensaje);
+                if (reporte == null)
+                    return Json(new { exito = false, mensaje = Mensaje }, JsonRequestBehavior.AllowGet);
+
+                return Json(new
+                {
+                    exito = true,
+                    pagos = reporte.Pagos,
+                    totalesMetodo = reporte.TotalesMetodo,
+                    cantidadPagos = reporte.CantidadPagos,
+                    totalRecaudado = reporte.TotalRecaudado,
+                    qrSinCobrar = reporte.QrSinCobrar
+                }, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                return Json(new { exito = false, mensaje = ex.Message }, JsonRequestBehavior.AllowGet);
+            }
+        }
+
         // ---- HU22: Reporte de Morosidad ----
 
         [ValidarPermisos(NombrePermiso = "Generar Reporte Morosidad")]

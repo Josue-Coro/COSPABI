@@ -221,6 +221,25 @@
                 }
                 totalSocio = res.totalRegistros;
                 $.each(res.socios, function (_, s) {
+                    // Sin email del cliente no se puede crear la cuenta: el portal
+                    // ofrece pagar con QR y la pasarela exige el correo. Se muestra
+                    // el socio pero no se deja seleccionar, para que quede claro
+                    // que falta completar la ficha del cliente.
+                    var sinCorreo = !s.email_cliente || !s.email_cliente.trim();
+
+                    if (sinCorreo) {
+                        tbody.append(
+                            '<tr class="bg-gray-50 opacity-70">' +
+                            '<td class="px-4 py-2.5 font-medium text-gray-500">' + s.nombre_socio + '</td>' +
+                            '<td class="px-4 py-2.5 text-gray-400 font-mono">' + s.codigo_fijo + '</td>' +
+                            '<td class="px-4 py-2.5 text-gray-400">' + (s.ci_cliente || '-') + '</td>' +
+                            '<td class="px-4 py-2.5 text-center">' +
+                            '<span class="text-xs text-amber-600 font-semibold" title="Registra el email en el modulo Clientes">Sin correo</span>' +
+                            '</td></tr>'
+                        );
+                        return;
+                    }
+
                     tbody.append(
                         '<tr class="hover:bg-green-50 cursor-pointer transition" ' +
                         'onclick="seleccionarSocio(' + s.id_socio + ',\'' + s.nombre_socio.replace(/'/g, "\\'") + '\')">' +

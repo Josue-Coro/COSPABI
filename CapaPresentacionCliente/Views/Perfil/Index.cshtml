@@ -2,162 +2,173 @@
 @{
     ViewBag.Title = "Mi Perfil";
     Layout = "~/Views/Shared/_Layout.cshtml";
+
+    var inicial = string.IsNullOrWhiteSpace(Model.nombre_socio) ? "S" : Model.nombre_socio.Substring(0, 1).ToUpper();
+
+    Func<string, string> oVacio = v => string.IsNullOrWhiteSpace(v) ? null : v;
 }
 
-<style>
-    body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f1f5f9; }
+<header class="mb-6 md:mb-8">
+    <h1 class="font-headline-lg-mobile text-headline-lg-mobile md:font-headline-lg md:text-headline-lg text-on-surface mb-1">Mi Perfil</h1>
+    <p class="font-body-md text-body-md text-on-surface-variant">Tus datos de socio y de la instalación.</p>
+</header>
 
-    .perfil-header {
-        background: #1c2434;
-        border-radius: 16px;
-        padding: 24px 20px;
-        color: white;
-        margin-bottom: 16px;
-    }
-    .avatar-circle {
-        width: 64px; height: 64px;
-        border-radius: 50%;
-        background: #22c55e;
-        display: flex; align-items: center; justify-content: center;
-        font-size: 24px; font-weight: 700;
-        color: white;
-        flex-shrink: 0;
-    }
-    .badge-rol {
-        background: #22c55e;
-        color: white;
-        font-size: 11px;
-        font-weight: 600;
-        padding: 3px 10px;
-        border-radius: 20px;
-        display: inline-block;
-        margin-top: 6px;
-    }
-    .seccion-card {
-        background: #fff;
-        border-radius: 14px;
-        padding: 18px 20px;
-        margin-bottom: 14px;
-        box-shadow: 0 1px 4px rgba(0,0,0,0.07);
-    }
-    .seccion-titulo {
-        font-size: 12px;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.6px;
-        color: #16a34a;
-        margin-bottom: 14px;
-        padding-bottom: 8px;
-        border-bottom: 2px solid #f0fdf4;
-    }
-    .dato-fila {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        padding: 9px 0;
-        border-bottom: 1px solid #f1f5f9;
-        gap: 12px;
-    }
-    .dato-fila:last-child { border-bottom: none; }
-    .dato-label {
-        font-size: 13px;
-        color: #94a3b8;
-        font-weight: 500;
-        flex-shrink: 0;
-        min-width: 120px;
-    }
-    .dato-valor {
-        font-size: 14px;
-        color: #1e293b;
-        font-weight: 600;
-        text-align: right;
-        word-break: break-word;
-    }
-    .dato-valor.vacio { color: #cbd5e1; font-weight: 400; font-style: italic; }
-</style>
+<div class="grid grid-cols-1 md:grid-cols-12 gap-gutter-grid">
 
-<div style="max-width:520px; margin:0 auto; padding:16px;">
+    @* ---------------- Identidad ---------------- *@
+    <section class="md:col-span-5 bg-surface-container-lowest rounded-xl border border-outline-variant/40 shadow-sm p-card-padding flex flex-col items-center text-center relative overflow-hidden">
+        <div class="absolute inset-0 bg-gradient-to-br from-primary-50 to-transparent opacity-60 pointer-events-none"></div>
 
-    <!-- Encabezado -->
-    <div class="perfil-header">
-        <div class="d-flex align-items-center" style="gap:16px;">
-            <div class="avatar-circle">
-                @Model.nombre_socio.Substring(0, 1).ToUpper()
+        <div class="relative z-10 w-24 h-24 rounded-full gradient-primary text-on-primary flex items-center justify-center font-headline-lg text-headline-lg border-4 border-surface-container-lowest shadow-md mb-4">
+            @inicial
+        </div>
+
+        <h2 class="relative z-10 font-headline-md text-headline-md text-on-surface mb-2">@Model.nombre_socio</h2>
+
+        <div class="relative z-10 flex flex-wrap items-center justify-center gap-2 mb-6">
+            <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full font-label-sm text-label-sm @(Model.estado ? "bg-primary-50 text-primary-700" : "bg-slate-100 text-on-surface-variant")">
+                <svg class="ic w-4 h-4"><use href="#ic-check-circle"></use></svg>
+                @(Model.estado ? "Socio activo" : "Socio inactivo")
+            </span>
+            <span class="inline-block px-3 py-1 bg-surface-container text-on-surface font-label-sm text-label-sm rounded-full">
+                @Model.NombreRolSocio
+            </span>
+        </div>
+
+        <div class="relative z-10 w-full flex flex-col gap-stack-sm text-left">
+            <div class="flex items-center gap-3 p-3 bg-slate-100 rounded-lg">
+                <span class="text-outline"><svg class="ic w-5 h-5"><use href="#ic-badge"></use></svg></span>
+                <div>
+                    <p class="font-caption text-caption text-on-surface-variant">Código de socio</p>
+                    <p class="font-label-sm text-label-sm text-on-surface font-bold">@Model.codigo_fijo</p>
+                </div>
             </div>
-            <div>
-                <div style="font-size:19px; font-weight:700; line-height:1.2;">
-                    @Model.nombre_socio
+            <div class="flex items-center gap-3 p-3 bg-slate-100 rounded-lg">
+                <span class="text-outline"><svg class="ic w-5 h-5"><use href="#ic-calendar"></use></svg></span>
+                <div>
+                    <p class="font-caption text-caption text-on-surface-variant">Socio desde</p>
+                    <p class="font-label-sm text-label-sm text-on-surface font-bold">@Model.fecha_registro.ToString("dd/MM/yyyy")</p>
                 </div>
-                <div style="font-size:13px; opacity:0.8; margin-top:2px;">
-                    Cód. Fijo @Model.codigo_fijo
-                </div>
-                <span class="badge-rol">@Model.NombreRolSocio</span>
             </div>
         </div>
+    </section>
+
+    @* ---------------- Datos y acciones ---------------- *@
+    <div class="md:col-span-7 flex flex-col gap-gutter-grid">
+
+        <section class="bg-surface-container-lowest rounded-xl border border-outline-variant/40 shadow-sm p-card-padding">
+            <h3 class="font-label-sm text-label-sm font-semibold text-on-surface-variant uppercase tracking-wider mb-4 border-b border-outline-variant/40 pb-2">
+                Datos personales
+            </h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <p class="font-caption text-caption text-on-surface-variant mb-1 flex items-center gap-1">
+                        <svg class="ic w-4 h-4"><use href="#ic-user"></use></svg> Nombre completo
+                    </p>
+                    <p class="font-body-md text-label-sm text-on-surface font-medium">@Model.nombre_cliente</p>
+                </div>
+                <div>
+                    <p class="font-caption text-caption text-on-surface-variant mb-1 flex items-center gap-1">
+                        <svg class="ic w-4 h-4"><use href="#ic-badge"></use></svg> Cédula de identidad
+                    </p>
+                    <p class="font-body-md text-label-sm text-on-surface font-medium">@Model.ci_cliente</p>
+                </div>
+                <div>
+                    <p class="font-caption text-caption text-on-surface-variant mb-1 flex items-center gap-1">
+                        <svg class="ic w-4 h-4"><use href="#ic-mail"></use></svg> Correo electrónico
+                    </p>
+                    <p class="font-body-md text-label-sm @(oVacio(Model.email_cliente) == null ? "text-on-surface-variant italic" : "text-on-surface font-medium")">
+                        @(oVacio(Model.email_cliente) ?? "No registrado")
+                    </p>
+                </div>
+                <div>
+                    <p class="font-caption text-caption text-on-surface-variant mb-1 flex items-center gap-1">
+                        <svg class="ic w-4 h-4"><use href="#ic-chart"></use></svg> Categoría / actividad
+                    </p>
+                    <p class="font-body-md text-label-sm text-on-surface font-medium">@Model.categoria</p>
+                    <p class="font-caption text-caption text-on-surface-variant mt-1">@Model.actividad</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="bg-surface-container-lowest rounded-xl border border-outline-variant/40 shadow-sm p-card-padding">
+            <h3 class="font-label-sm text-label-sm font-semibold text-on-surface-variant uppercase tracking-wider mb-4 border-b border-outline-variant/40 pb-2">
+                Información del servicio
+            </h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <p class="font-caption text-caption text-on-surface-variant mb-1 flex items-center gap-1">
+                        <svg class="ic w-4 h-4"><use href="#ic-gauge"></use></svg> N.º de medidor
+                    </p>
+                    <p class="font-body-md text-label-sm @(oVacio(Model.num_serie_medidor) == null ? "text-on-surface-variant italic" : "text-on-surface font-medium")">
+                        @(oVacio(Model.num_serie_medidor) ?? "Sin medidor asignado")
+                    </p>
+                </div>
+                <div>
+                    <p class="font-caption text-caption text-on-surface-variant mb-1 flex items-center gap-1">
+                        <svg class="ic w-4 h-4"><use href="#ic-route"></use></svg> Ruta de lectura
+                    </p>
+                    <span class="inline-flex items-center px-2 py-1 bg-secondary-container text-on-secondary-container rounded-md font-label-sm text-label-sm font-bold">
+                        @Model.nombre_ruta
+                    </span>
+                </div>
+                <div>
+                    <p class="font-caption text-caption text-on-surface-variant mb-1 flex items-center gap-1">
+                        <svg class="ic w-4 h-4"><use href="#ic-pin"></use></svg> N.º de casa
+                    </p>
+                    <p class="font-body-md text-label-sm @(Model.num_casa == 0 ? "text-on-surface-variant italic" : "text-on-surface font-medium")">
+                        @(Model.num_casa > 0 ? Model.num_casa.ToString() : "No registrado")
+                    </p>
+                </div>
+                <div>
+                    <p class="font-caption text-caption text-on-surface-variant mb-1 flex items-center gap-1">
+                        <svg class="ic w-4 h-4"><use href="#ic-users"></use></svg> N.º de ocupantes
+                    </p>
+                    <p class="font-body-md text-label-sm @(Model.num_ocupantes == 0 ? "text-on-surface-variant italic" : "text-on-surface font-medium")">
+                        @(Model.num_ocupantes > 0 ? Model.num_ocupantes.ToString() : "No registrado")
+                    </p>
+                </div>
+                <div>
+                    <p class="font-caption text-caption text-on-surface-variant mb-1 flex items-center gap-1">
+                        <svg class="ic w-4 h-4"><use href="#ic-drop"></use></svg> Tipo de instalación
+                    </p>
+                    <p class="font-body-md text-label-sm @(oVacio(Model.tipo_instalacion) == null ? "text-on-surface-variant italic" : "text-on-surface font-medium")">
+                        @(oVacio(Model.tipo_instalacion) ?? "No registrado")
+                    </p>
+                </div>
+                <div>
+                    <p class="font-caption text-caption text-on-surface-variant mb-1 flex items-center gap-1">
+                        <svg class="ic w-4 h-4"><use href="#ic-settings"></use></svg> Dimensión
+                    </p>
+                    <p class="font-body-md text-label-sm @(oVacio(Model.dim_instalacion) == null ? "text-on-surface-variant italic" : "text-on-surface font-medium")">
+                        @(oVacio(Model.dim_instalacion) ?? "No registrado")
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <section class="bg-surface-container-lowest rounded-xl border border-outline-variant/40 shadow-sm overflow-hidden">
+            <h3 class="font-label-sm text-label-sm font-semibold text-on-surface-variant uppercase tracking-wider px-card-padding pt-card-padding pb-2">
+                Cuenta
+            </h3>
+            <div class="flex items-start gap-3 px-card-padding pb-4 text-on-surface-variant">
+                <svg class="ic w-5 h-5 shrink-0 mt-0.5 text-primary"><use href="#ic-info"></use></svg>
+                <p class="font-caption text-caption leading-relaxed">
+                    Para corregir tus datos personales o los de la instalación, acércate a las oficinas de la
+                    cooperativa: solo el personal autorizado puede modificarlos.
+                </p>
+            </div>
+            <a href="@Url.Action("CerrarSesion", "Login")"
+               class="w-full flex items-center justify-between gap-3 p-4 border-t border-outline-variant/40 hover:bg-error-container/25 transition-colors group">
+                <span class="flex items-center gap-3">
+                    <span class="w-8 h-8 rounded-full bg-error-container/60 group-hover:bg-error-container text-error-red flex items-center justify-center transition-colors">
+                        <svg class="ic w-[18px] h-[18px]"><use href="#ic-logout"></use></svg>
+                    </span>
+                    <span class="font-label-sm text-label-sm font-bold text-error-red">Cerrar sesión</span>
+                </span>
+                <span class="text-outline"><svg class="ic w-5 h-5"><use href="#ic-chevron-right"></use></svg></span>
+            </a>
+        </section>
+
     </div>
-
-    <!-- Datos Personales -->
-    <div class="seccion-card">
-        <div class="seccion-titulo">Datos Personales</div>
-
-        <div class="dato-fila">
-            <span class="dato-label">Nombre completo</span>
-            <span class="dato-valor">@Model.nombre_cliente</span>
-        </div>
-        <div class="dato-fila">
-            <span class="dato-label">CI</span>
-            <span class="dato-valor">@Model.ci_cliente</span>
-        </div>
-        <div class="dato-fila">
-            <span class="dato-label">Socio desde</span>
-            <span class="dato-valor">@Model.fecha_registro.ToString("dd/MM/yyyy")</span>
-        </div>
-        <div class="dato-fila">
-            <span class="dato-label">Categoría</span>
-            <span class="dato-valor">@Model.categoria</span>
-        </div>
-        <div class="dato-fila">
-            <span class="dato-label">Actividad</span>
-            <span class="dato-valor">@Model.actividad</span>
-        </div>
-    </div>
-
-    <!-- Instalación -->
-    <div class="seccion-card">
-        <div class="seccion-titulo">Instalación</div>
-
-        <div class="dato-fila">
-            <span class="dato-label">N° Medidor</span>
-            <span class="dato-valor">@Model.num_serie_medidor</span>
-        </div>
-        <div class="dato-fila">
-            <span class="dato-label">Ruta</span>
-            <span class="dato-valor">@Model.nombre_ruta</span>
-        </div>
-        <div class="dato-fila">
-            <span class="dato-label">N° Casa</span>
-            <span class="dato-valor @(Model.num_casa == 0 ? "vacio" : "")">
-                @(Model.num_casa > 0 ? Model.num_casa.ToString() : "No registrado")
-            </span>
-        </div>
-        <div class="dato-fila">
-            <span class="dato-label">N° Ocupantes</span>
-            <span class="dato-valor @(Model.num_ocupantes == 0 ? "vacio" : "")">
-                @(Model.num_ocupantes > 0 ? Model.num_ocupantes.ToString() : "No registrado")
-            </span>
-        </div>
-        <div class="dato-fila">
-            <span class="dato-label">Tipo instalación</span>
-            <span class="dato-valor @(string.IsNullOrEmpty(Model.tipo_instalacion) ? "vacio" : "")">
-                @(string.IsNullOrEmpty(Model.tipo_instalacion) ? "No registrado" : Model.tipo_instalacion)
-            </span>
-        </div>
-        <div class="dato-fila">
-            <span class="dato-label">Dimensión</span>
-            <span class="dato-valor @(string.IsNullOrEmpty(Model.dim_instalacion) ? "vacio" : "")">
-                @(string.IsNullOrEmpty(Model.dim_instalacion) ? "No registrado" : Model.dim_instalacion)
-            </span>
-        </div>
-    </div>
-
 </div>

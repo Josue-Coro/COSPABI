@@ -9,9 +9,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Iniciar Sesión - COSPABI</title>
     <link href="~/Content/app.css" rel="stylesheet" />
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="@Url.Content("~/Scripts/jquery-3.7.0.min.js")"></script>
     <style>
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
@@ -99,7 +97,7 @@
                 <h2 class="text-xl font-semibold text-gray-800 mb-1">Bienvenido de vuelta</h2>
                 <p class="text-sm text-gray-400 mb-7">Ingresa tus credenciales para continuar</p>
 
-                <form id="loginForm" novalidate>
+                <form id="loginForm" method="post" novalidate>
 
                     <!-- Campo: Usuario -->
                     <div class="mb-5">

@@ -1,115 +1,401 @@
-@{
+﻿@{
     ViewBag.Title = "Mis Avisos";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<style>
-    body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f1f5f9; }
+<header class="mb-6 md:mb-8">
+    <h1 class="font-headline-lg-mobile text-headline-lg-mobile md:font-headline-lg md:text-headline-lg text-on-surface mb-1">Mis Avisos</h1>
+    <p class="font-body-md text-body-md text-on-surface-variant">Historial de tus avisos de cobranza y estado de cuenta.</p>
+</header>
 
-    .card-portal {
-        background: #fff; border-radius: 14px;
-        box-shadow: 0 1px 4px rgba(0,0,0,0.07);
-        overflow: hidden; margin-bottom: 14px;
-    }
-    .card-portal-header {
-        background: #f8fafc; padding: 12px 18px;
-        border-bottom: 1px solid #e2e8f0;
-        font-size: 12px; font-weight: 700;
-        text-transform: uppercase; letter-spacing: 0.5px; color: #64748b;
-    }
-    .resumen-grid { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
-    .resumen-item {
-        flex: 1; min-width: 140px; background: #fff; border-radius: 14px;
-        box-shadow: 0 1px 4px rgba(0,0,0,0.07); padding: 14px 16px; text-align: center;
-    }
-    .resumen-item .num { font-size: 22px; font-weight: 800; color: #1e293b; }
-    .resumen-item .lbl { font-size: 11px; color: #94a3b8; text-transform: uppercase; font-weight: 600; }
-    .resumen-item.deuda .num { color: #dc2626; }
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter-grid">
 
-    .tabla-avisos { width: 100%; font-size: 14px; }
-    .tabla-avisos th {
-        text-align: left; padding: 10px 18px; font-size: 11px;
-        text-transform: uppercase; color: #94a3b8; border-bottom: 1px solid #f1f5f9;
-    }
-    .tabla-avisos td { padding: 10px 18px; border-bottom: 1px solid #f1f5f9; color: #334155; }
-    .tabla-avisos tr:last-child td { border-bottom: none; }
-    .monto { font-weight: 700; color: #1e293b; white-space: nowrap; }
+    @* ---------------- Columna de resumen ---------------- *@
+    <div class="lg:col-span-4 flex flex-col gap-gutter-grid">
 
-    .badge-estado {
-        font-size: 11px; font-weight: 600;
-        padding: 3px 10px; border-radius: 20px; display: inline-block;
-    }
-    .badge-PAGADO   { background: #dcfce7; color: #15803d; }
-    .badge-pendiente{ background: #fffbeb; color: #d97706; }
-    .badge-vencido  { background: #fef2f2; color: #dc2626; }
-    .badge-ANULADO  { background: #f1f5f9; color: #64748b; }
-    .sin-datos { padding: 24px; text-align: center; color: #94a3b8; font-size: 14px; }
-</style>
+        <section class="bg-surface-container-lowest rounded-xl border border-outline-variant/40 p-card-padding shadow-[0_4px_6px_-1px_rgba(0,0,0,0.05)] relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-32 h-32 bg-primary-50 rounded-bl-full opacity-60 pointer-events-none"></div>
+            <div class="relative z-10">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Saldo pendiente</h2>
+                    <span id="iconoSaldo" class="text-warning-yellow">
+                        <svg class="ic w-5 h-5"><use href="#ic-warning"></use></svg>
+                    </span>
+                </div>
+                <p id="deudaTotal" class="font-headline-lg-mobile text-headline-lg-mobile font-bold text-on-surface mb-1">Bs. --</p>
+                <p id="detalleDeuda" class="font-caption text-caption text-on-surface-variant mb-6">Cargando…</p>
+                <button type="button" id="btnPagarSaldo" disabled
+                        class="w-full py-3 rounded-xl gradient-primary text-on-primary font-label-sm text-label-sm font-semibold shadow-[0_4px_12px_-2px_rgba(34,197,94,0.5)] hover:opacity-90 active:translate-y-px transition-all disabled:opacity-40 disabled:shadow-none inline-flex items-center justify-center gap-2">
+                    <svg class="ic w-[18px] h-[18px]"><use href="#ic-qr"></use></svg>
+                    Pagar el aviso más antiguo
+                </button>
+            </div>
+        </section>
 
-<div class="resumen-grid" id="resumen"></div>
+        <section class="bg-surface-container-lowest rounded-xl border border-outline-variant/40 p-card-padding shadow-[0_4px_6px_-1px_rgba(0,0,0,0.05)]">
+            <h2 class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider mb-4">Resumen</h2>
+            <div class="flex flex-col gap-3">
+                <div class="flex justify-between items-center">
+                    <span class="font-body-md text-label-sm text-on-surface-variant">Avisos pagados</span>
+                    <span id="numPagados" class="font-label-sm text-label-sm font-bold text-primary-700">--</span>
+                </div>
+                <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                    <div id="barraPagados" class="bg-primary-container h-2 rounded-full transition-all" style="width:0%"></div>
+                </div>
+                <div class="flex justify-between items-center pt-1">
+                    <span class="font-body-md text-label-sm text-on-surface-variant">Avisos pendientes</span>
+                    <span id="numPendientes" class="font-label-sm text-label-sm font-bold text-warning-yellow">--</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="font-body-md text-label-sm text-on-surface-variant">Avisos vencidos</span>
+                    <span id="numVencidos" class="font-label-sm text-label-sm font-bold text-error-red">--</span>
+                </div>
+            </div>
+        </section>
 
-<div class="card-portal">
-    <div class="card-portal-header">Historial de avisos de cobranza</div>
-    <div style="overflow-x:auto">
-        <table class="tabla-avisos">
-            <thead>
-                <tr>
-                    <th>Período</th>
-                    <th>Emisión</th>
-                    <th>Vence</th>
-                    <th style="text-align:right">Consumo</th>
-                    <th>Estado</th>
-                    <th style="text-align:right">Total</th>
-                    <th style="text-align:right">Deuda</th>
-                </tr>
-            </thead>
-            <tbody id="tbodyAvisos">
-                <tr><td colspan="7" class="sin-datos">Cargando...</td></tr>
-            </tbody>
-        </table>
+    </div>
+
+    @* ---------------- Lista de avisos ---------------- *@
+    <div class="lg:col-span-8">
+        <section class="bg-surface-container-lowest rounded-xl border border-outline-variant/40 shadow-[0_4px_6px_-1px_rgba(0,0,0,0.05)] overflow-hidden">
+            <div class="p-4 sm:p-card-padding border-b border-outline-variant/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-surface-container-low/40">
+                <h2 class="font-headline-md text-headline-md-mobile text-on-surface">Historial de avisos</h2>
+                <div class="relative">
+                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none">
+                        <svg class="ic w-[18px] h-[18px]"><use href="#ic-search"></use></svg>
+                    </span>
+                    <input type="text" id="buscarPeriodo" placeholder="Buscar período…" autocomplete="off"
+                           class="pl-10 pr-4 py-2 bg-slate-100 border border-outline-variant/60 rounded-xl font-label-sm text-label-sm text-on-surface placeholder:text-on-surface-variant/70 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 transition-all w-full sm:w-56">
+                </div>
+            </div>
+
+            <div id="listaAvisos" class="flex flex-col">
+                <p class="p-6 text-center font-body-md text-label-sm text-on-surface-variant">Cargando…</p>
+            </div>
+        </section>
+    </div>
+
+</div>
+
+@* ============================================================
+   Modal de pago con QR. Tres estados en un mismo dialogo:
+   QR generado, pago confirmado y pago rechazado/expirado, para
+   no inventar rutas nuevas — /Portal/PagoExitoso tiene que
+   seguir siendo el callback de texto plano que Libelula llama.
+   ============================================================ *@
+<div id="modalQr" class="hidden fixed inset-0 z-[60] items-center justify-center p-4 bg-inverse-surface/50 backdrop-blur-sm">
+    <div class="bg-surface-container-lowest rounded-xl w-full max-w-sm shadow-2xl overflow-hidden animate-fade-in-up">
+
+        <div class="flex items-center justify-between px-5 py-3 border-b border-outline-variant/40">
+            <h3 id="qrTitulo" class="font-label-sm text-label-sm font-bold text-on-surface">Pagar con QR</h3>
+            <button type="button" id="btnCerrarQr" aria-label="Cerrar"
+                    class="w-8 h-8 flex items-center justify-center rounded-full text-on-surface-variant hover:bg-surface-container transition-colors">
+                <svg class="ic w-5 h-5"><use href="#ic-close"></use></svg>
+            </button>
+        </div>
+
+        @* --- Estado 1: QR --- *@
+        <div id="qrVistaQr" class="p-card-padding flex flex-col items-center text-center">
+            <p id="qrPeriodo" class="font-caption text-caption text-on-surface-variant mb-1"></p>
+            <p id="qrMonto" class="font-headline-md text-headline-md text-primary-700 font-bold mb-4"></p>
+
+            <div class="w-52 h-52 rounded-xl border border-outline-variant bg-white p-3 flex items-center justify-center mb-4">
+                <img id="qrImagen" src="" alt="Código QR de pago" class="hidden w-full h-full object-contain">
+                <span id="qrCargando" class="text-on-surface-variant">
+                    <svg class="ic w-8 h-8 animate-spin-slow"><use href="#ic-refresh"></use></svg>
+                </span>
+            </div>
+
+            <p id="qrEstado" class="font-label-sm text-label-sm font-semibold text-warning-yellow mb-4">Generando el código QR…</p>
+
+            <button type="button" id="btnVerificarQr"
+                    class="w-full py-3 rounded-xl border border-outline text-on-surface font-label-sm text-label-sm font-semibold hover:bg-surface-container-low active:translate-y-px transition-all inline-flex items-center justify-center gap-2">
+                <svg class="ic w-[18px] h-[18px]"><use href="#ic-check-circle"></use></svg>
+                Ya pagué / Verificar
+            </button>
+
+            <p class="font-caption text-caption leading-relaxed text-on-surface-variant mt-4">
+                Escanea el QR con la app de tu banco. El código vence hoy a las 23:59.
+                Si ya pagaste y no se actualiza solo, toca «Ya pagué».
+            </p>
+        </div>
+
+        @* --- Estado 2: pago confirmado --- *@
+        <div id="qrVistaExito" class="hidden p-card-padding flex-col items-center text-center">
+            <div class="w-20 h-20 rounded-full gradient-primary text-on-primary flex items-center justify-center mb-5 shadow-lg shadow-primary-container/30 animate-scale-in">
+                <svg class="ic w-10 h-10" style="stroke-width:2.5"><use href="#ic-check"></use></svg>
+            </div>
+            <h4 class="font-headline-md text-headline-md-mobile text-on-surface mb-1 animate-fade-in-up">¡Pago confirmado!</h4>
+            <p id="exitoMonto" class="font-headline-md text-headline-md text-primary-700 font-bold mb-4 animate-fade-in-up delay-100"></p>
+            <p id="exitoDetalle" class="font-body-md text-label-sm text-on-surface-variant mb-6 animate-fade-in-up delay-200"></p>
+            <button type="button" class="btn-cerrar-modal w-full py-3 rounded-xl gradient-primary text-on-primary font-label-sm text-label-sm font-semibold hover:opacity-90 active:translate-y-px transition-all">
+                Volver a mis avisos
+            </button>
+        </div>
+
+        @* --- Estado 3: pago rechazado / QR expirado --- *@
+        <div id="qrVistaError" class="hidden p-card-padding flex-col items-center text-center">
+            <div class="w-20 h-20 rounded-full bg-error-container flex items-center justify-center text-error mb-5 animate-scale-in">
+                <svg class="ic w-10 h-10"><use href="#ic-error"></use></svg>
+            </div>
+            <h4 class="font-headline-md text-headline-md-mobile text-on-surface mb-2">No se pudo completar el pago</h4>
+            <p id="errorMensaje" class="font-body-md text-label-sm text-on-surface-variant mb-6"></p>
+            <div class="flex flex-col w-full gap-stack-sm">
+                <button type="button" id="btnReintentar"
+                        class="w-full py-3 rounded-xl gradient-primary text-on-primary font-label-sm text-label-sm font-semibold hover:opacity-90 active:translate-y-px transition-all inline-flex items-center justify-center gap-2">
+                    <svg class="ic w-[18px] h-[18px]"><use href="#ic-refresh"></use></svg>
+                    Reintentar
+                </button>
+                <button type="button" class="btn-cerrar-modal w-full py-3 rounded-xl border border-outline-variant text-on-surface font-label-sm text-label-sm font-semibold hover:bg-surface-container-low transition-colors">
+                    Cerrar
+                </button>
+            </div>
+        </div>
+
     </div>
 </div>
 
 @section scripts {
-<script>
-    function fmt(n) { return (n == null ? 0 : n).toLocaleString('es-BO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
-    function parseNet(v) { if (!v) return null; var m = /\/Date\((\d+)\)\//.exec(v); var d = m ? new Date(parseInt(m[1])) : new Date(v); return isNaN(d) ? null : d; }
-    function ffecha(v) { var d = parseNet(v); return d ? d.toLocaleDateString('es-BO') : '-'; }
+    <script>
+        var avisosCache = [];
 
-    $(function () {
-        $.get('@Url.Action("Resumen", "Portal")', function (res) {
-            if (!res.exito) return;
-            var r = res.resumen;
-            $('#resumen').html(
-                '<div class="resumen-item deuda"><div class="num">Bs. ' + fmt(r.deuda_total) + '</div><div class="lbl">Deuda total</div></div>' +
-                '<div class="resumen-item"><div class="num">' + r.avisos_pendientes + '</div><div class="lbl">Avisos pendientes</div></div>' +
-                '<div class="resumen-item"><div class="num">' + r.avisos_vencidos + '</div><div class="lbl">Vencidos</div></div>'
-            );
+        $(function () {
+            cargarPortal();
+
+            $('#buscarPeriodo').on('input', function () { pintarAvisos($(this).val()); });
+
+            // Los datos del aviso viajan en atributos data-*, no en un onclick
+            // inline: asi ningun texto que venga de la BD termina dentro de codigo JS.
+            $(document).on('click', '.btn-pagar', function () {
+                var b = $(this);
+                abrirQr(b.data('aviso'), b.data('periodo'), b.data('total'));
+            });
+
+            $('#btnPagarSaldo').on('click', function () {
+                var pendientes = avisosCache.filter(esPagable);
+                if (!pendientes.length) return;
+                var a = pendientes[pendientes.length - 1]; // el mas antiguo
+                abrirQr(a.id_aviso, a.nombre_periodo, a.total_aviso);
+            });
+
+            $('#btnVerificarQr').on('click', verificarQr);
+            $('#btnReintentar').on('click', function () {
+                if (qrAviso) abrirQr(qrAviso.id, qrAviso.periodo, qrAviso.total);
+            });
+            $('#btnCerrarQr, .btn-cerrar-modal').on('click', cerrarQr);
+            $('#modalQr').on('click', function (e) { if (e.target === this) cerrarQr(); });
         });
 
-        $.get('@Url.Action("ListarAvisos", "Portal")', function (res) {
-            var tb = $('#tbodyAvisos'); tb.empty();
-            if (!res.exito || !res.avisos.length) {
-                tb.html('<tr><td colspan="7" class="sin-datos">No tienes avisos registrados.</td></tr>');
+        function esPagable(a) { return a.estado !== 'PAGADO' && a.estado !== 'ANULADO'; }
+
+        function cargarPortal() {
+            $.get('@Url.Action("Resumen", "Portal")', function (res) {
+                if (!res.exito) return;
+                var r = res.resumen;
+                $('#deudaTotal').text(Portal.bs(r.deuda_total));
+                $('#detalleDeuda').text(
+                    r.avisos_pendientes === 0
+                        ? 'No tienes avisos pendientes de pago.'
+                        : r.avisos_pendientes + (r.avisos_pendientes === 1 ? ' aviso pendiente de pago' : ' avisos pendientes de pago'));
+                $('#numPendientes').text(r.avisos_pendientes);
+                $('#numVencidos').text(r.avisos_vencidos);
+                $('#btnPagarSaldo').prop('disabled', r.avisos_pendientes === 0);
+                if (r.avisos_pendientes === 0) {
+                    $('#iconoSaldo').removeClass('text-warning-yellow').addClass('text-primary')
+                                    .html('<svg class="ic w-5 h-5"><use href="#ic-check-circle"></use></svg>');
+                }
+            });
+
+            $.get('@Url.Action("ListarAvisos", "Portal")', function (res) {
+                avisosCache = (res.exito && res.avisos) ? res.avisos : [];
+
+                // El SP de resumen no cuenta los pagados; se cuentan aqui sobre
+                // el historial que ya vino, sin pedir nada mas al servidor.
+                var pagados = avisosCache.filter(function (a) { return a.estado === 'PAGADO'; }).length;
+                var considerados = avisosCache.filter(function (a) { return a.estado !== 'ANULADO'; }).length;
+                $('#numPagados').text(pagados);
+                $('#barraPagados').css('width', (considerados ? Math.round(pagados * 100 / considerados) : 0) + '%');
+
+                pintarAvisos($('#buscarPeriodo').val());
+            });
+        }
+
+        function pintarAvisos(filtro) {
+            var cont = $('#listaAvisos');
+            cont.empty();
+
+            var texto = (filtro || '').trim().toLowerCase();
+            var lista = texto
+                ? avisosCache.filter(function (a) { return String(a.nombre_periodo).toLowerCase().indexOf(texto) >= 0; })
+                : avisosCache;
+
+            if (!lista.length) {
+                cont.html('<p class="p-6 text-center font-body-md text-label-sm text-on-surface-variant">' +
+                          (avisosCache.length ? 'Ningún período coincide con la búsqueda.' : 'No tienes avisos registrados.') + '</p>');
                 return;
             }
-            $.each(res.avisos, function (_, a) {
-                var badge;
-                if (a.estado === 'PAGADO')       badge = '<span class="badge-estado badge-PAGADO">PAGADO</span>';
-                else if (a.estado === 'ANULADO') badge = '<span class="badge-estado badge-ANULADO">ANULADO</span>';
-                else if (a.vencido)              badge = '<span class="badge-estado badge-vencido">VENCIDO</span>';
-                else                             badge = '<span class="badge-estado badge-pendiente">PENDIENTE</span>';
-                tb.append('<tr>' +
-                    '<td>' + a.nombre_periodo + '</td>' +
-                    '<td>' + ffecha(a.fecha_emision) + '</td>' +
-                    '<td>' + ffecha(a.fecha_vencimiento) + '</td>' +
-                    '<td style="text-align:right">' + (a.consumo_m3 != null ? fmt(a.consumo_m3) + ' m&sup3;' : '-') + '</td>' +
-                    '<td>' + badge + '</td>' +
-                    '<td style="text-align:right" class="monto">Bs. ' + fmt(a.total_aviso) + '</td>' +
-                    '<td style="text-align:right" class="monto">Bs. ' + fmt(a.deuda_actual) + '</td>' +
-                    '</tr>');
+
+            $.each(lista, function (_, a) {
+                var pagado  = a.estado === 'PAGADO';
+                var anulado = a.estado === 'ANULADO';
+                var venc    = !pagado && !anulado && a.vencido;
+
+                var badge, icono, colorIcono, subtitulo;
+                if (pagado) {
+                    badge = '<span class="shrink-0 text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-primary-50 text-primary-700">Pagado</span>';
+                    icono = 'ic-check-circle'; colorIcono = 'bg-primary-50 text-primary-700';
+                    subtitulo = 'Emitido el ' + Portal.ffecha(a.fecha_emision);
+                } else if (anulado) {
+                    badge = '<span class="shrink-0 text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-slate-100 text-on-surface-variant">Anulado</span>';
+                    icono = 'ic-close'; colorIcono = 'bg-slate-100 text-on-surface-variant';
+                    subtitulo = 'Emitido el ' + Portal.ffecha(a.fecha_emision);
+                } else if (venc) {
+                    badge = '<span class="shrink-0 text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-error-container text-on-error-container">Vencido</span>';
+                    icono = 'ic-warning'; colorIcono = 'bg-error-container/60 text-on-error-container';
+                    subtitulo = 'Venció el ' + Portal.ffecha(a.fecha_vencimiento);
+                } else {
+                    badge = '<span class="shrink-0 text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-warning-yellow/15 text-on-surface">Pendiente</span>';
+                    icono = 'ic-receipt'; colorIcono = 'bg-warning-yellow/10 text-warning-yellow';
+                    subtitulo = 'Vence el ' + Portal.ffecha(a.fecha_vencimiento);
+                }
+
+                var accion = esPagable(a)
+                    ? '<button type="button" class="btn-pagar px-4 py-2 rounded-xl border border-primary-container text-primary-700 font-label-sm text-label-sm font-semibold hover:bg-primary-50 transition-colors whitespace-nowrap inline-flex items-center gap-1.5" ' +
+                          'data-aviso="' + a.id_aviso + '" ' +
+                          'data-periodo="' + Portal.esc(a.nombre_periodo) + '" ' +
+                          'data-total="' + a.deuda_actual + '">' +
+                          '<svg class="ic w-4 h-4"><use href="#ic-qr"></use></svg>Pagar</button>'
+                    : '';
+
+                cont.append(
+                    '<article class="p-4 sm:p-card-padding border-b border-outline-variant/30 last:border-0 hover:bg-surface-container-low/40 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4' +
+                        (venc ? ' border-l-4 border-l-error-red' : (esPagable(a) ? ' border-l-4 border-l-warning-yellow' : '')) + '">' +
+                        '<div class="flex items-center gap-4 min-w-0">' +
+                            '<span class="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ' + colorIcono + '">' +
+                                '<svg class="ic w-6 h-6"><use href="#' + icono + '"></use></svg>' +
+                            '</span>' +
+                            '<div class="min-w-0">' +
+                                '<div class="flex items-center gap-2 mb-0.5">' +
+                                    '<h3 class="font-label-sm text-label-sm font-bold text-on-surface truncate">Período ' + Portal.esc(a.nombre_periodo) + '</h3>' +
+                                    badge +
+                                '</div>' +
+                                '<p class="font-caption text-caption text-on-surface-variant">' + subtitulo + '</p>' +
+                            '</div>' +
+                        '</div>' +
+                        '<div class="flex items-center justify-between sm:justify-end gap-5 w-full sm:w-auto">' +
+                            '<div class="text-right">' +
+                                '<p class="font-label-sm text-label-sm font-bold text-on-surface whitespace-nowrap">' + Portal.bs(a.total_aviso) + '</p>' +
+                                '<p class="font-caption text-caption text-on-surface-variant">' +
+                                    (a.consumo_m3 != null ? 'Consumo: ' + Portal.fmt(a.consumo_m3) + ' m³' : 'Sin lectura') +
+                                    (esPagable(a) && a.deuda_actual !== a.total_aviso ? ' · debe ' + Portal.bs(a.deuda_actual) : '') +
+                                '</p>' +
+                            '</div>' +
+                            accion +
+                        '</div>' +
+                    '</article>');
             });
-        });
-    });
-</script>
+        }
+
+        /* ---------------- Pago con QR (Libélula) ----------------
+           El servidor solo acepta avisos del socio de la sesión: aquí
+           únicamente se manda el id del aviso y se consulta el estado. */
+        var qrIdPago = 0, qrTimer = null, qrAviso = null;
+
+        function mostrarVista(cual) {
+            $('#qrVistaQr, #qrVistaExito, #qrVistaError').addClass('hidden').removeClass('flex');
+            $('#qrVista' + cual).removeClass('hidden').addClass('flex');
+            $('#qrTitulo').text(cual === 'Qr' ? 'Pagar con QR' : (cual === 'Exito' ? 'Pago realizado' : 'Pago no completado'));
+        }
+
+        function abrirQr(idAviso, periodo, total) {
+            qrAviso = { id: idAviso, periodo: periodo, total: total };
+            detenerPolling();
+
+            $('.btn-pagar, #btnPagarSaldo').prop('disabled', true);
+            $('#qrPeriodo').text('Aviso del período ' + periodo);
+            $('#qrMonto').text(Portal.bs(total));
+            $('#qrImagen').addClass('hidden').attr('src', '');
+            $('#qrCargando').removeClass('hidden');
+            $('#btnVerificarQr').prop('disabled', true);
+            estadoQr('warning', 'Generando el código QR…');
+            mostrarVista('Qr');
+            $('#modalQr').removeClass('hidden').addClass('flex');
+
+            $.post('@Url.Action("GenerarQr", "Portal")', { idAviso: idAviso }, function (res) {
+                $('.btn-pagar, #btnPagarSaldo').prop('disabled', false);
+                if (!res.exito || !res.qr) {
+                    mostrarError(res.mensaje || 'No se pudo generar el código QR.');
+                    return;
+                }
+                qrIdPago = res.qr.id_pago;
+                $('#qrCargando').addClass('hidden');
+                if (res.qr.qr_url) { $('#qrImagen').attr('src', res.qr.qr_url).removeClass('hidden'); }
+                $('#btnVerificarQr').prop('disabled', false);
+                estadoQr('warning', 'Esperando el pago…');
+                qrTimer = setInterval(consultarEstadoQr, 5000);
+            }).fail(function () {
+                $('.btn-pagar, #btnPagarSaldo').prop('disabled', false);
+                mostrarError('No se pudo contactar al servidor. Revisa tu conexión.');
+            });
+        }
+
+        function estadoQr(tono, texto) {
+            var color = tono === 'ok' ? 'text-primary-700' : (tono === 'error' ? 'text-error-red' : 'text-warning-yellow');
+            $('#qrEstado').attr('class', 'font-label-sm text-label-sm font-semibold mb-4 ' + color).text(texto);
+        }
+
+        function consultarEstadoQr() {
+            if (!qrIdPago) return;
+            $.get('@Url.Action("EstadoQr", "Portal")', { idPago: qrIdPago }, function (res) {
+                if (!res.exito) return;
+                if (res.estado === 'APROBADO') {
+                    pagoConfirmado();
+                } else if (res.estado === 'EXPIRADO' || res.estado === 'RECHAZADO') {
+                    detenerPolling();
+                    mostrarError('El código QR quedó ' + res.estado.toLowerCase() + '. Puedes generar uno nuevo.');
+                }
+            });
+        }
+
+        function verificarQr() {
+            if (!qrIdPago) return;
+            estadoQr('warning', 'Consultando la pasarela…');
+            $.post('@Url.Action("VerificarQr", "Portal")', { idPago: qrIdPago }, function (res) {
+                if (res.estado === 'APROBADO') { pagoConfirmado(); return; }
+                if (res.estado === 'EXPIRADO' || res.estado === 'RECHAZADO') {
+                    detenerPolling();
+                    mostrarError(res.mensaje || 'El código QR ya no es válido.');
+                    return;
+                }
+                estadoQr(res.exito ? 'warning' : 'error', res.mensaje || 'Todavía no se registra el pago.');
+            }).fail(function () {
+                estadoQr('error', 'No se pudo contactar al servidor.');
+            });
+        }
+
+        function pagoConfirmado() {
+            detenerPolling();
+            $('#exitoMonto').text(Portal.bs(qrAviso ? qrAviso.total : 0));
+            $('#exitoDetalle').text('Aviso del período ' + (qrAviso ? qrAviso.periodo : '') +
+                                    ' · ' + new Date().toLocaleDateString('es-BO'));
+            mostrarVista('Exito');
+        }
+
+        function mostrarError(mensaje) {
+            detenerPolling();
+            $('#errorMensaje').text(mensaje);
+            mostrarVista('Error');
+        }
+
+        function detenerPolling() {
+            if (qrTimer) { clearInterval(qrTimer); qrTimer = null; }
+            qrIdPago = 0;
+        }
+
+        function cerrarQr() {
+            detenerPolling();
+            $('#modalQr').addClass('hidden').removeClass('flex');
+            cargarPortal();
+        }
+    </script>
 }

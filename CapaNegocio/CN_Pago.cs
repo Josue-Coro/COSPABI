@@ -41,16 +41,19 @@ namespace CapaNegocio
         // Registra la deuda en Libelula y guarda el pago PENDIENTE con su QR.
         // Si el aviso ya tiene un QR pendiente vigente, lo reutiliza (no duplica
         // deudas en la pasarela).
+        // idSocio: lo manda el portal del socio para que el aviso solo pueda ser
+        // uno suyo. El cajero no lo manda y sigue pudiendo cobrar cualquier aviso.
         public bool GenerarPagoQr(int idAviso, int? idCaja, string cajero, int idUsuario,
                                   CN_Libelula libelula, string callbackUrl,
-                                  out CM_PagoQrPendiente qr, out string Mensaje)
+                                  out CM_PagoQrPendiente qr, out string Mensaje,
+                                  int? idSocio = null)
         {
             qr = null;
             Mensaje = string.Empty;
 
             if (idAviso <= 0) { Mensaje = "Debe seleccionar un aviso."; return false; }
 
-            var datos = cdPago.ObtenerDatosDeudaQr(idAviso);
+            var datos = cdPago.ObtenerDatosDeudaQr(idAviso, idSocio);
             if (datos == null)               { Mensaje = "Aviso no encontrado.";      return false; }
             if (datos.estado == "PAGADO")    { Mensaje = "El aviso ya esta pagado.";  return false; }
             if (datos.estado == "ANULADO")   { Mensaje = "El aviso esta anulado.";    return false; }
@@ -173,10 +176,36 @@ namespace CapaNegocio
                                           out _, out Mensaje);
         }
 
-        // Estado actual de un pago (polling de la pantalla de cobro)
-        public string ObtenerEstadoPago(int idPago)
+        // Estado actual de un pago (polling de la pantalla de cobro).
+        // idSocio limita la consulta a los pagos de ese socio (portal).
+        public string ObtenerEstadoPago(int idPago, int? idSocio = null)
         {
-            return cdPago.ObtenerEstadoPago(idPago);
+            return cdPago.ObtenerEstadoPago(idPago, idSocio);
+        }
+
+        // Verificacion puntual pedida por el socio desde el portal ("ya pague").
+        // A diferencia de ConciliarPagosQr, que recorre TODOS los pendientes del
+        // sistema, esto toca un unico pago y solo si es del socio de la sesion.
+        // La comprobacion contra la pasarela es la misma de siempre.
+        public bool VerificarPagoQrSocio(int idPago, int idSocio, CN_Libelula libelula,
+                                         out string estado, out string Mensaje)
+        {
+            estado  = null;
+            Mensaje = string.Empty;
+
+            var pago = cdPago.ObtenerEstadoPagoQr(idPago, idSocio);
+            if (pago == null) { Mensaje = "Pago no encontrado."; return false; }
+
+            estado = pago.estado_pago;
+            if (pago.estado_pago == "APROBADO") { Mensaje = "El pago ya estaba confirmado."; return true; }
+            if (pago.estado_pago != "PENDIENTE")
+            { Mensaje = "El QR quedo " + pago.estado_pago.ToLower() + "."; return false; }
+            if (string.IsNullOrWhiteSpace(pago.id_transaccion))
+            { Mensaje = "El pago no tiene una transaccion asociada."; return false; }
+
+            bool ok = ConfirmarPagoQr(pago.id_transaccion, libelula, out Mensaje);
+            estado = cdPago.ObtenerEstadoPago(idPago, idSocio);
+            return ok;
         }
 
         // Cruza los pagos QR PENDIENTES contra Libelula y confirma los ya pagados.

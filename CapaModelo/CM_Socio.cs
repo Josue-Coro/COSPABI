@@ -8,25 +8,6 @@ namespace CapaModelo
 {
     public  class CM_Socio
     {
-        /*CREATE TABLE socio 
-            (
-             id_socio INTEGER NOT NULL IDENTITY(1,1), 
-             nombre_socio VARCHAR (255) NOT NULL , 
-             cliente_id_cliente INTEGER NOT NULL , 
-             rol_socio_id_rol_socio INTEGER NOT NULL , 
-             ubicacion INTEGER , 
-             medidor_id_medidor INTEGER NOT NULL , 
-             num_casa INTEGER , 
-             num_ocupantes INTEGER , 
-             tipo_instalacion VARCHAR (255) , 
-             dim_instalacion VARCHAR (255) , 
-             actividad VARCHAR (255) NOT NULL , 
-             categoria VARCHAR (255) NOT NULL , 
-             fecha_registro DATE NOT NULL , 
-             ruta_id_ruta INTEGER NOT NULL , 
-             codigo_fijo INTEGER NOT NULL 
-            )
-        GO*/
         public int id_socio { get; set; }
         public string nombre_socio { get; set; }
 
@@ -35,6 +16,9 @@ namespace CapaModelo
         public CM_Cliente cliente { get; set; }
         public string nombre_cliente { get; set; }
         public string ci_cliente { get; set; }
+        // Email de la persona: sin el no se le puede crear cuenta de portal
+        // (la pasarela lo exige para el pago con QR).
+        public string email_cliente { get; set; }
 
         // FK RolSocio
         public int rol_socio_id_rol_socio { get; set; }

@@ -42,6 +42,7 @@ namespace CapaDato
                             cliente_id_cliente = Convert.ToInt32(dr["cliente_id_cliente"]),
                             nombre_cliente = dr["nombre_cliente"].ToString(),
                             ci_cliente = dr["ci_cliente"].ToString(),
+                            email_cliente = dr["email_cliente"] == DBNull.Value ? null : dr["email_cliente"].ToString(),
                             rol_socio_id_rol_socio = Convert.ToInt32(dr["rol_socio_id_rol_socio"]),
                             NombreRolSocio = dr["nombre_rol_socio"].ToString(),
                             medidor_id_medidor = dr["medidor_id_medidor"] == DBNull.Value ? (int?)null : Convert.ToInt32(dr["medidor_id_medidor"]),

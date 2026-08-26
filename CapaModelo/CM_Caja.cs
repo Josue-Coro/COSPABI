@@ -78,6 +78,33 @@ namespace CapaModelo
         public decimal                    TotalRecaudado { get; set; }
     }
 
+    // Reporte de pagos del sistema: cobros aprobados sin caja (portal del socio)
+    public class CM_ReportePagoSistemaFila
+    {
+        public int      id_pago            { get; set; }
+        public DateTime fecha_pago         { get; set; }
+        public int?     aviso_id_aviso     { get; set; }
+        public string   tipo_cobro         { get; set; }
+        public string   nombre_socio       { get; set; }
+        public int?     codigo_fijo        { get; set; }
+        public string   nombre_periodo     { get; set; }
+        public string   nombre_metodo      { get; set; }
+        public string   id_transaccion     { get; set; }
+        public string   codigo_recaudacion { get; set; }
+        public string   forma_pago         { get; set; }
+        public decimal  monto_pagado       { get; set; }
+    }
+
+    public class CM_ReportePagosSistema
+    {
+        public List<CM_ReportePagoSistemaFila> Pagos          { get; set; }
+        public List<CM_ReporteCajaMetodo>      TotalesMetodo  { get; set; }
+        public int                             CantidadPagos  { get; set; }
+        public decimal                         TotalRecaudado { get; set; }
+        // QR generados en el periodo que nadie llego a pagar (PENDIENTE/EXPIRADO)
+        public int                             QrSinCobrar    { get; set; }
+    }
+
     public class CM_CajeroFiltro
     {
         public int    id_usuario_admin { get; set; }

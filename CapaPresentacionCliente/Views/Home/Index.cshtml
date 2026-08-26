@@ -2,163 +2,205 @@
 @{
     ViewBag.Title = "Inicio";
     Layout = "~/Views/Shared/_Layout.cshtml";
+
     var nombre = Session["NombreSocio"] as string ?? "Socio";
-    var hoy    = DateTime.Today;
+    var hoy = DateTime.Today;
+    var vencido = Model != null && Model.fecha_vencimiento < hoy && Model.estado != "PAGADO";
+    var pagado = Model != null && Model.estado == "PAGADO";
 }
 
-<style>
-    body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f1f5f9; }
+<header class="mb-6 md:mb-8">
+    <p class="font-body-md text-body-md text-on-surface-variant mb-1">Bienvenido de nuevo,</p>
+    <h1 class="font-headline-lg-mobile text-headline-lg-mobile md:font-headline-lg md:text-headline-lg text-on-surface">@nombre</h1>
+    <p class="font-caption text-caption text-on-surface-variant mt-2">
+        @hoy.ToString("dddd, dd 'de' MMMM 'de' yyyy", new System.Globalization.CultureInfo("es-BO"))
+    </p>
+</header>
 
-    .home-header {
-        background: #1c2434;
-        border-radius: 14px;
-        padding: 22px 20px;
-        color: white;
-        margin-bottom: 16px;
-    }
-    .home-header .saludo { font-size: 13px; color: rgba(255,255,255,0.55); margin-bottom: 2px; }
-    .home-header .nombre { font-size: 20px; font-weight: 700; }
-    .home-header .fecha  { font-size: 12px; color: rgba(255,255,255,0.4); margin-top: 3px; }
+<div class="grid grid-cols-1 md:grid-cols-12 gap-gutter-grid">
 
-    .aviso-card {
-        background: #fff;
-        border-radius: 14px;
-        box-shadow: 0 1px 4px rgba(0,0,0,0.07);
-        overflow: hidden;
-        margin-bottom: 14px;
-    }
-    .aviso-card-header {
-        background: #f8fafc;
-        padding: 12px 18px;
-        border-bottom: 1px solid #e2e8f0;
-        display: flex; align-items: center; justify-content: space-between;
-    }
-    .aviso-card-header .titulo {
-        font-size: 12px; font-weight: 700;
-        text-transform: uppercase; letter-spacing: 0.5px; color: #64748b;
-    }
-    .aviso-card-body { padding: 18px; }
-    .monto-principal { font-size: 30px; font-weight: 800; color: #1e293b; line-height: 1; margin-bottom: 3px; }
-    .monto-label     { font-size: 12px; color: #94a3b8; margin-bottom: 14px; }
-    .aviso-dato-fila {
-        display: flex; justify-content: space-between;
-        padding: 8px 0; border-bottom: 1px solid #f1f5f9; font-size: 14px;
-    }
-    .aviso-dato-fila:last-child { border-bottom: none; }
-    .aviso-dato-fila .lbl { color: #94a3b8; }
-    .aviso-dato-fila .val { font-weight: 600; color: #1e293b; }
+    @* ---------------- Saldo actual (aviso mas reciente) ---------------- *@
+    <section class="bento-card bg-surface-container-lowest rounded-xl border border-outline-variant/40 p-card-padding md:col-span-7 lg:col-span-8 flex flex-col relative overflow-hidden">
+        <div class="absolute -right-20 -top-20 w-64 h-64 bg-primary-50 rounded-full blur-3xl opacity-60 pointer-events-none"></div>
 
-    .badge-estado {
-        font-size: 11px; font-weight: 600;
-        padding: 3px 10px; border-radius: 20px; display: inline-block;
-    }
-    .badge-GENERADO  { background: #dcfce7; color: #15803d; }
-    .badge-LECTURADO { background: #fffbeb; color: #d97706; }
-    .badge-IMPRESO   { background: #f0fdf4; color: #16a34a; }
-    .badge-PAGADO    { background: #dcfce7; color: #15803d; }
-    .badge-vencido   { background: #fef2f2; color: #dc2626; }
-    .badge-vigente   { background: #dcfce7; color: #15803d; }
-
-    .empty-state { text-align: center; padding: 36px 20px; color: #94a3b8; }
-    .empty-state svg { margin-bottom: 10px; opacity: 0.35; }
-    .empty-state p   { font-size: 14px; margin: 0; }
-
-    .acceso-card {
-        background: #fff;
-        border-radius: 14px;
-        box-shadow: 0 1px 4px rgba(0,0,0,0.07);
-        padding: 16px 18px;
-        display: flex; align-items: center; gap: 14px;
-        text-decoration: none; color: inherit;
-        transition: box-shadow 0.15s;
-        margin-bottom: 10px;
-    }
-    .acceso-card:hover { box-shadow: 0 4px 14px rgba(0,0,0,0.10); text-decoration: none; color: inherit; }
-    .acceso-icon {
-        width: 44px; height: 44px; border-radius: 12px;
-        background: #dcfce7;
-        display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-    }
-    .acceso-titulo { font-size: 15px; font-weight: 700; color: #1e293b; margin: 0; }
-    .acceso-sub    { font-size: 13px; color: #94a3b8; margin: 0; }
-</style>
-
-<div style="max-width:520px; margin:0 auto; padding:16px;">
-
-    <!-- Encabezado saludo -->
-    <div class="home-header">
-        <div class="saludo">Bienvenido de vuelta</div>
-        <div class="nombre">@nombre</div>
-        <div class="fecha">@hoy.ToString("dddd, dd 'de' MMMM 'de' yyyy", new System.Globalization.CultureInfo("es-ES"))</div>
-    </div>
-
-    <!-- Último aviso -->
-    <div class="aviso-card">
-        <div class="aviso-card-header">
-            <span class="titulo">Último Aviso</span>
-            @if (Model != null)
-            {
-                var badgeClass = "badge-" + Model.estado;
-                <span class="badge-estado @badgeClass">@Model.nombre_estado</span>
-            }
-        </div>
-        <div class="aviso-card-body">
-            @if (Model != null)
-            {
-                var vencido = Model.fecha_vencimiento < hoy && Model.estado != "PAGADO";
-                <div class="monto-principal">Bs. @Model.deuda_actual.ToString("N2")</div>
-                <div class="monto-label">Deuda actual</div>
-
-                <div class="aviso-dato-fila">
-                    <span class="lbl">Periodo</span>
-                    <span class="val">@Model.nombre_periodo</span>
-                </div>
-                <div class="aviso-dato-fila">
-                    <span class="lbl">Total aviso</span>
-                    <span class="val">Bs. @Model.total_aviso.ToString("N2")</span>
-                </div>
-                <div class="aviso-dato-fila">
-                    <span class="lbl">Vencimiento</span>
-                    <span class="val">
-                        <span class="badge-estado @(vencido ? "badge-vencido" : "badge-vigente")">
-                            @Model.fecha_vencimiento.ToString("dd/MM/yyyy")
-                        </span>
+        <div class="relative z-10 flex-1 flex flex-col">
+            <div class="flex justify-between items-start gap-3 mb-6">
+                <div class="flex items-center gap-2">
+                    <span class="p-2 bg-surface-container rounded-lg text-primary">
+                        <svg class="ic w-5 h-5"><use href="#ic-wallet"></use></svg>
                     </span>
+                    <span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Saldo actual</span>
                 </div>
-                <div class="aviso-dato-fila">
-                    <span class="lbl">Emisión</span>
-                    <span class="val">@Model.fecha_emision.ToString("dd/MM/yyyy")</span>
+
+                @if (Model != null)
+                {
+                    if (pagado)
+                    {
+                        <span class="px-3 py-1 rounded-full flex items-center gap-1 border bg-primary-50 text-primary-700 border-primary-container/30 font-label-sm text-label-sm">
+                            <svg class="ic w-4 h-4"><use href="#ic-check-circle"></use></svg>
+                            Al día
+                        </span>
+                    }
+                    else if (vencido)
+                    {
+                        <span class="px-3 py-1 rounded-full flex items-center gap-1 border bg-error-container/50 text-on-error-container border-error-red/20 font-label-sm text-label-sm">
+                            <svg class="ic w-4 h-4"><use href="#ic-warning"></use></svg>
+                            Venció el @Model.fecha_vencimiento.ToString("dd MMM")
+                        </span>
+                    }
+                    else
+                    {
+                        <span class="px-3 py-1 rounded-full flex items-center gap-1 border bg-warning-yellow/10 text-on-surface border-warning-yellow/30 font-label-sm text-label-sm">
+                            <svg class="ic w-4 h-4"><use href="#ic-clock"></use></svg>
+                            Vence @Model.fecha_vencimiento.ToString("dd MMM")
+                        </span>
+                    }
+                }
+            </div>
+
+            @if (Model != null)
+            {
+                <div class="mb-8">
+                    <p class="font-headline-lg-mobile text-headline-lg-mobile md:font-headline-lg md:text-headline-lg text-on-surface mb-1">
+                        Bs. @Model.deuda_actual.ToString("N2")
+                    </p>
+                    <p class="font-body-md text-body-md text-on-surface-variant">
+                        Período @Model.nombre_periodo &middot; total del aviso Bs. @Model.total_aviso.ToString("N2")
+                    </p>
+                </div>
+
+                <div class="flex flex-col sm:flex-row gap-3 mt-auto">
+                    @if (!pagado)
+                    {
+                        <a href="@Url.Action("Avisos", "Portal")"
+                           class="gradient-primary text-on-primary font-label-sm text-label-sm font-semibold rounded-lg px-6 py-3 flex-1 inline-flex items-center justify-center gap-2 shadow-sm hover:opacity-90 active:translate-y-px transition-all">
+                            <svg class="ic w-[18px] h-[18px]"><use href="#ic-qr"></use></svg>
+                            Pagar con QR
+                        </a>
+                    }
+                    <a href="@Url.Action("Avisos", "Portal")"
+                       class="bg-transparent border border-outline-variant text-on-surface font-label-sm text-label-sm rounded-lg px-6 py-3 flex-1 inline-flex items-center justify-center gap-2 hover:bg-surface-container-low active:translate-y-px transition-all">
+                        <svg class="ic w-[18px] h-[18px]"><use href="#ic-receipt"></use></svg>
+                        Ver mis avisos
+                    </a>
                 </div>
             }
             else
             {
-                <div class="empty-state">
-                    <svg width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                    </svg>
-                    <p>No tienes avisos registrados aún.</p>
+                <div class="flex-1 flex flex-col items-center justify-center text-center py-8 text-on-surface-variant">
+                    <svg class="ic w-12 h-12 mb-3 opacity-40"><use href="#ic-receipt"></use></svg>
+                    <p class="font-body-md text-body-md">Todavía no tienes avisos registrados.</p>
                 </div>
             }
         </div>
-    </div>
+    </section>
 
-    <!-- Accesos rápidos -->
-    <p style="font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; color:#94a3b8; margin-bottom:10px;">
-        Accesos rápidos
-    </p>
+    @* ---------------- Consumo (se arma en el cliente con ListarAvisos) ---------------- *@
+    <section class="bento-card bg-surface-container-lowest rounded-xl border border-outline-variant/40 p-card-padding md:col-span-5 lg:col-span-4 flex flex-col">
+        <div class="flex items-center gap-2 mb-6">
+            <span class="p-2 bg-surface-container rounded-lg text-primary">
+                <svg class="ic w-5 h-5"><use href="#ic-drop"></use></svg>
+            </span>
+            <span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Último consumo</span>
+        </div>
 
-    <a href="@Url.Action("Index", "Perfil")" class="acceso-card">
-        <div class="acceso-icon">
-            <svg width="22" height="22" fill="none" stroke="#16a34a" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-            </svg>
+        <div class="mb-6 flex items-end gap-2">
+            <span id="consumoActual" class="font-headline-lg-mobile text-headline-lg-mobile md:font-headline-lg md:text-headline-lg text-on-surface leading-none">--</span>
+            <span class="font-body-md text-body-md text-on-surface-variant mb-1">m³</span>
         </div>
-        <div>
-            <p class="acceso-titulo">Mi Perfil</p>
-            <p class="acceso-sub">Ver mis datos de socio</p>
+
+        <div id="graficoConsumo" class="mt-auto flex items-end justify-between h-24 gap-2 px-1">
+            <p class="font-caption text-caption text-on-surface-variant self-center w-full text-center">Cargando…</p>
         </div>
-    </a>
+    </section>
+
+    @* ---------------- Notificaciones recientes ---------------- *@
+    <section class="md:col-span-12 mt-2">
+        <div class="flex justify-between items-center mb-stack-md">
+            <h2 class="font-headline-md text-headline-md-mobile text-on-surface">Notificaciones recientes</h2>
+            <a href="@Url.Action("Notificaciones", "Portal")" class="font-label-sm text-label-sm text-primary hover:underline flex items-center gap-1">
+                Ver todas <svg class="ic w-4 h-4"><use href="#ic-arrow-right"></use></svg>
+            </a>
+        </div>
+        <div id="notifRecientes" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <p class="font-caption text-caption text-on-surface-variant">Cargando…</p>
+        </div>
+    </section>
 
 </div>
+
+@section scripts {
+    <script>
+        $(function () {
+            cargarConsumo();
+            cargarNotificaciones();
+        });
+
+        // El grafico sale de los avisos que ya devuelve el portal: no hace
+        // falta un SP nuevo, cada aviso trae su consumo_m3.
+        function cargarConsumo() {
+            $.get('@Url.Action("ListarAvisos", "Portal")', function (res) {
+                var cont = $('#graficoConsumo');
+                if (!res.exito || !res.avisos || !res.avisos.length) {
+                    cont.html('<p class="font-caption text-caption text-on-surface-variant self-center w-full text-center">Sin lecturas registradas.</p>');
+                    return;
+                }
+
+                // ListarAvisos llega del mas reciente al mas antiguo
+                var conConsumo = res.avisos.filter(function (a) { return a.consumo_m3 != null; });
+                if (!conConsumo.length) {
+                    cont.html('<p class="font-caption text-caption text-on-surface-variant self-center w-full text-center">Sin lecturas registradas.</p>');
+                    return;
+                }
+
+                $('#consumoActual').text(Portal.fmt(conConsumo[0].consumo_m3));
+
+                var ultimos = conConsumo.slice(0, 4).reverse();
+                var max = Math.max.apply(null, ultimos.map(function (a) { return a.consumo_m3; }));
+                if (max <= 0) { max = 1; }
+
+                cont.empty();
+                $.each(ultimos, function (i, a) {
+                    var alto = Math.max(8, Math.round((a.consumo_m3 / max) * 100));
+                    var esUltimo = (i === ultimos.length - 1);
+                    var etiqueta = Portal.esc(String(a.nombre_periodo).substring(0, 7));
+                    cont.append(
+                        '<div class="w-full flex flex-col items-center gap-1 group" title="' + etiqueta + ': ' + Portal.fmt(a.consumo_m3) + ' m³">' +
+                            '<div class="w-full rounded-t-sm transition-colors ' +
+                                (esUltimo ? 'gradient-primary shadow-[0_-2px_10px_rgba(34,197,94,0.3)]' : 'bg-surface-container-highest group-hover:bg-primary-container/50') +
+                            '" style="height:' + alto + '%"></div>' +
+                            '<span class="font-caption text-caption ' + (esUltimo ? 'text-primary font-bold' : 'text-on-surface-variant') + '">' + etiqueta + '</span>' +
+                        '</div>');
+                });
+            });
+        }
+
+        function cargarNotificaciones() {
+            $.get('@Url.Action("ListarNotificaciones", "Portal")', function (res) {
+                var cont = $('#notifRecientes');
+                cont.empty();
+                if (!res.exito || !res.notificaciones || !res.notificaciones.length) {
+                    cont.html('<p class="font-caption text-caption text-on-surface-variant">No tienes notificaciones.</p>');
+                    return;
+                }
+                var url = '@Url.Action("Notificaciones", "Portal")';
+                $.each(res.notificaciones.slice(0, 3), function (_, n) {
+                    var nueva = !n.leido;
+                    cont.append(
+                        '<a href="' + url + '" class="bento-card bg-surface-container-lowest rounded-xl border border-outline-variant/40 p-4 flex gap-4 items-start group">' +
+                            '<span class="p-2 rounded-lg shrink-0 ' + (nueva ? 'bg-primary-50 text-primary' : 'bg-surface-container text-on-surface-variant') + '">' +
+                                '<svg class="ic w-5 h-5"><use href="#ic-megaphone"></use></svg>' +
+                            '</span>' +
+                            '<span class="min-w-0">' +
+                                '<span class="flex items-center gap-2 mb-1">' +
+                                    '<span class="font-label-sm text-label-sm text-on-surface font-semibold truncate">' + Portal.esc(n.titulo) + '</span>' +
+                                    (nueva ? '<span class="shrink-0 text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-primary-50 text-primary-700">Nueva</span>' : '') +
+                                '</span>' +
+                                '<span class="block font-caption text-caption leading-relaxed text-on-surface-variant line-clamp-2">' + Portal.esc(n.mensaje) + '</span>' +
+                            '</span>' +
+                        '</a>');
+                });
+            });
+        }
+    </script>
+}

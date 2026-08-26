@@ -233,6 +233,7 @@
     <Content Include="Views\Tarifa\EditarTarifa.cshtml" />
     <Content Include="Views\Reporte\Caja.cshtml" />
     <Content Include="Views\Reporte\Morosidad.cshtml" />
+    <Content Include="Views\Reporte\PagosSistema.cshtml" />
     <Content Include="Views\MetodoPago\MetodoPago.cshtml" />
     <Content Include="Views\CargoExtra\CargoExtra.cshtml" />
     <Content Include="Views\CuentaSocio\CuentaSocio.cshtml" />
