@@ -25,7 +25,7 @@ namespace CapaPresentacionAdmin.Controllers
                 {
                     exito          = true,
                     totalSocios    = stats.TotalSocios,
-                    totalClientes  = stats.TotalClientes,
+                    totalPersonas  = stats.TotalPersonas,
                     totalMedidores = stats.TotalMedidores,
                     totalRutas     = stats.TotalRutas,
                     totalUsuarios  = stats.TotalUsuarios,

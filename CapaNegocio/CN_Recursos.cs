@@ -28,6 +28,13 @@ namespace CapaNegocio
                 && Regex.IsMatch(texto.Trim(), @"^\d{" + min + "," + max + "}$");
         }
 
+        // Dominio cerrado de socio.categoria: mismo conjunto que socio_categoria_CK (Migracion 19)
+        private static readonly string[] CategoriasSocio = { "Doméstico", "Comercial", "Industrial", "Social" };
+        public static bool EsCategoriaSocioValida(string categoria)
+        {
+            return !string.IsNullOrWhiteSpace(categoria) && System.Array.IndexOf(CategoriasSocio, categoria.Trim()) >= 0;
+        }
+
         // Email con formato básico correcto (algo@dominio.ext)
         public static bool EsEmailValido(string email)
         {

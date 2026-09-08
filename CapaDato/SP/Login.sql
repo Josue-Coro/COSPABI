@@ -60,7 +60,7 @@ GO
 
 
 INSERT INTO permiso (accion, [descripcion]) VALUES
-('Gestionar Cliente', 'Gestion de cliente'),
+('Gestionar Persona', 'Gestion de personas'),
 ('Gestionar Avisos', 'Gestion de avisos'),
 ('Gestionar Caja', 'Gestion de caja'),
 ('Gestionar Lecturas', 'Gestion de lecturas'),
@@ -97,9 +97,9 @@ go
 ----------------
 -----------------
 INSERT INTO permiso (accion, [descripcion]) VALUES
-('Registrar Cliente', 'Crear nuevos clientes'),
-('Editar Cliente', 'Modificar clientes existentes'),
-('Eliminar Cliente', 'Eliminar clientes existentes'),
+('Registrar Persona', 'Crear nuevas personas'),
+('Editar Persona', 'Modificar personas existentes'),
+('Eliminar Persona', 'Eliminar personas existentes'),
 ('Editar Tarifa', 'Modificar tarifas existentes'),
 ('Editar Tipo Cargo', 'Modificar tipos de cargo existentes'),
 ('Registrar Socio', 'Crear nuevos socios'),
@@ -108,8 +108,8 @@ INSERT INTO permiso (accion, [descripcion]) VALUES
 
 go
 
-INSERT INTO permiso (accion, [descripcion]) VALUES
-('Gestionar Ruta', 'Gestion de Rutas');
+INSERT INTO permiso (accion, [descripcion], modulo) VALUES
+('Reporte de Pagos de Inscripción', 'Reporte de Pagos de Inscripción', 'Reporte');
 
 go
 INSERT INTO permiso (accion, [descripcion]) VALUES
@@ -153,7 +153,7 @@ GO
 INSERT INTO rol (nombre, descripcion, estado) VALUES
 ('Super Admin', 'Acceso total al sistema',1),
 ('Admin', 'Acceso limitado al sistema',1),
-('Cajero', 'Acceso solo a caja, cliente y avisos',1);
+('Cajero', 'Acceso solo a caja, personas y avisos',1);
 
 
 

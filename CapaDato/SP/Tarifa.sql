@@ -1,24 +1,21 @@
 USE [COSPABIRL1]
 GO
 
-SELECT [id_tarifa]
-      ,[consumo_minimo_m3]
-      ,[monto_minimo]
-      ,[precio_m3]
-      ,[rol_socio_id_rol_socio]
-  FROM [dbo].[tarifa]
-
-GO
-
+-- =============================================================================
+-- TARIFA  (una tarifa por rol_socio: consumo_minimo_m3 / monto_minimo / precio_m3)
+--
+-- Las tarifas NO se siembran desde aqui: las filas ya existen en la base. Este
+-- archivo solo define procedimientos y es re-ejecutable (CREATE OR ALTER).
+-- =============================================================================
 
 -- =============================================
 -- LISTAR TARIFAS
 -- =============================================
-CREATE PROCEDURE [dbo].[sp_listar_tarifa]
+CREATE OR ALTER PROCEDURE [dbo].[sp_listar_tarifa]
 AS
 BEGIN
     SET NOCOUNT ON;
-    SELECT 
+    SELECT
         u.id_tarifa,
         u.consumo_minimo_m3,
         u.monto_minimo,
@@ -26,24 +23,24 @@ BEGIN
         u.rol_socio_id_rol_socio,
         r.rol_socio AS nombre_rol
     FROM [dbo].[tarifa] u
-    INNER JOIN [dbo].[rol_socio] r ON r.id_rol_socio = u.id_tarifa
+    -- El JOIN unia rol_socio.id_rol_socio contra tarifa.id_tarifa (la PK de la
+    -- tarifa, no su FK). Coincidia por casualidad mientras id_tarifa y
+    -- rol_socio_id_rol_socio llevaban el mismo valor; con una tarifa mas, el
+    -- listado mostraba el rol equivocado o perdia la fila.
+    INNER JOIN [dbo].[rol_socio] r ON r.id_rol_socio = u.rol_socio_id_rol_socio
 END
 GO
 
-
---insertamos  tarifa para cada rol ya definido en la tabla rol_socio ("SOCIO", "USUARIO") solo esos 2 van a existir en la tabla rol_socio
-insert into tarifa (consumo_minimo_m3, monto_minimo, precio_m3, rol_socio_id_rol_socio) values (10.00, 50.00, 5.00, 1)
-insert into tarifa (consumo_minimo_m3, monto_minimo, precio_m3, rol_socio_id_rol_socio) values (15.00, 75.00, 7.00, 2)
-go
 -- =============================================
 -- EDITAR TARIFA
 -- =============================================
-
-CREATE PROCEDURE [dbo].[sp_editar_tarifa]
+-- consumo_minimo_m3 y precio_m3 son INT en la tabla: los parametros son INT.
+-- monto_minimo es DECIMAL(30,3) en la tabla y si admite decimales.
+CREATE OR ALTER PROCEDURE [dbo].[sp_editar_tarifa]
     @id_tarifa INT,
-    @consumo_minimo_m3 DECIMAL(18,2),
-    @monto_minimo DECIMAL(18,2),
-    @precio_m3 DECIMAL(18,2),
+    @consumo_minimo_m3 INT,
+    @monto_minimo DECIMAL(18,3),
+    @precio_m3 INT,
     @rol_socio_id_rol_socio INT,
     @Resultado INT OUTPUT,
     @Mensaje VARCHAR(500) OUTPUT
@@ -59,7 +56,7 @@ BEGIN
         RETURN;
     END
 
-    IF EXISTS (SELECT 1 FROM [dbo].tarifa 
+    IF EXISTS (SELECT 1 FROM [dbo].tarifa
                WHERE rol_socio_id_rol_socio = @rol_socio_id_rol_socio AND id_tarifa <> @id_tarifa)
     BEGIN
         SET @Mensaje = 'Ya existe otra tarifa con ese rol de socio.';
@@ -73,10 +70,10 @@ BEGIN
     END
 
     UPDATE [dbo].[tarifa]
-    SET 
-        consumo_minimo_m3 = @consumo_minimo_m3,
-        monto_minimo      = @monto_minimo,
-        precio_m3        = @precio_m3,
+    SET
+        consumo_minimo_m3      = @consumo_minimo_m3,
+        monto_minimo           = @monto_minimo,
+        precio_m3              = @precio_m3,
         rol_socio_id_rol_socio = @rol_socio_id_rol_socio
     WHERE id_tarifa = @id_tarifa;
 
@@ -84,15 +81,3 @@ BEGIN
     SET @Mensaje   = 'Tarifa actualizada correctamente.';
 END
 GO
-      
---probar el procedimiento almacenado de editar tarifa
-DECLARE @Resultado INT, @Mensaje VARCHAR(500);
-
-EXEC [dbo].[sp_editar_tarifa] 
-    @id_tarifa = 1, 
-    @consumo_minimo_m3 = 12.00, 
-    @monto_minimo = 60.00, 
-    @precio_m3 = 6.00, 
-    @rol_socio_id_rol_socio = 1, 
-    @Resultado = @Resultado OUTPUT, 
-    @Mensaje = @Mensaje OUTPUT;

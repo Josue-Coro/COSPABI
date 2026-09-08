@@ -57,10 +57,10 @@ namespace CapaNegocio
             if (datos == null)               { Mensaje = "Aviso no encontrado.";      return false; }
             if (datos.estado == "PAGADO")    { Mensaje = "El aviso ya esta pagado.";  return false; }
             if (datos.estado == "ANULADO")   { Mensaje = "El aviso esta anulado.";    return false; }
-            if (string.IsNullOrWhiteSpace(datos.email))
+            if (string.IsNullOrWhiteSpace(datos.correo))
             {
-                Mensaje = "El socio no tiene email registrado (requerido por la pasarela). " +
-                          "Actualice el email del cliente e intente de nuevo.";
+                Mensaje = "El socio no tiene correo registrado (requerido por la pasarela). " +
+                          "Actualice el correo del socio e intente de nuevo.";
                 return false;
             }
 
@@ -76,7 +76,7 @@ namespace CapaNegocio
 
             var solicitud = new CM_LibelulaDeudaRequest
             {
-                email_cliente  = datos.email,
+                email_cliente  = datos.correo,
                 identificador  = identificador,
                 descripcion    = "Aviso de cobranza #" + idAviso + " - " + datos.nombre_periodo,
                 // La deuda caduca en Libelula al final del dia: un QR abandonado

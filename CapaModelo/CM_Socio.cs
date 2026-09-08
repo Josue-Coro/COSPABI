@@ -11,14 +11,14 @@ namespace CapaModelo
         public int id_socio { get; set; }
         public string nombre_socio { get; set; }
 
-        // FK Cliente
-        public int cliente_id_cliente { get; set; }
-        public CM_Cliente cliente { get; set; }
-        public string nombre_cliente { get; set; }
-        public string ci_cliente { get; set; }
-        // Email de la persona: sin el no se le puede crear cuenta de portal
-        // (la pasarela lo exige para el pago con QR).
-        public string email_cliente { get; set; }
+        // FK Persona (identidad: CI, nombre). Hasta 4 socios por persona.
+        public int persona_id_persona { get; set; }
+        public CM_Persona persona { get; set; }
+        public string nombre_persona { get; set; }
+        public string ci_persona { get; set; }
+        // Correo del socio (quien usa el medidor): obligatorio, sin el no hay
+        // cuenta de portal ni pago QR (la pasarela lo exige). Migracion 17.
+        public string correo { get; set; }
 
         // FK RolSocio
         public int rol_socio_id_rol_socio { get; set; }

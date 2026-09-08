@@ -249,8 +249,9 @@
                 '<td class="px-6 py-3.5 font-mono font-semibold text-blue-700">' + s.codigo_fijo + '</td>' +
                 '<td class="px-6 py-3.5 font-medium text-gray-800">' + s.nombre_socio      + '</td>' +
                 '<td class="px-6 py-3.5 text-gray-600">' +
-                    '<div>' + s.nombre_cliente + '</div>' +
-                    '<div class="text-xs text-gray-400">CI: ' + s.ci_cliente + '</div>' +
+                    '<div>' + s.nombre_persona + '</div>' +
+                    '<div class="text-xs text-gray-400">CI: ' + s.ci_persona + '</div>' +
+                    '<div class="text-xs text-gray-400">' + (s.correo || '') + '</div>' +
                 '</td>' +
                 '<td class="px-6 py-3.5 font-mono text-xs text-gray-600">' + s.num_serie_medidor + '</td>' +
                 '<td class="px-6 py-3.5 text-gray-600">'               + s.nombre_ruta      + '</td>' +

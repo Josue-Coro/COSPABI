@@ -13,7 +13,7 @@ AS
 BEGIN
     SET NOCOUNT ON;
     SELECT
-        (SELECT ISNULL(SUM(a.deuda_actual), 0)
+        (SELECT ISNULL(SUM(a.total_aviso), 0)
          FROM aviso a
          INNER JOIN estado e ON e.id_estado = a.estado_id_estado
          WHERE a.socio_id_socio = @id_socio
@@ -50,7 +50,7 @@ BEGIN
         a.fecha_vencimiento,
         l.consumo_m3,                    -- RF-26: historial de consumo
         a.total_aviso,
-        a.deuda_actual,
+        CASE WHEN e.estado IN ('PAGADO', 'ANULADO') THEN 0 ELSE a.total_aviso END AS deuda_actual,
         e.estado,
         CASE WHEN e.estado NOT IN ('PAGADO', 'ANULADO')
                   AND a.fecha_vencimiento < CAST(GETDATE() AS DATE)

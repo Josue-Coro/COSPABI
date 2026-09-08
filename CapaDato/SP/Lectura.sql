@@ -28,6 +28,23 @@ END
 GO
 
 -- =============================================
+-- 1b. Listar periodos existentes (combos de Avisos, Cargos Extra, Lecturas)
+--     Solo lee: los periodos se crean al registrar la lectura del mes
+--     (sp_obtener_o_crear_periodo) o al financiar una inscripcion. Antes el
+--     combo creaba 13 meses hacia atras cada vez que se abria la pantalla,
+--     con costo_inscripcion NULL, y resucitaba periodos borrados a mano.
+-- =============================================
+CREATE OR ALTER PROCEDURE dbo.sp_listar_periodos
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SELECT id_periodo, periodo, costo_inscripcion
+    FROM periodo
+    ORDER BY CAST(RIGHT(periodo, 4) + LEFT(periodo, 2) AS INT) DESC;   -- MM/yyyy -> yyyyMM
+END
+GO
+
+-- =============================================
 -- 2. Listar medidores de una ruta para lecturar
 --    Muestra: datos del socio, lectura anterior,
 --    y si ya fue leido en el periodo actual

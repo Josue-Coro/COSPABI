@@ -172,7 +172,7 @@ BEGIN
         a.id_aviso,
         a.fecha_emision,
         a.fecha_vencimiento,
-        a.deuda_actual AS monto_adeudado,
+        a.total_aviso AS monto_adeudado,
         DATEDIFF(DAY, a.fecha_vencimiento, GETDATE()) AS dias_mora
     FROM aviso a
     INNER JOIN estado  e   ON e.id_estado    = a.estado_id_estado
@@ -189,7 +189,7 @@ BEGIN
     SELECT
         COUNT(DISTINCT s.id_socio)     AS cantidad_socios,
         COUNT(*)                       AS cantidad_avisos,
-        ISNULL(SUM(a.deuda_actual),0)  AS total_adeudado
+        ISNULL(SUM(a.total_aviso),0)   AS total_adeudado
     FROM aviso a
     INNER JOIN estado e ON e.id_estado = a.estado_id_estado
     INNER JOIN socio  s ON s.id_socio  = a.socio_id_socio

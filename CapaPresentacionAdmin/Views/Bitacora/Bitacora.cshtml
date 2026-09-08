@@ -227,8 +227,8 @@
         var filas = '';
         $.each(data, function (i, b) {
 
-            var fecha = formatearFecha(b.fecha);
-            var hora  = formatearHora(b.hora);
+            var fecha = formatearFecha(b.fecha_hora);
+            var hora  = formatearHora(b.fecha_hora);
 
             // Iniciales del usuario
             var partes   = b.nombre_completo.split(' ');

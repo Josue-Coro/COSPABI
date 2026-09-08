@@ -50,12 +50,12 @@
     <div class="grid grid-cols-2 gap-3 mb-3">
         <div>
             <label class="block text-sm font-medium text-gray-700 mb-1.5">Consumo mínimo (m³) <span class="text-red-500">*</span></label>
-            <input type="number" id="consumo_minimo_m3" min="0" placeholder="Ej: 10"
+            <input type="number" id="consumo_minimo_m3" min="0" step="1" inputmode="numeric" placeholder="Ej: 10"
                    class="input-field w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm bg-gray-50 text-gray-800 placeholder-gray-400">
         </div>
         <div>
             <label class="block text-sm font-medium text-gray-700 mb-1.5">Precio por m³ (Bs.) <span class="text-red-500">*</span></label>
-            <input type="number" id="precio_m3" min="0" step="0.01" placeholder="Ej: 5"
+            <input type="number" id="precio_m3" min="0" step="1" inputmode="numeric" placeholder="Ej: 5"
                    class="input-field w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm bg-gray-50 text-gray-800 placeholder-gray-400">
         </div>
     </div>
@@ -127,17 +127,26 @@
             });
         });
 
-        function editar() {
-            var id      = parseInt($('#idTarifa').val());
-            var consumo = parseFloat($('#consumo_minimo_m3').val());
-            var monto   = parseFloat($('#monto_minimo').val());
-            var precio  = parseFloat($('#precio_m3').val());
-            var rol     = $('#rol_socio_id_rol_socio').val();
+        // consumo_minimo_m3 y precio_m3 son INT en la base. Se valida la cadena
+        // cruda: parseInt('3.5') devolveria 3 y guardaria un valor que el
+        // usuario nunca escribio.
+        function esEnteroNoNegativo(txt) { return /^\d+$/.test(txt); }
 
-            if (isNaN(consumo) || consumo < 0) { mostrarError('Ingresa un consumo mínimo válido.'); return; }
-            if (isNaN(monto)   || monto < 0)   { mostrarError('Ingresa un monto mínimo válido.');   return; }
-            if (isNaN(precio)  || precio < 0)  { mostrarError('Ingresa un precio por m³ válido.');  return; }
-            if (!rol)                           { mostrarError('Selecciona un rol de socio.');        return; }
+        function editar() {
+            var id         = parseInt($('#idTarifa').val());
+            var consumoTxt = $.trim($('#consumo_minimo_m3').val());
+            var precioTxt  = $.trim($('#precio_m3').val());
+            var montoTxt   = normalizarMonto($('#monto_minimo').val());
+            var monto      = parseFloat(montoTxt);
+            var rol        = $('#rol_socio_id_rol_socio').val();
+
+            if (!esEnteroNoNegativo(consumoTxt)) { mostrarError('El consumo mínimo debe ser un número entero de m³, sin decimales.'); return; }
+            if (!esEnteroNoNegativo(precioTxt))  { mostrarError('El precio por m³ debe ser un número entero, sin decimales.');        return; }
+            if (isNaN(monto) || monto < 0)       { mostrarError('Ingresa un monto mínimo válido.');                                   return; }
+            if (!rol)                            { mostrarError('Selecciona un rol de socio.');                                       return; }
+
+            var consumo = parseInt(consumoTxt, 10);
+            var precio  = parseInt(precioTxt, 10);
 
             ocultarError();
             setLoading(true);
@@ -148,7 +157,7 @@
                 data: {
                     id_tarifa:             id,
                     consumo_minimo_m3:     consumo,
-                    monto_minimo:          monto,
+                    monto_minimo:          montoTxt,
                     precio_m3:             precio,
                     rol_socio_id_rol_socio: rol
                 },
@@ -166,6 +175,11 @@
                 }
             });
         }
+
+        // El monto viaja como STRING con punto decimal: el servidor lo parsea con
+        // InvariantCulture. Enviarlo como number dejaba que el model binder lo
+        // leyera en es-BO (coma decimal) y lo convirtiera en 0.
+        function normalizarMonto(v) { return $.trim(v || '').replace(',', '.'); }
 
         function mostrarError(msg) { $('#errorText').text(msg); $('#errorMsg').removeClass('hidden'); }
         function ocultarError()    { $('#errorMsg').addClass('hidden'); }

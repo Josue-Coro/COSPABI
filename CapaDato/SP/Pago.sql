@@ -21,7 +21,7 @@ BEGIN
     SELECT
         a.id_aviso,
         a.total_aviso,
-        a.deuda_actual,
+        a.total_aviso AS deuda_actual,
         e.estado AS estado,
         a.fecha_emision,
         a.fecha_vencimiento,
@@ -81,6 +81,39 @@ BEGIN
         IF @estado = 'PAGADO'  BEGIN SET @Mensaje = 'El aviso ya esta pagado.'; RETURN; END
         IF @estado = 'ANULADO' BEGIN SET @Mensaje = 'El aviso esta anulado.'; RETURN; END
 
+        -- Guarda de coherencia del desglose.
+        -- total_aviso es una foto tomada al generar el aviso. El cierre de ciclo de
+        -- mas abajo marca PAGADO *todos* los cargos PENDIENTE del socio+periodo,
+        -- dando por hecho que son exactamente los que entraron en esa foto. Si la
+        -- suma no cuadra, esa premisa es falsa y cobrar dejaria marcado como pagado
+        -- algo que nunca se cobro. Se aborta ANTES de recibir el dinero, que es el
+        -- unico momento en que abortar es gratis.
+        DECLARE @socio_chk INT, @periodo_chk INT, @consumo_chk DECIMAL(30,2);
+        SELECT @socio_chk   = socio_id_socio,
+               @periodo_chk = periodo_id_periodo,
+               @consumo_chk = total_consumo
+        FROM aviso WHERE id_aviso = @id_aviso;
+
+        DECLARE @desglose DECIMAL(30,2) =
+              @consumo_chk
+            + ISNULL((SELECT SUM(ce.monto) FROM cargo_extra ce
+                      WHERE ce.socio_id_socio     = @socio_chk
+                        AND ce.periodo_id_periodo = @periodo_chk
+                        AND ce.estado             = 'PENDIENTE'), 0)
+            + ISNULL((SELECT SUM(ci.monto_pago) FROM credito_inscripcion ci
+                      WHERE ci.socio_id_socio     = @socio_chk
+                        AND ci.periodo_id_periodo = @periodo_chk
+                        AND ci.estado             = 'PENDIENTE'), 0);
+
+        IF @desglose <> @total
+        BEGIN
+            SET @Mensaje = 'El detalle del aviso no coincide con su total (aviso Bs. ' +
+                           CONVERT(VARCHAR, @total) + ' vs. detalle Bs. ' +
+                           CONVERT(VARCHAR, @desglose) + '). No se registro ningun cobro. ' +
+                           'Anule el aviso y vuelva a generarlo para que el total se recalcule.';
+            RETURN;
+        END
+
         DECLARE @recibido DECIMAL(30,2) = ISNULL(@monto_recibido, @total);
         IF @recibido < @total
         BEGIN SET @Mensaje = 'El monto recibido es menor al total del aviso (el pago es completo).'; RETURN; END
@@ -120,8 +153,13 @@ BEGIN
           AND periodo_id_periodo = @periodo_id 
           AND estado = 'PENDIENTE';
 
+        -- Se sella tambien el pago que la cancelo. Antes solo se cambiaba el
+        -- estado y pago_id_pago quedaba NULL, asi que una cuota cobrada via
+        -- aviso era indistinguible de la cuota inicial de inscripcion (que
+        -- nace CANCELADO con su propio pago sin aviso).
         UPDATE credito_inscripcion
-        SET estado = 'CANCELADO'
+        SET estado       = 'CANCELADO',
+            pago_id_pago = @id_pago
         WHERE socio_id_socio = @socio_id 
           AND periodo_id_periodo = @periodo_id 
           AND estado = 'PENDIENTE';
@@ -228,13 +266,20 @@ BEGIN
     SELECT descripcion AS concepto, monto 
     FROM cargo_extra 
     WHERE socio_id_socio = @socio_id_rec 
-      AND periodo_id_periodo = @periodo_id_rec;
+      AND periodo_id_periodo = @periodo_id_rec
+      AND estado <> 'ANULADO';   -- un cargo anulado no se cobro: fuera del recibo
 
+    -- Mismo criterio que sp_detalle_aviso / sp_imprimir_aviso: la cuota inicial
+    -- de inscripcion se cobro aparte al registrar al socio (su pago no tiene
+    -- aviso), asi que no forma parte de lo que se pago con ESTE recibo.
     INSERT INTO #Detalle (concepto, subtotal)
-    SELECT 'Cuota de Inscripción (' + CAST(num_cuota AS VARCHAR) + ')', monto_pago
-    FROM credito_inscripcion 
-    WHERE socio_id_socio = @socio_id_rec 
-      AND periodo_id_periodo = @periodo_id_rec;
+    SELECT 'Cuota de Inscripción (' + CAST(ci.num_cuota AS VARCHAR) + ')', ci.monto_pago
+    FROM credito_inscripcion ci
+    WHERE ci.socio_id_socio = @socio_id_rec 
+      AND ci.periodo_id_periodo = @periodo_id_rec
+      AND NOT EXISTS (SELECT 1 FROM pago pg
+                      WHERE pg.id_pago = ci.pago_id_pago
+                        AND pg.aviso_id_aviso IS NULL);
 
     SELECT concepto, subtotal FROM #Detalle;
     DROP TABLE #Detalle;

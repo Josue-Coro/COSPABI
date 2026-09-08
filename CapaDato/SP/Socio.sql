@@ -1,4 +1,4 @@
-USE [COSPABIRL1]
+﻿USE [COSPABIRL1]
 GO
 -- =============================================
 -- SP_Socio_Listar (con paginación y búsqueda)
@@ -16,10 +16,10 @@ BEGIN
     SELECT
         s.id_socio,
         s.nombre_socio,
-        s.cliente_id_cliente,
-        c.nombre_completo                  AS nombre_cliente,
-        c.ci                               AS ci_cliente,
-        c.email                            AS email_cliente,
+        s.persona_id_persona,
+        p.nombre_completo                  AS nombre_persona,
+        p.ci                               AS ci_persona,
+        s.correo,
         s.rol_socio_id_rol_socio,
         rs.rol_socio                       AS nombre_rol_socio,
         s.medidor_id_medidor,
@@ -37,14 +37,14 @@ BEGIN
         s.codigo_fijo,
         s.estado
     FROM socio s
-    INNER JOIN cliente      c  ON c.id_cliente      = s.cliente_id_cliente
+    INNER JOIN persona      p  ON p.id_persona      = s.persona_id_persona
     INNER JOIN rol_socio    rs ON rs.id_rol_socio   = s.rol_socio_id_rol_socio
     LEFT JOIN  medidor      m  ON m.id_medidor      = s.medidor_id_medidor
     INNER JOIN ruta         r  ON r.id_ruta         = s.ruta_id_ruta
     WHERE
         s.nombre_socio     LIKE '%' + @Busqueda + '%'
-        OR c.nombre_completo LIKE '%' + @Busqueda + '%'
-        OR c.ci              LIKE '%' + @Busqueda + '%'
+        OR p.nombre_completo LIKE '%' + @Busqueda + '%'
+        OR p.ci              LIKE '%' + @Busqueda + '%'
         OR m.serie           LIKE '%' + @Busqueda + '%'
         OR CAST(s.codigo_fijo AS NVARCHAR) LIKE '%' + @Busqueda + '%'
     ORDER BY s.id_socio DESC
@@ -53,12 +53,12 @@ BEGIN
     -- Total registros para paginación
     SELECT COUNT(*) AS TotalRegistros
     FROM socio s
-    INNER JOIN cliente c ON c.id_cliente = s.cliente_id_cliente
+    INNER JOIN persona p ON p.id_persona = s.persona_id_persona
     LEFT JOIN  medidor  m ON m.id_medidor  = s.medidor_id_medidor
     WHERE
         s.nombre_socio       LIKE '%' + @Busqueda + '%'
-        OR c.nombre_completo LIKE '%' + @Busqueda + '%'
-        OR c.ci              LIKE '%' + @Busqueda + '%'
+        OR p.nombre_completo LIKE '%' + @Busqueda + '%'
+        OR p.ci              LIKE '%' + @Busqueda + '%'
         OR m.serie           LIKE '%' + @Busqueda + '%'
         OR CAST(s.codigo_fijo AS NVARCHAR) LIKE '%' + @Busqueda + '%';
 END
@@ -70,7 +70,8 @@ GO
 CREATE OR ALTER PROCEDURE sp_editar_socio
     @id_socio                INT,
     @nombre_socio            VARCHAR(255),
-    @cliente_id_cliente      INT,
+    @persona_id_persona      INT,
+    @correo                  VARCHAR(150),
     @rol_socio_id_rol_socio  INT,
     @ubicacion               INT           = NULL,
     @medidor_id_medidor      INT           = NULL,
@@ -94,6 +95,23 @@ BEGIN
         BEGIN
             SET @Resultado = 0;
             SET @Mensaje = 'El socio no existe.';
+            RETURN;
+        END
+
+        IF NOT EXISTS (SELECT 1 FROM persona WHERE id_persona = @persona_id_persona)
+        BEGIN
+            SET @Resultado = 0;
+            SET @Mensaje = 'La persona seleccionada no existe.';
+            RETURN;
+        END
+
+        -- Correo obligatorio y normalizado: viaja tal cual a Libelula como
+        -- email_cliente y un espacio al inicio rompe el registro de la deuda.
+        SET @correo = NULLIF(LTRIM(RTRIM(@correo)), '');
+        IF @correo IS NULL
+        BEGIN
+            SET @Resultado = 0;
+            SET @Mensaje = 'El correo del socio es obligatorio (requerido para pagos por QR y portal).';
             RETURN;
         END
 
@@ -135,7 +153,8 @@ BEGIN
 
         UPDATE socio SET
             nombre_socio           = @nombre_socio,
-            cliente_id_cliente     = @cliente_id_cliente,
+            persona_id_persona     = @persona_id_persona,
+            correo                 = @correo,
             rol_socio_id_rol_socio = @rol_socio_id_rol_socio,
             ubicacion              = @ubicacion,
             medidor_id_medidor     = @medidor_id_medidor,
@@ -211,9 +230,10 @@ BEGIN
     SELECT
         s.id_socio,
         s.nombre_socio,
-        s.cliente_id_cliente,
-        c.nombre_completo                  AS nombre_cliente,
-        c.ci                               AS ci_cliente,
+        s.persona_id_persona,
+        p.nombre_completo                  AS nombre_persona,
+        p.ci                               AS ci_persona,
+        s.correo,
         s.rol_socio_id_rol_socio,
         rs.rol_socio                       AS nombre_rol_socio,
         s.medidor_id_medidor,
@@ -231,7 +251,7 @@ BEGIN
         s.codigo_fijo,
         s.estado
     FROM socio s
-    INNER JOIN cliente      c  ON c.id_cliente      = s.cliente_id_cliente
+    INNER JOIN persona      p  ON p.id_persona      = s.persona_id_persona
     INNER JOIN rol_socio    rs ON rs.id_rol_socio   = s.rol_socio_id_rol_socio
     LEFT JOIN  medidor      m  ON m.id_medidor      = s.medidor_id_medidor
     INNER JOIN ruta         r  ON r.id_ruta         = s.ruta_id_ruta

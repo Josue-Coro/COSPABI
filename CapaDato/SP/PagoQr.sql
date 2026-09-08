@@ -1,4 +1,4 @@
-USE [COSPABIRL1]
+﻿USE [COSPABIRL1]
 GO
 
 -- =============================================================================
@@ -19,7 +19,7 @@ WHERE NOT EXISTS (SELECT 1 FROM metodo_pago WHERE metodo = 'QR LIBELULA');
 GO
 
 -- 1. Datos del aviso para registrar la deuda en Libelula ----------------------
---    Resultset 1: cabecera (incluye email del cliente y QR pendiente si existe).
+--    Resultset 1: cabecera (incluye correo del socio y QR pendiente si existe).
 --    Resultset 2: detalle de la deuda (concepto, subtotal), igual que el recibo.
 CREATE OR ALTER PROCEDURE dbo.sp_datos_deuda_qr
     @id_aviso INT,
@@ -44,7 +44,7 @@ BEGIN
         s.nombre_socio,
         s.codigo_fijo,
         per.periodo AS nombre_periodo,
-        c.email,
+        s.correo,
         pqr.id_pago         AS pendiente_id_pago,
         pqr.id_transaccion  AS pendiente_id_transaccion,
         pqr.url_pasarela    AS pendiente_url_pasarela,
@@ -52,7 +52,6 @@ BEGIN
     FROM aviso a
     INNER JOIN estado  e   ON e.id_estado    = a.estado_id_estado
     INNER JOIN socio   s   ON s.id_socio     = a.socio_id_socio
-    INNER JOIN cliente c   ON c.id_cliente   = s.cliente_id_cliente
     INNER JOIN periodo per ON per.id_periodo = a.periodo_id_periodo
     OUTER APPLY (
         SELECT TOP 1 p.id_pago, p.id_transaccion, p.url_pasarela, p.qr_url
@@ -215,9 +214,25 @@ BEGIN
         END
 
         DECLARE @id_pagado INT = (SELECT id_estado FROM estado WHERE estado = 'PAGADO');
-        DECLARE @socio_id INT, @periodo_id INT;
-        SELECT @socio_id = socio_id_socio, @periodo_id = periodo_id_periodo
+        DECLARE @socio_id INT, @periodo_id INT, @total_aviso DECIMAL(30,2), @consumo DECIMAL(30,2);
+        SELECT @socio_id = socio_id_socio, @periodo_id = periodo_id_periodo,
+               @total_aviso = total_aviso,  @consumo = total_consumo
         FROM aviso WHERE id_aviso = @id_aviso;
+
+        -- Misma comprobacion de coherencia que en el cobro por caja, pero AQUI NO SE
+        -- ABORTA: el socio ya pago en la pasarela y rechazar dejaria el dinero fuera
+        -- del sistema con el aviso impago. Se confirma el cobro y se deja constancia
+        -- en bitacora para que alguien revise el descuadre.
+        DECLARE @desglose DECIMAL(30,2) =
+              @consumo
+            + ISNULL((SELECT SUM(ce.monto) FROM cargo_extra ce
+                      WHERE ce.socio_id_socio     = @socio_id
+                        AND ce.periodo_id_periodo = @periodo_id
+                        AND ce.estado             = 'PENDIENTE'), 0)
+            + ISNULL((SELECT SUM(ci.monto_pago) FROM credito_inscripcion ci
+                      WHERE ci.socio_id_socio     = @socio_id
+                        AND ci.periodo_id_periodo = @periodo_id
+                        AND ci.estado             = 'PENDIENTE'), 0);
 
         -- Si la caja del cajero ya cerro (pago confirmado tarde o en background),
         -- el pago pasa a ser "online" (sin caja): no distorsiona un arqueo ya hecho.
@@ -242,11 +257,24 @@ BEGIN
         WHERE socio_id_socio = @socio_id AND periodo_id_periodo = @periodo_id
           AND estado = 'PENDIENTE';
 
-        UPDATE credito_inscripcion SET estado = 'CANCELADO'
+        -- Igual que en el cobro por caja: se sella el pago que cancelo la cuota.
+        UPDATE credito_inscripcion
+        SET estado       = 'CANCELADO',
+            pago_id_pago = @id_pago
         WHERE socio_id_socio = @socio_id AND periodo_id_periodo = @periodo_id
           AND estado = 'PENDIENTE';
 
         COMMIT;
+
+        -- Constancia del descuadre detectado arriba (el cobro ya se confirmo).
+        IF @desglose <> @total_aviso
+        BEGIN
+            DECLARE @accDescuadre VARCHAR(255) =
+                'Descuadre al confirmar pago QR: aviso #' + CAST(@id_aviso AS VARCHAR) +
+                ' total Bs. ' + CONVERT(VARCHAR, @total_aviso) +
+                ' vs. detalle Bs. ' + CONVERT(VARCHAR, @desglose) + '. Revisar cargos del periodo.';
+            EXEC dbo.sp_registrar_bitacora @accDescuadre, 0;
+        END
 
         -- RF-27: notificacion automatica al portal del socio (best-effort)
         EXEC dbo.sp_notificar_pago_confirmado @id_pago;

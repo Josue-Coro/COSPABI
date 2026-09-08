@@ -1,4 +1,4 @@
-USE [COSPABIRL1]
+﻿USE [COSPABIRL1]
 GO
 
 -- =============================================================================
@@ -15,7 +15,8 @@ GO
 CREATE OR ALTER PROCEDURE dbo.sp_registrar_socio_con_inscripcion
     -- datos del socio
     @nombre_socio            VARCHAR(255),
-    @cliente_id_cliente      INT,
+    @persona_id_persona      INT,
+    @correo                  VARCHAR(150),
     @rol_socio_id_rol_socio  INT,
     @ubicacion               INT           = NULL,
     @medidor_id_medidor      INT           = NULL,
@@ -50,11 +51,17 @@ BEGIN
 
     BEGIN TRY
         -- ===== Validaciones del socio =====
-        IF NOT EXISTS (SELECT 1 FROM cliente WHERE id_cliente = @cliente_id_cliente)
-        BEGIN SET @Mensaje = 'El cliente seleccionado no existe.'; RETURN; END
+        IF NOT EXISTS (SELECT 1 FROM persona WHERE id_persona = @persona_id_persona)
+        BEGIN SET @Mensaje = 'La persona seleccionada no existe.'; RETURN; END
+
+        -- Correo del socio (quien usa el medidor): obligatorio para QR y portal.
+        -- Se normaliza porque viaja tal cual a Libelula como email_cliente.
+        SET @correo = NULLIF(LTRIM(RTRIM(@correo)), '');
+        IF @correo IS NULL
+        BEGIN SET @Mensaje = 'El correo del socio es obligatorio (requerido para pagos por QR y portal).'; RETURN; END
 
         -- Regla institucional: una persona puede tener como máximo 4 socios (4 medidores)
-        IF (SELECT COUNT(*) FROM socio WHERE cliente_id_cliente = @cliente_id_cliente) >= 4
+        IF (SELECT COUNT(*) FROM socio WHERE persona_id_persona = @persona_id_persona) >= 4
         BEGIN SET @Mensaje = 'Esta persona ya alcanzó el máximo de 4 socios (medidores) permitidos.'; RETURN; END
 
         IF @medidor_id_medidor IS NOT NULL AND EXISTS (SELECT 1 FROM socio WHERE medidor_id_medidor = @medidor_id_medidor)
@@ -114,13 +121,13 @@ BEGIN
 
         -- 1) Socio
         INSERT INTO socio (
-            nombre_socio, cliente_id_cliente, rol_socio_id_rol_socio,
+            nombre_socio, persona_id_persona, correo, rol_socio_id_rol_socio,
             ubicacion, medidor_id_medidor, num_casa, num_ocupantes,
             tipo_instalacion, dim_instalacion, actividad, categoria,
             fecha_registro, ruta_id_ruta, codigo_fijo, estado
         )
         VALUES (
-            @nombre_socio, @cliente_id_cliente, @rol_socio_id_rol_socio,
+            @nombre_socio, @persona_id_persona, @correo, @rol_socio_id_rol_socio,
             @ubicacion, @medidor_id_medidor, @num_casa, @num_ocupantes,
             @tipo_instalacion, @dim_instalacion, @actividad, @categoria,
             @fecha_registro, @ruta_id_ruta, @codigo_fijo, 1

@@ -13,7 +13,7 @@ BEGIN
     ORDER BY
         CASE modulo
             WHEN 'Administración'      THEN 1
-            WHEN 'Atención al Cliente' THEN 2
+            WHEN 'Personas y Socios'   THEN 2
             WHEN 'Operaciones'         THEN 3
             WHEN 'Caja y Pagos'        THEN 4
             WHEN 'Configuración'       THEN 5

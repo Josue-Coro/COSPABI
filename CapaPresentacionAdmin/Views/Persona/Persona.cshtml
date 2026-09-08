@@ -5,9 +5,9 @@
     var oUsuario = (CapaModelo.CM_Usuario_Activo)Session["Usuario"];
     var listaPermisos = oUsuario?.ListaPermisos ?? new System.Collections.Generic.List<CapaModelo.CM_Permiso>();
 
-    bool puedeRegistrar = listaPermisos.Any(p => p.accion.ToUpper() == "REGISTRAR CLIENTE");
-    bool puedeEditar = listaPermisos.Any(p => p.accion.ToUpper() == "EDITAR CLIENTE");
-    bool puedeEliminar = listaPermisos.Any(p => p.accion.ToUpper() == "ELIMINAR CLIENTE");
+    bool puedeRegistrar = listaPermisos.Any(p => p.accion.ToUpper() == "REGISTRAR PERSONA");
+    bool puedeEditar = listaPermisos.Any(p => p.accion.ToUpper() == "EDITAR PERSONA");
+    bool puedeEliminar = listaPermisos.Any(p => p.accion.ToUpper() == "ELIMINAR PERSONA");
 }
 
 <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -61,15 +61,14 @@
                     <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">CI</th>
                     <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Género</th>
                     <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Teléfono</th>
-                    <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Email</th>
                     <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">F. Nacimiento</th>
                     <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Estado</th>
                     <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide text-center">Acciones</th>
                 </tr>
             </thead>
-            <tbody id="tbodyClientes" class="divide-y divide-gray-100">
+            <tbody id="tbodyPersonas" class="divide-y divide-gray-100">
                 <tr>
-                    <td colspan="9" class="px-6 py-10 text-center text-sm text-gray-400">
+                    <td colspan="8" class="px-6 py-10 text-center text-sm text-gray-400">
                         <svg class="animate-spin mx-auto mb-2" style="width:22px;height:22px;"
                              fill="none" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10"
@@ -181,7 +180,7 @@
     var tamanoPagina   = 10;
 
     $(function () {
-        cargarClientes();
+        cargarPersonas();
 
         var timer;
         $('#txtBusqueda').on('input', function () {
@@ -189,55 +188,55 @@
             timer = setTimeout(function () {
                 busquedaActual = $('#txtBusqueda').val().trim();
                 paginaActual   = 1;
-                cargarClientes();
+                cargarPersonas();
             }, 400);
         });
 
         $('#selTamano').on('change', function () {
             tamanoPagina = parseInt($(this).val());
             paginaActual = 1;
-            cargarClientes();
+            cargarPersonas();
         });
     });
 
     // -- Cargar tabla -------------------------------------------------
-    function cargarClientes() {
-        $('#tbodyClientes').html(
-            '<tr><td colspan="9" class="px-6 py-10 text-center text-sm text-gray-400">' +
+    function cargarPersonas() {
+        $('#tbodyPersonas').html(
+            '<tr><td colspan="8" class="px-6 py-10 text-center text-sm text-gray-400">' +
             '<svg class="animate-spin mx-auto mb-2" style="width:22px;height:22px;" fill="none" viewBox="0 0 24 24">' +
             '<circle class="opacity-25" cx="12" cy="12" r="10" stroke="#22c55e" stroke-width="4"/>' +
             '<path class="opacity-75" fill="#22c55e" d="M4 12a8 8 0 018-8v8H4z"/></svg>Cargando...</td></tr>'
         );
 
         $.ajax({
-            url:  '@Url.Action("Listar", "Cliente")',
+            url:  '@Url.Action("Listar", "Persona")',
             type: 'GET',
             data: { busqueda: busquedaActual, pagina: paginaActual, tamanoPagina: tamanoPagina },
             success: function (res) {
                 if (!res.exito) { mostrarToast(res.mensaje, 'error'); return; }
-                renderTabla(res.clientes, res.totalRegistros);
+                renderTabla(res.personas, res.totalRegistros);
                 totalPaginas = Math.ceil(res.totalRegistros / tamanoPagina) || 1;
                 renderPaginacion(res.totalRegistros);
             },
             error: function () {
-                $('#tbodyClientes').html('<tr><td colspan="9" class="px-6 py-10 text-center text-sm text-red-500">Error al cargar los datos.</td></tr>');
+                $('#tbodyPersonas').html('<tr><td colspan="8" class="px-6 py-10 text-center text-sm text-red-500">Error al cargar los datos.</td></tr>');
             }
         });
     }
 
     // -- Renderizar filas ---------------------------------------------
-    function renderTabla(clientes, total) {
-        var tbody = $('#tbodyClientes');
+    function renderTabla(personas, total) {
+        var tbody = $('#tbodyPersonas');
         tbody.empty();
 
-        if (!clientes || clientes.length === 0) {
-            tbody.append('<tr><td colspan="9" class="px-6 py-10 text-center text-sm text-gray-400">No se encontraron personas.</td></tr>');
+        if (!personas || personas.length === 0) {
+            tbody.append('<tr><td colspan="8" class="px-6 py-10 text-center text-sm text-gray-400">No se encontraron personas.</td></tr>');
             return;
         }
 
         var inicio = (paginaActual - 1) * tamanoPagina + 1;
 
-        $.each(clientes, function (i, c) {
+        $.each(personas, function (i, c) {
             var badge = c.estado
                 ? '<span class="px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">Activo</span>'
                 : '<span class="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-500">Inactivo</span>';
@@ -245,7 +244,7 @@
             var nomEsc = c.nombre_completo.replace(/'/g, "\\'");
 
             var btnEditar = puedeEditar
-                ? '<button onclick="abrirEditar(' + c.id_cliente + ')" title="Editar" ' +
+                ? '<button onclick="abrirEditar(' + c.id_persona + ')" title="Editar" ' +
                   'class="p-1.5 rounded-lg text-gray-400 hover:bg-green-50 hover:text-green-600 transition">' +
                   '<svg style="width:15px;height:15px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">' +
                   '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" ' +
@@ -254,7 +253,7 @@
                 : '';
 
             var btnEstado = puedeEliminar
-                ? '<button onclick="abrirEliminar(' + c.id_cliente + ',\'' + nomEsc + '\',' + c.estado + ')" ' +
+                ? '<button onclick="abrirEliminar(' + c.id_persona + ',\'' + nomEsc + '\',' + c.estado + ')" ' +
                   'title="' + (c.estado ? 'Desactivar' : 'Activar') + '" ' +
                   'class="p-1.5 rounded-lg text-gray-400 hover:bg-red-50 hover:text-red-500 transition">' +
                   '<svg style="width:15px;height:15px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">' +
@@ -271,7 +270,6 @@
                 '<td class="px-6 py-3.5 text-gray-600">'             + c.ci                                + '</td>' +
                 '<td class="px-6 py-3.5 text-gray-600">'             + c.genero                            + '</td>' +
                 '<td class="px-6 py-3.5 text-gray-600">'             + (c.telefono || '')                 + '</td>' +
-                '<td class="px-6 py-3.5 text-gray-600">'             + (c.email || '') + '</td>' +
                 '<td class="px-6 py-3.5 text-gray-600">' + parsearFechaNet(c.fecha_nacimiento) + '</td>' +
                 '<td class="px-6 py-3.5">'                           + badge                               + '</td>' +
                 '<td class="px-6 py-3.5 text-center">' +
@@ -315,12 +313,12 @@
     function irPagina(p) {
         if (p < 1 || p > totalPaginas) return;
         paginaActual = p;
-        cargarClientes();
+        cargarPersonas();
     }
 
     // -- Modales ------------------------------------------------------
     function abrirCrear()  {
-        $('#iframeCrear').attr('src', '@Url.Action("RegistrarCliente", "Cliente")');
+        $('#iframeCrear').attr('src', '@Url.Action("RegistrarPersona", "Persona")');
         $('#modalCrear').removeClass('hidden').addClass('flex');
     }
     function cerrarCrear() {
@@ -329,7 +327,7 @@
     }
 
     function abrirEditar(id) {
-        $('#iframeEditar').attr('src', '@Url.Action("EditarCliente", "Cliente")?id=' + id);
+        $('#iframeEditar').attr('src', '@Url.Action("EditarPersona", "Persona")?id=' + id);
         $('#modalEditar').removeClass('hidden').addClass('flex');
     }
     function cerrarEditar() {
@@ -339,7 +337,7 @@
 
     function abrirEliminar(id, nombre, estado) {
         $('#iframeEliminar').attr('src',
-            '@Url.Action("EliminarCliente", "Cliente")?id=' + id +
+            '@Url.Action("EliminarPersona", "Persona")?id=' + id +
             '&nombre=' + encodeURIComponent(nombre) +
             '&estado=' + estado);
         $('#modalEliminar').removeClass('hidden').addClass('flex');
@@ -354,7 +352,7 @@
         cerrarCrear();
         cerrarEditar();
         cerrarEliminar();
-        cargarClientes();
+        cargarPersonas();
     }
 
     // -- Helpers ------------------------------------------------------

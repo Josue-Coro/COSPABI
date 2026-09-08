@@ -55,7 +55,7 @@ namespace CapaModelo
         public string  nombre_socio   { get; set; }
         public int     codigo_fijo    { get; set; }
         public string  nombre_periodo { get; set; }
-        public string  email          { get; set; }
+        public string  correo         { get; set; }
 
         public CM_PagoQrPendiente         Pendiente { get; set; }
         public List<CM_ReciboPagoDetalle> Detalles  { get; set; }

@@ -154,6 +154,40 @@ namespace CapaDato
             return resultado;
         }
 
+        // Periodos existentes, del mas reciente al mas antiguo (solo lectura)
+        public List<CM_Periodo> ListarPeriodos()
+        {
+            var lista = new List<CM_Periodo>();
+
+            try
+            {
+                using (SqlConnection cn = new SqlConnection(CD_Conexion.cn))
+                {
+                    SqlCommand cmd = new SqlCommand("dbo.sp_listar_periodos", cn);
+                    cmd.CommandType = CommandType.StoredProcedure;
+
+                    cn.Open();
+                    using (SqlDataReader dr = cmd.ExecuteReader())
+                    {
+                        while (dr.Read())
+                        {
+                            lista.Add(new CM_Periodo
+                            {
+                                id_periodo = Convert.ToInt32(dr["id_periodo"]),
+                                periodo    = dr["periodo"].ToString()
+                            });
+                        }
+                    }
+                }
+            }
+            catch
+            {
+                lista = new List<CM_Periodo>();
+            }
+
+            return lista;
+        }
+
         // Auto-crea el período en BD si no existe y devuelve su id_periodo
         public int ObtenerOCrearPeriodo(string periodoNombre)
         {

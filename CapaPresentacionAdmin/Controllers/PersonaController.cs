@@ -7,21 +7,21 @@ using System.Web.Mvc;
 namespace CapaPresentacionAdmin.Controllers
 {
     [Authorize]
-    public class ClienteController : Controller
+    public class PersonaController : Controller
     {
-        [ValidarPermisos(NombrePermiso = "Gestionar Cliente")]
-        public ActionResult Cliente()
+        [ValidarPermisos(NombrePermiso = "Gestionar Persona")]
+        public ActionResult Persona()
         {
             return View();
         }
 
         [HttpGet]
-        [ValidarPermisos(NombrePermiso = "Gestionar Cliente")]
+        [ValidarPermisos(NombrePermiso = "Gestionar Persona")]
         public JsonResult Listar(string busqueda = "", int pagina = 1, int tamanoPagina = 10)
         {
             try
             {
-                var resultado = new CN_Cliente().Listar(busqueda, pagina, tamanoPagina);
+                var resultado = new CN_Persona().Listar(busqueda, pagina, tamanoPagina);
 
                 if (resultado == null)
                     return Json(new { exito = false, mensaje = "Error al obtener los datos." },
@@ -31,7 +31,7 @@ namespace CapaPresentacionAdmin.Controllers
                 {
                     exito = true,
                     totalRegistros = resultado.TotalRegistros,
-                    clientes = resultado.Clientes
+                    personas = resultado.Personas
                 }, JsonRequestBehavior.AllowGet);
             }
             catch (Exception ex)
@@ -42,18 +42,18 @@ namespace CapaPresentacionAdmin.Controllers
         }
 
         [HttpGet]
-        [ValidarPermisos(NombrePermiso = "Gestionar Cliente")]
+        [ValidarPermisos(NombrePermiso = "Gestionar Persona")]
         public JsonResult Obtener(int id)
         {
             try
             {
-                var cliente = new CN_Cliente().Obtener(id);
+                var persona = new CN_Persona().Obtener(id);
 
-                if (cliente == null)
-                    return Json(new { exito = false, mensaje = "Cliente no encontrado." },
+                if (persona == null)
+                    return Json(new { exito = false, mensaje = "Persona no encontrada." },
                                 JsonRequestBehavior.AllowGet);
 
-                return Json(new { exito = true, cliente }, JsonRequestBehavior.AllowGet);
+                return Json(new { exito = true, persona }, JsonRequestBehavior.AllowGet);
             }
             catch (Exception ex)
             {
@@ -62,20 +62,20 @@ namespace CapaPresentacionAdmin.Controllers
             }
         }
 
-        [ValidarPermisos(NombrePermiso = "Registrar Cliente")]
-        public ActionResult RegistrarCliente()
+        [ValidarPermisos(NombrePermiso = "Registrar Persona")]
+        public ActionResult RegistrarPersona()
         {
             return View();
         }
 
         [HttpPost]
-        [ValidarPermisos(NombrePermiso = "Registrar Cliente")]
-        public JsonResult Registrar(CM_Cliente modelo)
+        [ValidarPermisos(NombrePermiso = "Registrar Persona")]
+        public JsonResult Registrar(CM_Persona modelo)
         {
             try
             {
                 var oUsuario = (CM_Usuario_Activo)Session["Usuario"];
-                bool exito = new CN_Cliente().Registrar(modelo, oUsuario.id_usuario_admin, out string Mensaje);
+                bool exito = new CN_Persona().Registrar(modelo, oUsuario.id_usuario_admin, out string Mensaje);
 
                 return Json(new { exito, mensaje = Mensaje });
             }
@@ -85,20 +85,20 @@ namespace CapaPresentacionAdmin.Controllers
             }
         }
 
-        [ValidarPermisos(NombrePermiso = "Editar Cliente")]
-        public ActionResult EditarCliente()
+        [ValidarPermisos(NombrePermiso = "Editar Persona")]
+        public ActionResult EditarPersona()
         {
             return View();
         }
 
         [HttpPost]
-        [ValidarPermisos(NombrePermiso = "Editar Cliente")]
-        public JsonResult Editar(CM_Cliente modelo)
+        [ValidarPermisos(NombrePermiso = "Editar Persona")]
+        public JsonResult Editar(CM_Persona modelo)
         {
             try
             {
                 var oUsuario = (CM_Usuario_Activo)Session["Usuario"];
-                bool exito = new CN_Cliente().Editar(modelo, oUsuario.id_usuario_admin, out string Mensaje);
+                bool exito = new CN_Persona().Editar(modelo, oUsuario.id_usuario_admin, out string Mensaje);
 
                 return Json(new { exito, mensaje = Mensaje });
             }
@@ -108,20 +108,20 @@ namespace CapaPresentacionAdmin.Controllers
             }
         }
 
-        [ValidarPermisos(NombrePermiso = "Eliminar Cliente")]
-        public ActionResult EliminarCliente()
+        [ValidarPermisos(NombrePermiso = "Eliminar Persona")]
+        public ActionResult EliminarPersona()
         {
             return View();
         }
 
         [HttpPost]
-        [ValidarPermisos(NombrePermiso = "Eliminar Cliente")]
+        [ValidarPermisos(NombrePermiso = "Eliminar Persona")]
         public JsonResult CambiarEstado(int id)
         {
             try
             {
                 var oUsuario = (CM_Usuario_Activo)Session["Usuario"];
-                bool exito = new CN_Cliente().CambiarEstado(id, oUsuario.id_usuario_admin, out string Mensaje);
+                bool exito = new CN_Persona().CambiarEstado(id, oUsuario.id_usuario_admin, out string Mensaje);
 
                 return Json(new { exito, mensaje = Mensaje });
             }

@@ -40,7 +40,7 @@
         <div class="stat-top">
             <div>
                 <p class="stat-label">Personas</p>
-                <p class="stat-num" id="n-clientes">...</p>
+                <p class="stat-num" id="n-personas">...</p>
             </div>
             <div class="stat-icon" style="background:#dbeafe;color:#2563eb">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -220,7 +220,7 @@
             if (!r.exito) return;
 
             animateCount(document.getElementById('n-socios'),    r.totalSocios);
-            animateCount(document.getElementById('n-clientes'),  r.totalClientes);
+            animateCount(document.getElementById('n-personas'),  r.totalPersonas);
             animateCount(document.getElementById('n-medidores'), r.totalMedidores);
             animateCount(document.getElementById('n-rutas'),     r.totalRutas);
             animateCount(document.getElementById('n-usuarios'),  r.totalUsuarios);
@@ -233,7 +233,7 @@
                 periodLabels[i].textContent = 'Per\u00EDodo: ' + r.periodo;
             }
         }).fail(function () {
-            var ids = ['n-socios','n-clientes','n-medidores','n-rutas',
+            var ids = ['n-socios','n-personas','n-medidores','n-rutas',
                        'n-usuarios','n-lecturas','n-avisos','n-socios-big'];
             for (var i = 0; i < ids.length; i++) {
                 document.getElementById(ids[i]).textContent = '-';

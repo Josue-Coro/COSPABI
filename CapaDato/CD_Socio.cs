@@ -39,10 +39,10 @@ namespace CapaDato
                         {
                             id_socio = Convert.ToInt32(dr["id_socio"]),
                             nombre_socio = dr["nombre_socio"].ToString(),
-                            cliente_id_cliente = Convert.ToInt32(dr["cliente_id_cliente"]),
-                            nombre_cliente = dr["nombre_cliente"].ToString(),
-                            ci_cliente = dr["ci_cliente"].ToString(),
-                            email_cliente = dr["email_cliente"] == DBNull.Value ? null : dr["email_cliente"].ToString(),
+                            persona_id_persona = Convert.ToInt32(dr["persona_id_persona"]),
+                            nombre_persona = dr["nombre_persona"].ToString(),
+                            ci_persona = dr["ci_persona"].ToString(),
+                            correo = dr["correo"].ToString(),
                             rol_socio_id_rol_socio = Convert.ToInt32(dr["rol_socio_id_rol_socio"]),
                             NombreRolSocio = dr["nombre_rol_socio"].ToString(),
                             medidor_id_medidor = dr["medidor_id_medidor"] == DBNull.Value ? (int?)null : Convert.ToInt32(dr["medidor_id_medidor"]),
@@ -97,9 +97,10 @@ namespace CapaDato
                         {
                             id_socio = Convert.ToInt32(dr["id_socio"]),
                             nombre_socio = dr["nombre_socio"].ToString(),
-                            cliente_id_cliente = Convert.ToInt32(dr["cliente_id_cliente"]),
-                            nombre_cliente = dr["nombre_cliente"].ToString(),
-                            ci_cliente = dr["ci_cliente"].ToString(),
+                            persona_id_persona = Convert.ToInt32(dr["persona_id_persona"]),
+                            nombre_persona = dr["nombre_persona"].ToString(),
+                            ci_persona = dr["ci_persona"].ToString(),
+                            correo = dr["correo"].ToString(),
                             rol_socio_id_rol_socio = Convert.ToInt32(dr["rol_socio_id_rol_socio"]),
                             NombreRolSocio = dr["nombre_rol_socio"].ToString(),
                             medidor_id_medidor = dr["medidor_id_medidor"] == DBNull.Value ? (int?)null : Convert.ToInt32(dr["medidor_id_medidor"]),
@@ -143,7 +144,8 @@ namespace CapaDato
                     SqlCommand cmd = new SqlCommand("dbo.sp_registrar_socio_con_inscripcion", cn);
                     cmd.CommandType = CommandType.StoredProcedure;
                     cmd.Parameters.AddWithValue("@nombre_socio", socio.nombre_socio);
-                    cmd.Parameters.AddWithValue("@cliente_id_cliente", socio.cliente_id_cliente);
+                    cmd.Parameters.AddWithValue("@persona_id_persona", socio.persona_id_persona);
+                    cmd.Parameters.AddWithValue("@correo", socio.correo);
                     cmd.Parameters.AddWithValue("@rol_socio_id_rol_socio", socio.rol_socio_id_rol_socio);
                     cmd.Parameters.AddWithValue("@ubicacion", socio.ubicacion);
                     cmd.Parameters.AddWithValue("@medidor_id_medidor", (object)socio.medidor_id_medidor ?? DBNull.Value);
@@ -198,7 +200,8 @@ namespace CapaDato
                     cmd.CommandType = CommandType.StoredProcedure;
                     cmd.Parameters.AddWithValue("@id_socio", socio.id_socio);
                     cmd.Parameters.AddWithValue("@nombre_socio", socio.nombre_socio);
-                    cmd.Parameters.AddWithValue("@cliente_id_cliente", socio.cliente_id_cliente);
+                    cmd.Parameters.AddWithValue("@persona_id_persona", socio.persona_id_persona);
+                    cmd.Parameters.AddWithValue("@correo", socio.correo);
                     cmd.Parameters.AddWithValue("@rol_socio_id_rol_socio", socio.rol_socio_id_rol_socio);
                     cmd.Parameters.AddWithValue("@ubicacion", socio.ubicacion);
                     cmd.Parameters.AddWithValue("@medidor_id_medidor", (object)socio.medidor_id_medidor ?? DBNull.Value);

@@ -25,7 +25,7 @@ namespace CapaDato
                     if (dr.Read())
                     {
                         stats.TotalSocios    = Convert.ToInt32(dr["TotalSocios"]);
-                        stats.TotalClientes  = Convert.ToInt32(dr["TotalClientes"]);
+                        stats.TotalPersonas  = Convert.ToInt32(dr["TotalPersonas"]);
                         stats.TotalMedidores = Convert.ToInt32(dr["TotalMedidores"]);
                         stats.TotalRutas     = Convert.ToInt32(dr["TotalRutas"]);
                         stats.TotalUsuarios  = Convert.ToInt32(dr["TotalUsuarios"]);

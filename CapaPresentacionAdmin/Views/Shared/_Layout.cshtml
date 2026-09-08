@@ -32,7 +32,7 @@
         TienePermiso("Gestionar TipoCargo");
 
     bool tieneComercial =
-        TienePermiso("Gestionar Cliente") ||
+        TienePermiso("Gestionar Persona") ||
         TienePermiso("Gestionar Socio") ||
         TienePermiso("Gestionar Credito Inscripcion") ||
         TienePermiso("Gestionar Pago");
@@ -46,6 +46,7 @@
     bool tieneReporte =
         TienePermiso("Generar Reporte Caja") ||
         TienePermiso("Generar Reporte Morosidad") ||
+        TienePermiso("Reporte de Pagos de Inscripción") ||
         TienePermiso("Generar Reporte Pagos Sistema") ;
 
     // Iniciales del usuario para el avatar
@@ -231,8 +232,8 @@
 
                 <p class="nav-section">Principal</p>
                 @Html.ActionLink("Inicio", "Index", "Home",
-                    new { area = "" },
-                    new { @class = "nav-link" })
+                         new { area = "" },
+                         new { @class = "nav-link" })
                 @if (tieneAdmin)
                 {
                     <p class="nav-section">Administración</p>
@@ -240,33 +241,33 @@
                     if (TienePermiso("Gestionar Usuarios"))
                     {
                         @Html.ActionLink("Usuarios", "Usuario", "Usuario",
-                            new { area = "" },
-                            new { @class = "nav-link" })
+                                 new { area = "" },
+                                 new { @class = "nav-link" })
                     }
 
                     if (TienePermiso("Gestionar Rol"))
                     {
                         @Html.ActionLink("Roles", "Rol", "Rol",
-                            new { area = "" },
-                            new { @class = "nav-link" })
+                                 new { area = "" },
+                                 new { @class = "nav-link" })
                     }
                     if (TienePermiso("Gestionar Permiso"))
                     {
                         @Html.ActionLink("Permisos", "Permiso", "Permiso",
-                            new { area = "" },
-                            new { @class = "nav-link" })
+                                 new { area = "" },
+                                 new { @class = "nav-link" })
                     }
                     if (TienePermiso("Gestionar Caja"))
                     {
                         @Html.ActionLink("Cajas", "Caja", "Caja",
-                            new { area = "" },
-                            new { @class = "nav-link" })
+                                 new { area = "" },
+                                 new { @class = "nav-link" })
                     }
                     if (TienePermiso("Visualizar Bitacora"))
                     {
                         @Html.ActionLink("Bitacora", "Bitacora", "Bitacora",
-                            new { area = "" },
-                            new { @class = "nav-link" })
+                                 new { area = "" },
+                                 new { @class = "nav-link" })
                     }
 
                 }
@@ -278,50 +279,50 @@
                     if (TienePermiso("Gestionar Tarifa"))
                     {
                         @Html.ActionLink("Tarifas", "Tarifa", "Tarifa",
-                            new { area = "" },
-                            new { @class = "nav-link" })
+                                 new { area = "" },
+                                 new { @class = "nav-link" })
                     }
                     if (TienePermiso("Gestionar TipoCargo"))
                     {
                         @Html.ActionLink("Tipos de Cargo", "TipoCargo", "TipoCargo",
-                            new { area = "" },
-                            new { @class = "nav-link" })
+                                 new { area = "" },
+                                 new { @class = "nav-link" })
                     }
                     if (TienePermiso("Gestionar Medidor"))
                     {
                         @Html.ActionLink("Medidores", "Medidor", "Medidor",
-                            new { area = "" },
-                            new { @class = "nav-link" })
+                                 new { area = "" },
+                                 new { @class = "nav-link" })
                     }
 
                 }
                 @if (tieneComercial)
                 {
-                    <p class="nav-section">Atencion al Cliente</p>
+                    <p class="nav-section">Atención al Cliente</p>
 
-                    if (TienePermiso("Gestionar Cliente"))
+                    if (TienePermiso("Gestionar Persona"))
                     {
-                        @Html.ActionLink("Personas", "Cliente", "Cliente",
-                            new { area = "" },
-                            new { @class = "nav-link" })
+                        @Html.ActionLink("Personas", "Persona", "Persona",
+                                 new { area = "" },
+                                 new { @class = "nav-link" })
                     }
                     if (TienePermiso("Gestionar Socio"))
                     {
                         @Html.ActionLink("Socios", "Socio", "Socio",
-                            new { area = "" },
-                            new { @class = "nav-link" })
+                                 new { area = "" },
+                                 new { @class = "nav-link" })
                     }
                     if (TienePermiso("Gestionar Credito Inscripcion"))
                     {
                         @Html.ActionLink("Crédito de Inscripcion", "Credito", "Credito",
-                            new { area = "" },
-                            new { @class = "nav-link" })
+                                 new { area = "" },
+                                 new { @class = "nav-link" })
                     }
                     if (TienePermiso("Gestionar Pago"))
                     {
                         @Html.ActionLink("Pagos de Avisos", "Pago", "Pago",
-                            new { area = "" },
-                            new { @class = "nav-link" })
+                                 new { area = "" },
+                                 new { @class = "nav-link" })
                     }
 
                 }
@@ -331,32 +332,32 @@
                     if (TienePermiso("Gestionar Lecturas"))
                     {
                         @Html.ActionLink("Lecturas", "Lectura", "Lectura",
-                            new { area = "" },
-                            new { @class = "nav-link" })
+                                 new { area = "" },
+                                 new { @class = "nav-link" })
                     }
                     if (TienePermiso("Gestionar Avisos"))
                     {
                         @Html.ActionLink("Avisos y Cobros", "Aviso", "Aviso",
-                            new { area = "" },
-                            new { @class = "nav-link" })
+                                 new { area = "" },
+                                 new { @class = "nav-link" })
                     }
                     if (TienePermiso("Anular Avisos"))
                     {
                         @Html.ActionLink("Anular Avisos", "AnularAviso", "Aviso",
-                            new { area = "" },
-                            new { @class = "nav-link" })
+                                 new { area = "" },
+                                 new { @class = "nav-link" })
                     }
                     if (TienePermiso("Gestionar Cargo Extra"))
                     {
                         @Html.ActionLink("Cargos Extras", "CargoExtra", "CargoExtra",
-                            new { area = "" },
-                            new { @class = "nav-link" })
+                                 new { area = "" },
+                                 new { @class = "nav-link" })
                     }
                     if (TienePermiso("Gestionar Ruta"))
                     {
                         @Html.ActionLink("Rutas", "Ruta", "Ruta",
-                            new { area = "" },
-                            new { @class = "nav-link" })
+                                 new { area = "" },
+                                 new { @class = "nav-link" })
                     }
 
 
@@ -368,20 +369,20 @@
                     if (TienePermiso("Gestionar Cuenta Socio"))
                     {
                         @Html.ActionLink("Cuentas de Socio", "CuentaSocio", "CuentaSocio",
-                            new { area = "" },
-                            new { @class = "nav-link" })
+                                 new { area = "" },
+                                 new { @class = "nav-link" })
                     }
                     if (TienePermiso("Gestionar Notificaciones"))
                     {
                         @Html.ActionLink("Notificaciones", "Notificacion", "Notificacion",
-                            new { area = "" },
-                            new { @class = "nav-link" })
+                                 new { area = "" },
+                                 new { @class = "nav-link" })
                     }
                     if (TienePermiso("Gestionar Metodo Pago"))
                     {
                         @Html.ActionLink("Metodo de pago", "MetodoPago", "MetodoPago",
-                            new { area = "" },
-                            new { @class = "nav-link" })
+                                 new { area = "" },
+                                 new { @class = "nav-link" })
                     }
 
                 }
@@ -395,20 +396,26 @@
                     if (TienePermiso("Generar Reporte Caja"))
                     {
                         @Html.ActionLink("Reporte de Caja", "Caja", "Reporte",
-                            new { area = "" },
-                            new { @class = "nav-link" })
+                                 new { area = "" },
+                                 new { @class = "nav-link" })
                     }
                     if (TienePermiso("Generar Reporte Morosidad"))
                     {
                         @Html.ActionLink("Reporte de Morosidad", "Morosidad", "Reporte",
-                            new { area = "" },
-                            new { @class = "nav-link" })
+                                 new { area = "" },
+                                 new { @class = "nav-link" })
+                    }
+                    if (TienePermiso("Reporte de Pagos de Inscripción"))
+                    {
+                        @Html.ActionLink("Reporte de Pagos de Inscripción", "PagosInscripcion", "Reporte",
+                                new { area = "" },
+                                new { @class = "nav-link" })
                     }
                     if (TienePermiso("Generar Reporte Pagos Sistema"))
                     {
                         @Html.ActionLink("Reporte de Pagos del Sistema", "PagosSistema", "Reporte",
-                            new { area = "" },
-                            new { @class = "nav-link" })
+                                 new { area = "" },
+                                 new { @class = "nav-link" })
                     }
 
                 }

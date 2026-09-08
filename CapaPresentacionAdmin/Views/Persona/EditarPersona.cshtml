@@ -44,19 +44,13 @@
 </head>
 <body class="p-1">
 
-    <input type="hidden" id="hdnIdCliente" value="@id">
+    <input type="hidden" id="hdnIdPersona" value="@id">
 
     <div class="grid grid-cols-2 gap-3 mb-3">
 
         <div class="col-span-2">
             <label class="block text-xs font-medium text-gray-700 mb-1">Nombre Completo <span class="text-red-500">*</span></label>
             <input type="text" id="txtNombre" placeholder="Cargando..."
-                   class="input-field w-full px-3 py-2 border border-gray-300 rounded-xl text-sm bg-gray-50 text-gray-800 placeholder-gray-400">
-        </div>
-
-        <div class="col-span-2">
-            <label class="block text-xs font-medium text-gray-700 mb-1">Email <span class="text-red-500">*</span></label>
-            <input type="email" id="txtEmail" placeholder="Cargando..."
                    class="input-field w-full px-3 py-2 border border-gray-300 rounded-xl text-sm bg-gray-50 text-gray-800 placeholder-gray-400">
         </div>
 
@@ -108,21 +102,20 @@
     </button>
 
     <script>
-        // Cargar datos actuales del cliente al abrir el iframe
+        // Cargar datos actuales de la persona al abrir el iframe
         $(function () {
-            var id = parseInt($('#hdnIdCliente').val());
+            var id = parseInt($('#hdnIdPersona').val());
             $.ajax({
-                url:  '@Url.Action("Obtener", "Cliente")',
+                url:  '@Url.Action("Obtener", "Persona")',
                 type: 'GET',
                 data: { id: id },
                 success: function (res) {
                     if (!res.exito) { mostrarError('No se pudo cargar la persona.'); return; }
-                    var c = res.cliente;
+                    var c = res.persona;
                     $('#txtNombre').val(c.nombre_completo);
                     $('#txtCI').val(c.ci);
                     $('#selGenero').val(c.genero);
                     $('#txtTelefono').val(c.telefono || '');
-                    $('#txtEmail').val(c.email || '');
                     $('#txtFechaNac').val(parsearFecha(c.fecha_nacimiento));
                 },
                 error: function () { mostrarError('Error al cargar los datos.'); }
@@ -134,28 +127,25 @@
             var ci     = $.trim($('#txtCI').val());
             var genero = $('#selGenero').val();
             var tel    = $('#txtTelefono').val();
-            var email  = $.trim($('#txtEmail').val());
             var fnac   = $('#txtFechaNac').val();
 
             if (!nombre) { mostrarError('El nombre completo es obligatorio.'); return; }
             if (!ci)     { mostrarError('El CI es obligatorio.'); return; }
             if (!genero) { mostrarError('Selecciona el género.'); return; }
-            if (!email) { mostrarError('El email es obligatorio.'); return; }
             if (!fnac)   { mostrarError('La fecha de nacimiento es obligatoria.'); return; }
 
             ocultarError();
             setLoading(true);
 
             $.ajax({
-                url:  '@Url.Action("Editar", "Cliente")',
+                url:  '@Url.Action("Editar", "Persona")',
                 type: 'POST',
                 data: {
-                    id_cliente:       parseInt($('#hdnIdCliente').val()),
+                    id_persona:       parseInt($('#hdnIdPersona').val()),
                     nombre_completo:  nombre,
                     ci:               ci,
                     genero:           genero,
                     telefono:         tel ? parseInt(tel) : null,
-                    email:            email,
                     fecha_nacimiento: fnac
                 },
                 success: function (res) {

@@ -295,7 +295,7 @@ BEGIN
         DECLARE @porVencer TABLE (id_aviso INT, id_socio INT, periodo VARCHAR(50),
                                   vence DATE, deuda DECIMAL(30,2));
         INSERT INTO @porVencer
-        SELECT a.id_aviso, a.socio_id_socio, per.periodo, a.fecha_vencimiento, a.deuda_actual
+        SELECT a.id_aviso, a.socio_id_socio, per.periodo, a.fecha_vencimiento, a.total_aviso
         FROM aviso a
         INNER JOIN estado  e   ON e.id_estado    = a.estado_id_estado
         INNER JOIN periodo per ON per.id_periodo = a.periodo_id_periodo

@@ -1,32 +1,32 @@
 ﻿using CapaDato;
 using CapaModelo;
 using System;
-using static CapaModelo.CM_Cliente;
+using static CapaModelo.CM_Persona;
 
 namespace CapaNegocio
 {
-    public class CN_Cliente
+    public class CN_Persona
     {
-        private readonly CD_Cliente cdCliente = new CD_Cliente();
+        private readonly CD_Persona cdPersona = new CD_Persona();
         private readonly CN_Bitacora cnBitacora = new CN_Bitacora();
 
-        public CM_Cliente_Paginado Listar(string busqueda, int pagina, int tamanoPagina)
+        public CM_Persona_Paginado Listar(string busqueda, int pagina, int tamanoPagina)
         {
-            return cdCliente.Listar(busqueda, pagina, tamanoPagina);
+            return cdPersona.Listar(busqueda, pagina, tamanoPagina);
         }
 
         // Personas disponibles para asignar como socio (menos de 4 socios)
-        public CM_Cliente_Paginado ListarDisponiblesParaSocio(string busqueda, int pagina, int tamanoPagina)
+        public CM_Persona_Paginado ListarDisponiblesParaSocio(string busqueda, int pagina, int tamanoPagina)
         {
-            return cdCliente.ListarDisponiblesParaSocio(busqueda, pagina, tamanoPagina);
+            return cdPersona.ListarDisponiblesParaSocio(busqueda, pagina, tamanoPagina);
         }
 
-        public CM_Cliente Obtener(int idCliente)
+        public CM_Persona Obtener(int idPersona)
         {
-            return cdCliente.Obtener(idCliente);
+            return cdPersona.Obtener(idPersona);
         }
 
-        public bool Registrar(CM_Cliente obj, int idUsuarioSesion, out string Mensaje)
+        public bool Registrar(CM_Persona obj, int idUsuarioSesion, out string Mensaje)
         {
             Mensaje = string.Empty;
 
@@ -55,16 +55,6 @@ namespace CapaNegocio
                 Mensaje = "El género es obligatorio.";
                 return false;
             }
-            if (string.IsNullOrWhiteSpace(obj.email))
-            {
-                Mensaje = "El email es obligatorio (requerido para pagos por QR).";
-                return false;
-            }
-            if (!CN_Recursos.EsEmailValido(obj.email))
-            {
-                Mensaje = "El email no tiene un formato válido.";
-                return false;
-            }
             if (obj.fecha_nacimiento == DateTime.MinValue)
             {
                 Mensaje = "La fecha de nacimiento es obligatoria.";
@@ -81,21 +71,21 @@ namespace CapaNegocio
                 return false;
             }
 
-            bool resultado = cdCliente.Registrar(obj, idUsuarioSesion, out Mensaje);
+            bool resultado = cdPersona.Registrar(obj, idUsuarioSesion, out Mensaje);
 
             if (resultado)
-                cnBitacora.Registrar("Registró cliente: " + obj.nombre_completo, idUsuarioSesion);
+                cnBitacora.Registrar("Registró persona: " + obj.nombre_completo, idUsuarioSesion);
 
             return resultado;
         }
 
-        public bool Editar(CM_Cliente obj, int idUsuarioSesion, out string Mensaje)
+        public bool Editar(CM_Persona obj, int idUsuarioSesion, out string Mensaje)
         {
             Mensaje = string.Empty;
 
-            if (obj.id_cliente <= 0)
+            if (obj.id_persona <= 0)
             {
-                Mensaje = "Cliente no válido.";
+                Mensaje = "Persona no válida.";
                 return false;
             }
             if (string.IsNullOrWhiteSpace(obj.nombre_completo))
@@ -123,16 +113,6 @@ namespace CapaNegocio
                 Mensaje = "El género es obligatorio.";
                 return false;
             }
-            if (string.IsNullOrWhiteSpace(obj.email))
-            {
-                Mensaje = "El email es obligatorio (requerido para pagos por QR).";
-                return false;
-            }
-            if (!CN_Recursos.EsEmailValido(obj.email))
-            {
-                Mensaje = "El email no tiene un formato válido.";
-                return false;
-            }
             if (obj.fecha_nacimiento == DateTime.MinValue)
             {
                 Mensaje = "La fecha de nacimiento es obligatoria.";
@@ -149,28 +129,28 @@ namespace CapaNegocio
                 return false;
             }
 
-            bool resultado = cdCliente.Editar(obj, idUsuarioSesion, out Mensaje);
+            bool resultado = cdPersona.Editar(obj, idUsuarioSesion, out Mensaje);
 
             if (resultado)
-                cnBitacora.Registrar("Editó cliente ID: " + obj.id_cliente, idUsuarioSesion);
+                cnBitacora.Registrar("Editó persona ID: " + obj.id_persona, idUsuarioSesion);
 
             return resultado;
         }
 
-        public bool CambiarEstado(int idCliente, int idUsuarioSesion, out string Mensaje)
+        public bool CambiarEstado(int idPersona, int idUsuarioSesion, out string Mensaje)
         {
             Mensaje = string.Empty;
 
-            if (idCliente <= 0)
+            if (idPersona <= 0)
             {
-                Mensaje = "Cliente no válido.";
+                Mensaje = "Persona no válida.";
                 return false;
             }
 
-            bool resultado = cdCliente.CambiarEstado(idCliente, idUsuarioSesion, out Mensaje);
+            bool resultado = cdPersona.CambiarEstado(idPersona, idUsuarioSesion, out Mensaje);
 
             if (resultado)
-                cnBitacora.Registrar("Cambió estado del cliente ID: " + idCliente, idUsuarioSesion);
+                cnBitacora.Registrar("Cambió estado de la persona ID: " + idPersona, idUsuarioSesion);
 
             return resultado;
         }

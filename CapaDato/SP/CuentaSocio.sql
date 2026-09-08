@@ -1,13 +1,14 @@
-USE [COSPABIRL1]
+﻿USE [COSPABIRL1]
 GO
 
 -- =============================================================================
 -- CUENTA DE SOCIO (credenciales del portal, 1:1 con socio).
--- Regla de negocio: una cuenta de portal solo puede crearse si el cliente
--- (persona) detras del socio tiene email. El portal ofrece pagar el aviso con
--- QR y la pasarela Libelula EXIGE el email del cliente para registrar la
--- deuda; sin el, el socio entraria a un portal donde el boton de pagar falla
--- siempre. Se valida al registrar y al reasignar la cuenta a otro socio.
+-- Regla de negocio: una cuenta de portal solo puede crearse si el socio tiene
+-- correo (socio.correo, Migracion 17). El portal ofrece pagar el aviso con QR
+-- y la pasarela Libelula EXIGE el correo para registrar la deuda; sin el, el
+-- socio entraria a un portal donde el boton de pagar falla siempre. Desde la
+-- Migracion 17 la columna es NOT NULL, asi que la comprobacion solo cubre
+-- filas con espacios. Se valida al registrar y al reasignar la cuenta.
 -- =============================================================================
 
 
@@ -97,18 +98,16 @@ BEGIN
         RETURN;
     END
 
-    -- El portal ofrece pago por QR y la pasarela exige el email del cliente
+    -- El portal ofrece pago por QR y la pasarela exige el correo del socio
     IF NOT EXISTS (
         SELECT 1
         FROM socio s
-        INNER JOIN cliente c ON c.id_cliente = s.cliente_id_cliente
         WHERE s.id_socio = @IdSocio
-          AND c.email IS NOT NULL
-          AND LTRIM(RTRIM(c.email)) <> ''
+          AND LTRIM(RTRIM(s.correo)) <> ''
     )
     BEGIN
         SELECT 0 AS Resultado,
-               'El socio no tiene email registrado. Registre el email en el módulo Clientes antes de crearle una cuenta del portal.' AS Mensaje;
+               'El socio no tiene correo registrado. Registre el correo en el módulo Socios antes de crearle una cuenta del portal.' AS Mensaje;
         RETURN;
     END
 
@@ -157,18 +156,16 @@ BEGIN
         RETURN;
     END
 
-    -- El portal ofrece pago por QR y la pasarela exige el email del cliente
+    -- El portal ofrece pago por QR y la pasarela exige el correo del socio
     IF NOT EXISTS (
         SELECT 1
         FROM socio s
-        INNER JOIN cliente c ON c.id_cliente = s.cliente_id_cliente
         WHERE s.id_socio = @IdSocio
-          AND c.email IS NOT NULL
-          AND LTRIM(RTRIM(c.email)) <> ''
+          AND LTRIM(RTRIM(s.correo)) <> ''
     )
     BEGIN
         SELECT 0 AS Resultado,
-               'El socio no tiene email registrado. Registre el email en el módulo Clientes antes de crearle una cuenta del portal.' AS Mensaje;
+               'El socio no tiene correo registrado. Registre el correo en el módulo Socios antes de crearle una cuenta del portal.' AS Mensaje;
         RETURN;
     END
 

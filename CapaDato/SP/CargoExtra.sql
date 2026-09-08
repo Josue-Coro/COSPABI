@@ -25,6 +25,38 @@ BEGIN
             RETURN;
         END
 
+        -- Un periodo ya facturado NO admite cargos nuevos.
+        --
+        -- total_aviso es una foto inmutable tomada al generar el aviso, y
+        -- sp_generar_avisos_periodo solo suma cargos del MISMO periodo del aviso
+        -- (no hay arrastre al periodo siguiente). Un cargo nacido despues de la
+        -- emision terminaba de una de estas dos formas, ninguna cobrable:
+        --   * antes del pago  -> el UPDATE de sp_registrar_pago_aviso lo marcaba
+        --                        PAGADO sin que estuviera en el total.
+        --   * despues del pago-> quedaba PENDIENTE para siempre, sin aviso que
+        --                        pudiera recogerlo nunca.
+        -- La regla ya la asumian sp_anular_cargo_extra ('El cargo ya fue aplicado
+        -- a un aviso y no puede anularse') y sp_anular_aviso ('Ya puede registrar
+        -- cargos y regenerar el aviso'); faltaba implementarla en el alta.
+        -- Vive en el SP a proposito: la advertencia de la vista se podia ignorar.
+        DECLARE @id_aviso_activo INT, @nombre_periodo VARCHAR(50);
+
+        SELECT TOP 1 @id_aviso_activo = a.id_aviso
+        FROM aviso a
+        WHERE a.socio_id_socio     = @id_socio
+          AND a.periodo_id_periodo = @id_periodo
+          AND a.estado_id_estado <> (SELECT id_estado FROM estado WHERE estado = 'ANULADO');
+
+        IF @id_aviso_activo IS NOT NULL
+        BEGIN
+            SELECT @nombre_periodo = periodo FROM periodo WHERE id_periodo = @id_periodo;
+            SET @Mensaje = 'El periodo ' + ISNULL(@nombre_periodo, '') +
+                           ' ya fue facturado para este socio (aviso #' +
+                           CAST(@id_aviso_activo AS VARCHAR) + '). Registre el cargo en el ' +
+                           'periodo siguiente, o anule ese aviso y vuelva a generarlo.';
+            RETURN;
+        END
+
         IF EXISTS (
             SELECT 1 FROM cargo_extra
             WHERE socio_id_socio      = @id_socio

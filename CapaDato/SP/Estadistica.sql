@@ -1,4 +1,5 @@
-USE [COSPABIRL1]
+﻿USE [COSPABIRL1]
+GO
 CREATE OR ALTER PROCEDURE dbo.sp_obtener_estadisticas_dashboard
     @periodo VARCHAR(50)
 AS
@@ -10,7 +11,7 @@ BEGIN
 
     SELECT
         (SELECT COUNT(*) FROM socio)         AS TotalSocios,
-        (SELECT COUNT(*) FROM cliente)       AS TotalClientes,
+        (SELECT COUNT(*) FROM persona)       AS TotalPersonas,
         (SELECT COUNT(*) FROM medidor)       AS TotalMedidores,
         (SELECT COUNT(*) FROM ruta)          AS TotalRutas,
         (SELECT COUNT(*) FROM usuario_admin) AS TotalUsuarios,

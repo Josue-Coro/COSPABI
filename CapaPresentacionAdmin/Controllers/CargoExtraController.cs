@@ -23,7 +23,7 @@ namespace CapaPresentacionAdmin.Controllers
         [ValidarPermisos(NombrePermiso = "Gestionar Cargo Extra")]
         public JsonResult ListarPeriodos()
         {
-            var lista = new CN_Lectura().ListarPeriodosAutomaticos();
+            var lista = new CN_Lectura().ListarPeriodos();
             return Json(new { data = lista }, JsonRequestBehavior.AllowGet);
         }
 

@@ -56,11 +56,11 @@ namespace CapaPresentacionAdmin.Controllers
 
         [HttpGet]
         [ValidarPermisos(NombrePermiso = "Gestionar Socio")]
-        public JsonResult ListarCliente(string busqueda = "", int pagina = 1, int tamanoPagina = 10)
+        public JsonResult ListarPersonas(string busqueda = "", int pagina = 1, int tamanoPagina = 10)
         {
             try
             {
-                var resultado = new CN_Cliente().Listar(busqueda, pagina, tamanoPagina);
+                var resultado = new CN_Persona().Listar(busqueda, pagina, tamanoPagina);
 
                 if (resultado == null)
                     return Json(new { exito = false, mensaje = "Error al obtener los datos." },
@@ -70,7 +70,7 @@ namespace CapaPresentacionAdmin.Controllers
                 {
                     exito = true,
                     totalRegistros = resultado.TotalRegistros,
-                    clientes = resultado.Clientes
+                    personas = resultado.Personas
                 }, JsonRequestBehavior.AllowGet);
             }
             catch (Exception ex)
@@ -86,7 +86,7 @@ namespace CapaPresentacionAdmin.Controllers
         {
             try
             {
-                var resultado = new CN_Cliente().ListarDisponiblesParaSocio(busqueda, pagina, tamanoPagina);
+                var resultado = new CN_Persona().ListarDisponiblesParaSocio(busqueda, pagina, tamanoPagina);
 
                 if (resultado == null)
                     return Json(new { exito = false, mensaje = "Error al obtener los datos." },
@@ -96,7 +96,7 @@ namespace CapaPresentacionAdmin.Controllers
                 {
                     exito = true,
                     totalRegistros = resultado.TotalRegistros,
-                    clientes = resultado.Clientes
+                    personas = resultado.Personas
                 }, JsonRequestBehavior.AllowGet);
             }
             catch (Exception ex)

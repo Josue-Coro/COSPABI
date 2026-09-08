@@ -34,9 +34,25 @@ namespace CapaNegocio
                 Mensaje = "El nombre del socio es obligatorio.";
                 return 0;
             }
-            if (socio.cliente_id_cliente <= 0)
+            if (socio.persona_id_persona <= 0)
             {
-                Mensaje = "Debe seleccionar un cliente.";
+                Mensaje = "Debe seleccionar una persona.";
+                return 0;
+            }
+            if (string.IsNullOrWhiteSpace(socio.correo))
+            {
+                Mensaje = "El correo del socio es obligatorio (requerido para pagos por QR y portal).";
+                return 0;
+            }
+            if (!CN_Recursos.EsEmailValido(socio.correo))
+            {
+                Mensaje = "El correo no tiene un formato válido.";
+                return 0;
+            }
+            socio.correo = socio.correo.Trim();
+            if (!CN_Recursos.EsCategoriaSocioValida(socio.categoria))
+            {
+                Mensaje = "La categoría debe ser Doméstico, Comercial, Industrial o Social.";
                 return 0;
             }
             if (socio.medidor_id_medidor.HasValue && socio.medidor_id_medidor.Value <= 0)
@@ -100,6 +116,27 @@ namespace CapaNegocio
             if (string.IsNullOrWhiteSpace(socio.nombre_socio))
             {
                 Mensaje = "El nombre del socio es obligatorio.";
+                return false;
+            }
+            if (socio.persona_id_persona <= 0)
+            {
+                Mensaje = "Debe seleccionar una persona.";
+                return false;
+            }
+            if (string.IsNullOrWhiteSpace(socio.correo))
+            {
+                Mensaje = "El correo del socio es obligatorio (requerido para pagos por QR y portal).";
+                return false;
+            }
+            if (!CN_Recursos.EsEmailValido(socio.correo))
+            {
+                Mensaje = "El correo no tiene un formato válido.";
+                return false;
+            }
+            socio.correo = socio.correo.Trim();
+            if (!CN_Recursos.EsCategoriaSocioValida(socio.categoria))
+            {
+                Mensaje = "La categoría debe ser Doméstico, Comercial, Industrial o Social.";
                 return false;
             }
             if (socio.medidor_id_medidor.HasValue && socio.medidor_id_medidor.Value <= 0)

@@ -1,4 +1,4 @@
-USE [COSPABIRL1]
+﻿USE [COSPABIRL1]
 GO
 
 -- =============================================
@@ -87,7 +87,7 @@ BEGIN
         -- 1) Crear los avisos del periodo. total_aviso = consumo + SUMA(cargos) + cuota_credito
         INSERT INTO aviso (
             fecha_emision, fecha_vencimiento,
-            total_consumo, total_aviso, deuda_actual,
+            total_consumo, total_aviso,
             estado_id_estado,
             socio_id_socio, periodo_id_periodo,
             lectura_id_lectura
@@ -97,7 +97,6 @@ BEGIN
             CAST(DATEADD(DAY, 30, GETDATE()) AS DATE),
             calc.total_consumo,
             calc.total_consumo + calc.sum_cargos + calc.cuota_credito,   -- total_aviso
-            calc.total_consumo + calc.sum_cargos + calc.cuota_credito,   -- deuda_actual
             @id_estado_gen,
             s.id_socio,
             l.periodo_id_periodo,
@@ -154,7 +153,20 @@ BEGIN
     BEGIN CATCH
         IF @@TRANCOUNT > 0 ROLLBACK;
         SET @Generados = 0;
-        SET @Mensaje   = ERROR_MESSAGE();
+
+        -- 2601/2627 = violacion de indice unico. Desde la Migracion 15 existe
+        -- aviso_socio_periodo_UX, que impide dos avisos vivos del mismo socio y
+        -- periodo. Si salta aqui es porque otra sesion genero los avisos de este
+        -- periodo mientras esta corria: el NOT EXISTS de arriba no ve los INSERT
+        -- de la otra transaccion hasta que confirma. No se genero nada (la
+        -- transaccion completa se deshizo) y reintentar es seguro: los avisos que
+        -- alcanzo a crear la otra corrida ya excluyen a esos socios.
+        IF ERROR_NUMBER() IN (2601, 2627)
+            SET @Mensaje = 'Otro usuario genero los avisos de este periodo al mismo tiempo. ' +
+                           'No se genero ningun aviso duplicado; vuelva a intentar para ' +
+                           'completar los que falten.';
+        ELSE
+            SET @Mensaje = ERROR_MESSAGE();
     END CATCH
 END
 GO
@@ -183,7 +195,7 @@ BEGIN
         a.fecha_vencimiento,
         a.total_consumo,
         a.total_aviso,
-        a.deuda_actual,
+        CASE WHEN e.estado IN ('PAGADO', 'ANULADO') THEN 0 ELSE a.total_aviso END AS deuda_actual,
         e.estado                                                                  AS estado,
         a.estado_id_estado,
         e.estado                                                                  AS nombre_estado,
@@ -194,6 +206,7 @@ BEGIN
         CASE WHEN EXISTS (
             SELECT 1 FROM cargo_extra ce 
             WHERE ce.socio_id_socio = a.socio_id_socio AND ce.periodo_id_periodo = a.periodo_id_periodo
+              AND ce.estado <> 'ANULADO'
         ) THEN 1 ELSE 0 END                                                       AS tiene_cargo_extra,
         CASE WHEN EXISTS (
             SELECT 1 FROM credito_inscripcion ci 
@@ -293,7 +306,7 @@ GO
 -- =============================================
 -- 4. sp_ultimo_aviso_socio
 --    Devuelve el aviso mas reciente de un socio
---    para el portal cliente.
+--    para el portal del socio.
 -- =============================================
 CREATE OR ALTER PROCEDURE dbo.sp_ultimo_aviso_socio
     @id_socio INT
@@ -306,7 +319,7 @@ BEGIN
         a.fecha_vencimiento,
         a.total_consumo,
         a.total_aviso,
-        a.deuda_actual,
+        CASE WHEN e.estado IN ('PAGADO', 'ANULADO') THEN 0 ELSE a.total_aviso END AS deuda_actual,
         e.estado  AS estado,
         a.estado_id_estado,
         e.estado  AS nombre_estado,
@@ -394,7 +407,7 @@ BEGIN
         a.fecha_vencimiento,
         a.total_consumo,
         a.total_aviso,
-        a.deuda_actual,
+        CASE WHEN e.estado IN ('PAGADO', 'ANULADO') THEN 0 ELSE a.total_aviso END AS deuda_actual,
         e.estado        AS estado,
         -- Socio
         s.nombre_socio,
@@ -415,9 +428,12 @@ BEGIN
         t.consumo_minimo_m3,
         t.precio_m3,
         -- Suma de cargos extra del socio en el periodo (1:N)
+        -- Un cargo ANULADO nunca se facturo: sumarlo hacia que el detalle
+        -- mostrara un total mayor al total_aviso realmente cobrado.
         ISNULL((SELECT SUM(ce.monto) FROM cargo_extra ce
                 WHERE ce.socio_id_socio = a.socio_id_socio
-                  AND ce.periodo_id_periodo = a.periodo_id_periodo), 0) AS total_cargos,
+                  AND ce.periodo_id_periodo = a.periodo_id_periodo
+                  AND ce.estado <> 'ANULADO'), 0) AS total_cargos,
         -- Cuota de credito de inscripcion (0..1)
         ci.monto_pago   AS monto_credito
     FROM aviso a
@@ -429,9 +445,17 @@ BEGIN
     INNER JOIN medidor   m  ON m.id_medidor             = l.medidor_id_medidor
     INNER JOIN rol_socio rs ON rs.id_rol_socio          = s.rol_socio_id_rol_socio
     INNER JOIN tarifa    t  ON t.rol_socio_id_rol_socio = s.rol_socio_id_rol_socio
+    -- La cuota inicial de inscripcion se paga en efectivo al registrar al socio,
+    -- en el periodo de registro. Si ese periodo coincide con el de un aviso,
+    -- aparecia en el detalle sin haber entrado nunca en total_aviso. Se
+    -- reconoce porque su pago no tiene aviso; las cuotas cobradas via aviso
+    -- quedan ligadas a un pago que si lo tiene.
     LEFT  JOIN credito_inscripcion ci 
         ON ci.socio_id_socio = a.socio_id_socio
        AND ci.periodo_id_periodo = a.periodo_id_periodo
+       AND NOT EXISTS (SELECT 1 FROM pago pg
+                       WHERE pg.id_pago = ci.pago_id_pago
+                         AND pg.aviso_id_aviso IS NULL)
     WHERE a.id_aviso = @id_aviso;
 
     -- 2) Lista de cargos extra del aviso (N filas)
@@ -448,6 +472,7 @@ BEGIN
     INNER JOIN tipo_cargo tc ON tc.id_tipo = ce.tipo_cargo_id_tipo
     WHERE ce.socio_id_socio = @socio_id
       AND ce.periodo_id_periodo = @periodo_id
+      AND ce.estado <> 'ANULADO'
     ORDER BY ce.id_cargo_extra;
 END
 GO

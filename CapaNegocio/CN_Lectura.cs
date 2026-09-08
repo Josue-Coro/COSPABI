@@ -55,25 +55,16 @@ namespace CapaNegocio
         }
 
         // Genera mes actual + 12 anteriores como "MM/YYYY" y los auto-crea en BD
-        public List<CM_Periodo> ListarPeriodosAutomaticos()
+        // Periodos existentes para los combos (Avisos, Cargos Extra, Lecturas).
+        // Solo lee: antes creaba 13 meses hacia atras en cada carga de pantalla,
+        // con costo_inscripcion NULL, y resucitaba periodos borrados a mano.
+        // El periodo del mes lo crea ObtenerPeriodoActual cuando hace falta.
+        public List<CM_Periodo> ListarPeriodos()
         {
-            var lista = new List<CM_Periodo>();
-            var ahora = DateTime.Today;
-
-            for (int i = 0; i < 13; i++)
-            {
-                var fecha  = ahora.AddMonths(-i);
-                var nombre = fecha.Month.ToString("D2") + "/" + fecha.Year;
-                int id     = cdLectura.ObtenerOCrearPeriodo(nombre);
-
-                if (id > 0)
-                    lista.Add(new CM_Periodo { id_periodo = id, periodo = nombre });
-            }
-
-            return lista;
+            return cdLectura.ListarPeriodos();
         }
 
-        // Período del mes en curso (auto-creado si no existe). Mismo formato que ListarPeriodosAutomaticos.
+        // Período del mes en curso (auto-creado si no existe). Mismo formato que ListarPeriodos.
         public CM_Periodo ObtenerPeriodoActual()
         {
             var hoy    = DateTime.Today;

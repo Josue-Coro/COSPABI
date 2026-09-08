@@ -112,6 +112,19 @@ namespace CapaPresentacionAdmin.Controllers
             }
         }
 
+        [ValidarPermisos(NombrePermiso = "Reporte de Pagos de Inscripción")]
+        public ActionResult PagosInscripcion()
+        {
+            return View();
+        }
+
+        [HttpGet]
+        [ValidarPermisos(NombrePermiso = "Reporte de Pagos de Inscripción")]
+        public JsonResult PagosInscripcion(string fechaInicio, string fechaFin)
+        {
+            return Json(new { exito = false, mensaje = "Funcionalidad no implementada." }, JsonRequestBehavior.AllowGet);
+        }
+
         // ---- HU22: Reporte de Morosidad ----
 
         [ValidarPermisos(NombrePermiso = "Generar Reporte Morosidad")]

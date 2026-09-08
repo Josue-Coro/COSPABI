@@ -62,8 +62,7 @@ namespace CapaDato
                             {
                                 id_bitacora = Convert.ToInt32(dr["id_bitacora"]),
                                 accion = dr["accion"].ToString(),
-                                fecha = Convert.ToDateTime(dr["fecha"]),
-                                hora = Convert.ToDateTime(dr["hora"]),
+                                fecha_hora = Convert.ToDateTime(dr["fecha_hora"]),
                                 id_usuario = Convert.ToInt32(dr["usuario_admin_id_usuario_admin"]),
                                 nombre_completo = dr["nombre_completo"].ToString(),
                                 usuario = dr["usuario"].ToString()

@@ -30,7 +30,7 @@ BEGIN
         a.fecha_vencimiento,
         a.total_consumo,
         a.total_aviso,
-        a.deuda_actual,
+        CASE WHEN e.estado IN ('PAGADO', 'ANULADO') THEN 0 ELSE a.total_aviso END AS deuda_actual,
         e.estado        AS estado,
         e.estado        AS nombre_estado,
         -- Socio
@@ -58,9 +58,11 @@ BEGIN
         t.consumo_minimo_m3,
         t.precio_m3,
         -- Suma de cargos extra del socio en el periodo (1:N)
+        -- Un cargo ANULADO nunca se facturo: no puede aparecer en el impreso.
         ISNULL((SELECT SUM(ce.monto) FROM cargo_extra ce
                 WHERE ce.socio_id_socio = a.socio_id_socio
-                  AND ce.periodo_id_periodo = a.periodo_id_periodo), 0) AS total_cargos,
+                  AND ce.periodo_id_periodo = a.periodo_id_periodo
+                  AND ce.estado <> 'ANULADO'), 0) AS total_cargos,
         -- Cuota de crédito de inscripción (0..1)
         ci.monto_pago   AS monto_credito
     FROM aviso a
@@ -72,9 +74,17 @@ BEGIN
     INNER JOIN medidor   m  ON m.id_medidor             = l.medidor_id_medidor
     INNER JOIN rol_socio rs ON rs.id_rol_socio          = s.rol_socio_id_rol_socio
     INNER JOIN tarifa    t  ON t.rol_socio_id_rol_socio = s.rol_socio_id_rol_socio
+    -- La cuota inicial de inscripcion se paga en efectivo al registrar al socio,
+    -- en el periodo de registro. Si ese periodo coincide con el de un aviso,
+    -- aparecia en el detalle sin haber entrado nunca en total_aviso. Se
+    -- reconoce porque su pago no tiene aviso; las cuotas cobradas via aviso
+    -- quedan ligadas a un pago que si lo tiene.
     LEFT  JOIN credito_inscripcion ci 
         ON ci.socio_id_socio = a.socio_id_socio
        AND ci.periodo_id_periodo = a.periodo_id_periodo
+       AND NOT EXISTS (SELECT 1 FROM pago pg
+                       WHERE pg.id_pago = ci.pago_id_pago
+                         AND pg.aviso_id_aviso IS NULL)
     WHERE a.id_aviso = @id_aviso;
 
     -- 2) CARGOS EXTRA (Datos Facturados) --------------------------------------
@@ -90,6 +100,7 @@ BEGIN
     INNER JOIN tipo_cargo tc ON tc.id_tipo = ce.tipo_cargo_id_tipo
     WHERE ce.socio_id_socio = @socio_id
       AND ce.periodo_id_periodo = @periodo_id
+      AND ce.estado <> 'ANULADO'
     ORDER BY ce.id_cargo_extra;
 
     -- 3) HISTÓRICO (últimos 12 avisos del socio) ------------------------------

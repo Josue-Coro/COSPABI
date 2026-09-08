@@ -1,7 +1,14 @@
 USE [COSPABIRL1]
 GO
-    
-CREATE PROCEDURE [dbo].[sp_listar_medidores]
+
+-- =============================================================================
+-- MEDIDOR. Archivo re-ejecutable (CREATE OR ALTER); sin EXEC de prueba sueltos.
+-- =============================================================================
+
+-- =============================================
+-- LISTAR MEDIDORES (todos, con su socio si lo tiene)
+-- =============================================
+CREATE OR ALTER PROCEDURE [dbo].[sp_listar_medidores]
 (
     @Busqueda     VARCHAR(250) = '',
     @Pagina       INT          = 1,
@@ -13,7 +20,7 @@ BEGIN
 
     DECLARE @Offset INT = (@Pagina - 1) * @TamanoPagina;
 
-    -- Total de registros para la paginación
+    -- Total de registros para la paginacion
     SELECT COUNT(*) AS TotalRegistros
     FROM medidor m
     LEFT JOIN socio s ON s.medidor_id_medidor = m.id_medidor
@@ -47,15 +54,16 @@ BEGIN
 END
 GO
 
---probar sp_listar_medidores
-EXEC dbo.sp_listar_medidores @Busqueda = '', @Pagina = 1, @TamanoPagina = 1000;
-GO
-EXEC dbo.sp_listar_medidores_socio @Busqueda = '', @Pagina = 1, @TamanoPagina = 1000;
-GO
-
-
--- listar medidores que no esten asignado a ningun socio
-CREATE PROCEDURE [dbo].[sp_listar_medidores_socio]
+-- =============================================
+-- LISTAR MEDIDORES LIBRES (no asignados a ningun socio)
+--
+-- El COUNT y el SELECT de datos deben filtrar por lo MISMO. El total contaba
+-- todos los medidores mientras la lista solo devolvia los libres, asi que la
+-- paginacion mostraba paginas vacias (15 registros anunciados, 0 filas).
+-- El filtro de busqueda tampoco puede mirar al socio: estos medidores no
+-- tienen uno.
+-- =============================================
+CREATE OR ALTER PROCEDURE [dbo].[sp_listar_medidores_socio]
 (
     @Busqueda     VARCHAR(250) = '',
     @Pagina       INT          = 1,
@@ -67,16 +75,15 @@ BEGIN
 
     DECLARE @Offset INT = (@Pagina - 1) * @TamanoPagina;
 
-    -- Total de registros para la paginación
+    -- Total de registros para la paginacion (mismos filtros que los datos)
     SELECT COUNT(*) AS TotalRegistros
     FROM medidor m
     LEFT JOIN socio s ON s.medidor_id_medidor = m.id_medidor
-    WHERE (
+    WHERE s.medidor_id_medidor IS NULL
+      AND (
         @Busqueda = ''
-        OR m.serie        LIKE '%' + @Busqueda + '%'
-        OR CAST(m.numero  AS VARCHAR) LIKE '%' + @Busqueda + '%'
-        OR s.nombre_socio LIKE '%' + @Busqueda + '%'
-        OR CAST(s.codigo_fijo AS VARCHAR) LIKE '%' + @Busqueda + '%'
+        OR m.serie       LIKE '%' + @Busqueda + '%'
+        OR CAST(m.numero AS VARCHAR) LIKE '%' + @Busqueda + '%'
     );
 
     -- Datos paginados
@@ -87,24 +94,23 @@ BEGIN
         m.fecha_instalacion,
         s.nombre_socio,
         s.codigo_fijo
-        FROM medidor m
-        LEFT JOIN socio s ON s.medidor_id_medidor = m.id_medidor
-        WHERE s.medidor_id_medidor IS NULL
-        AND (
-            @Busqueda = ''
-            OR m.serie        LIKE '%' + @Busqueda + '%'
-            OR CAST(m.numero  AS VARCHAR) LIKE '%' + @Busqueda + '%'
-        )
-        ORDER BY m.id_medidor DESC
-        OFFSET @Offset ROWS FETCH NEXT @TamanoPagina ROWS ONLY;
-
+    FROM medidor m
+    LEFT JOIN socio s ON s.medidor_id_medidor = m.id_medidor
+    WHERE s.medidor_id_medidor IS NULL
+      AND (
+        @Busqueda = ''
+        OR m.serie       LIKE '%' + @Busqueda + '%'
+        OR CAST(m.numero AS VARCHAR) LIKE '%' + @Busqueda + '%'
+    )
+    ORDER BY m.id_medidor DESC
+    OFFSET @Offset ROWS FETCH NEXT @TamanoPagina ROWS ONLY;
 END
 GO
 
---Probar sp_listar_medidores_socio
-
--- Registrar medidor
-CREATE PROCEDURE [dbo].[sp_crear_medidor]
+-- =============================================
+-- REGISTRAR MEDIDOR
+-- =============================================
+CREATE OR ALTER PROCEDURE [dbo].[sp_crear_medidor]
     @serie            VARCHAR(150),
     @numero           INTEGER,
     @fecha_instalacion DATE,
@@ -126,15 +132,17 @@ BEGIN
             SET @Mensaje   = 'Medidor registrado correctamente.';
         END
         ELSE
-            SET @Mensaje = 'Ya existe un medidor con este número.';
+            SET @Mensaje = 'Ya existe un medidor con este numero.';
     END
     ELSE
         SET @Mensaje = 'Ya existe un medidor con esta serie.';
 END
 GO
 
--- Editar medidor
-CREATE PROCEDURE [dbo].[sp_editar_medidor]
+-- =============================================
+-- EDITAR MEDIDOR
+-- =============================================
+CREATE OR ALTER PROCEDURE [dbo].[sp_editar_medidor]
     @id_medidor       INTEGER,
     @serie            VARCHAR(150),
     @numero           INTEGER,
@@ -160,7 +168,7 @@ BEGIN
             SET @Mensaje   = 'Medidor actualizado correctamente.';
         END
         ELSE
-            SET @Mensaje = 'Ya existe un medidor con este número.';
+            SET @Mensaje = 'Ya existe un medidor con este numero.';
     END
     ELSE
         SET @Mensaje = 'Ya existe un medidor con esta serie.';

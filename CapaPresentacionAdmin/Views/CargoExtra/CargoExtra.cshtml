@@ -1,4 +1,4 @@
-@{
+﻿@{
     ViewBag.Title = "Cargo Extra";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
@@ -104,18 +104,20 @@
                 <input type="hidden" id="idSocio" value="0" />
             </div>
 
-            <!-- Advertencia: aviso ya generado -->
-            <div id="avisoWarning" class="hidden mb-4 p-4 bg-amber-50 border border-amber-200 rounded-xl">
+            <!-- Bloqueo: el período ya fue facturado para este socio -->
+            <div id="avisoWarning" class="hidden mb-4 p-4 bg-red-50 border border-red-200 rounded-xl">
                 <div class="flex gap-3 items-start">
-                    <svg class="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg class="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                               d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
                     </svg>
                     <div>
-                        <p class="text-sm font-semibold text-amber-800">Este socio ya tiene un aviso generado para este período</p>
-                        <p class="text-xs text-amber-700 mt-0.5">
-                            El cargo se registrará pero <strong>no se aplicará al aviso existente</strong>.
-                            Para aplicarlo: ve a <strong>Avisos → Historial</strong>, anula ese aviso y luego regenerá.
+                        <p class="text-sm font-semibold text-red-800">Este período ya fue facturado para este socio</p>
+                        <p class="text-xs text-red-700 mt-0.5">
+                            No se pueden registrar cargos: el total del aviso ya está emitido y
+                            <strong>un cargo agregado ahora no se cobraría nunca</strong>.
+                            Registrá el cargo en el período siguiente, o andá a
+                            <strong>Avisos → Historial</strong>, anulá ese aviso y volvé a generarlo.
                         </p>
                     </div>
                 </div>
@@ -381,16 +383,35 @@ function seleccionarSocio(id, nombre, codigo) {
 function limpiarSocio() {
     $('#idSocio').val(0);
     $('#socioSeleccionado').addClass('hidden');
-    $('#avisoWarning').addClass('hidden');
+    periodoYaFacturado = false;
+    aplicarBloqueoPeriodoFacturado();
+}
+
+// Un periodo ya facturado bloquea el registro. La validacion de verdad vive en
+// sp_registrar_cargo_extra; esto solo evita que el usuario llene el formulario
+// para nada.
+var periodoYaFacturado = false;
+
+function aplicarBloqueoPeriodoFacturado() {
+    $('#avisoWarning').toggleClass('hidden', !periodoYaFacturado);
+    $('#btnAgregar').prop('disabled', periodoYaFacturado)
+                    .toggleClass('opacity-50 cursor-not-allowed', periodoYaFacturado);
+    $('#btnRegistrar').prop('disabled', periodoYaFacturado)
+                      .toggleClass('opacity-50 cursor-not-allowed', periodoYaFacturado);
 }
 
 function verificarAvisoExistente() {
     var idSocio   = parseInt($('#idSocio').val());
     var idPeriodo = $('#idPeriodo').val();
-    if (!idSocio || !idPeriodo) { $('#avisoWarning').addClass('hidden'); return; }
+    if (!idSocio || !idPeriodo) {
+        periodoYaFacturado = false;
+        aplicarBloqueoPeriodoFacturado();
+        return;
+    }
     $.get('@Url.Action("VerificarAvisoExistente", "CargoExtra")', { idSocio: idSocio, idPeriodo: idPeriodo })
         .done(function (res) {
-            $('#avisoWarning').toggleClass('hidden', !res.existe);
+            periodoYaFacturado = !!res.existe;
+            aplicarBloqueoPeriodoFacturado();
         });
 }
 
@@ -477,6 +498,7 @@ function registrarCargos() {
 
     if (!idPeriodo) { mostrarToast('No se pudo determinar el per\u00edodo actual.', 'error'); return; }
     if (!idSocio)   { mostrarToast('Selecciona un socio.', 'error'); return; }
+    if (periodoYaFacturado) { mostrarToast('Este periodo ya fue facturado para el socio: no admite cargos nuevos.', 'error'); return; }
     if (cargosSeleccionados.length === 0) { mostrarToast('Agrega al menos un cargo a la lista.', 'error'); return; }
 
     var cargos = cargosSeleccionados.map(function (c) {

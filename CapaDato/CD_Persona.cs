@@ -3,28 +3,28 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
-using static CapaModelo.CM_Cliente;
+using static CapaModelo.CM_Persona;
 
 namespace CapaDato
 {
-    public class CD_Cliente
+    public class CD_Persona
     {
-        public CM_Cliente_Paginado Listar(string busqueda, int pagina, int tamanoPagina)
+        public CM_Persona_Paginado Listar(string busqueda, int pagina, int tamanoPagina)
         {
-            return ListarInterno("dbo.sp_listar_clientes", busqueda, pagina, tamanoPagina);
+            return ListarInterno("dbo.sp_listar_personas", busqueda, pagina, tamanoPagina);
         }
 
         // Personas que aún pueden ser socio (menos de 4 socios). Para el alta de socio.
-        public CM_Cliente_Paginado ListarDisponiblesParaSocio(string busqueda, int pagina, int tamanoPagina)
+        public CM_Persona_Paginado ListarDisponiblesParaSocio(string busqueda, int pagina, int tamanoPagina)
         {
             return ListarInterno("dbo.sp_listar_personas_disponibles_socio", busqueda, pagina, tamanoPagina);
         }
 
-        private CM_Cliente_Paginado ListarInterno(string nombreSp, string busqueda, int pagina, int tamanoPagina)
+        private CM_Persona_Paginado ListarInterno(string nombreSp, string busqueda, int pagina, int tamanoPagina)
         {
-            var resultado = new CM_Cliente_Paginado
+            var resultado = new CM_Persona_Paginado
             {
-                Clientes = new List<CM_Cliente>()
+                Personas = new List<CM_Persona>()
             };
 
             try
@@ -49,16 +49,15 @@ namespace CapaDato
                     {
                         while (dr.Read())
                         {
-                            resultado.Clientes.Add(new CM_Cliente
+                            resultado.Personas.Add(new CM_Persona
                             {
-                                id_cliente = Convert.ToInt32(dr["id_cliente"]),
+                                id_persona = Convert.ToInt32(dr["id_persona"]),
                                 nombre_completo = dr["nombre_completo"].ToString(),
                                 ci = dr["ci"].ToString(),
                                 genero = dr["genero"].ToString(),
                                 telefono = dr["telefono"] == DBNull.Value
                                                        ? (int?)null
                                                        : Convert.ToInt32(dr["telefono"]),
-                                email = dr["email"] == DBNull.Value ? null : dr["email"].ToString(),
                                 fecha_nacimiento = Convert.ToDateTime(dr["fecha_nacimiento"]),
                                 fecha_registro = Convert.ToDateTime(dr["fecha_registro"]),
                                 estado = Convert.ToBoolean(dr["estado"])
@@ -77,33 +76,32 @@ namespace CapaDato
             return resultado;
         }
 
-        public CM_Cliente Obtener(int idCliente)
+        public CM_Persona Obtener(int idPersona)
         {
-            CM_Cliente cliente = null;
+            CM_Persona persona = null;
 
             try
             {
                 using (SqlConnection cn = new SqlConnection(CD_Conexion.cn))
                 {
-                    SqlCommand cmd = new SqlCommand("dbo.sp_obtener_cliente", cn);
+                    SqlCommand cmd = new SqlCommand("dbo.sp_obtener_persona", cn);
                     cmd.CommandType = CommandType.StoredProcedure;
-                    cmd.Parameters.AddWithValue("@IdCliente", idCliente);
+                    cmd.Parameters.AddWithValue("@IdPersona", idPersona);
 
                     cn.Open();
                     SqlDataReader dr = cmd.ExecuteReader();
 
                     if (dr.Read())
                     {
-                        cliente = new CM_Cliente
+                        persona = new CM_Persona
                         {
-                            id_cliente = Convert.ToInt32(dr["id_cliente"]),
+                            id_persona = Convert.ToInt32(dr["id_persona"]),
                             nombre_completo = dr["nombre_completo"].ToString(),
                             ci = dr["ci"].ToString(),
                             genero = dr["genero"].ToString(),
                             telefono = dr["telefono"] == DBNull.Value
                                                    ? (int?)null
                                                    : Convert.ToInt32(dr["telefono"]),
-                            email = dr["email"] == DBNull.Value ? null : dr["email"].ToString(),
                             fecha_nacimiento = Convert.ToDateTime(dr["fecha_nacimiento"]),
                             fecha_registro = Convert.ToDateTime(dr["fecha_registro"]),
                             estado = Convert.ToBoolean(dr["estado"])
@@ -115,13 +113,13 @@ namespace CapaDato
             }
             catch
             {
-                cliente = null;
+                persona = null;
             }
 
-            return cliente;
+            return persona;
         }
 
-        public bool Registrar(CM_Cliente cliente, int idUsuarioSesion, out string Mensaje)
+        public bool Registrar(CM_Persona persona, int idUsuarioSesion, out string Mensaje)
         {
             bool resultado = false;
             Mensaje = string.Empty;
@@ -130,14 +128,13 @@ namespace CapaDato
             {
                 using (SqlConnection cn = new SqlConnection(CD_Conexion.cn))
                 {
-                    SqlCommand cmd = new SqlCommand("dbo.sp_registrar_cliente", cn);
+                    SqlCommand cmd = new SqlCommand("dbo.sp_registrar_persona", cn);
                     cmd.CommandType = CommandType.StoredProcedure;
-                    cmd.Parameters.AddWithValue("@NombreCompleto", cliente.nombre_completo);
-                    cmd.Parameters.AddWithValue("@CI", cliente.ci);
-                    cmd.Parameters.AddWithValue("@Genero", cliente.genero);
-                    cmd.Parameters.AddWithValue("@Telefono", (object)cliente.telefono ?? DBNull.Value);
-                    cmd.Parameters.AddWithValue("@Email", (object)cliente.email ?? DBNull.Value);
-                    cmd.Parameters.AddWithValue("@FechaNacimiento", cliente.fecha_nacimiento);
+                    cmd.Parameters.AddWithValue("@NombreCompleto", persona.nombre_completo);
+                    cmd.Parameters.AddWithValue("@CI", persona.ci);
+                    cmd.Parameters.AddWithValue("@Genero", persona.genero);
+                    cmd.Parameters.AddWithValue("@Telefono", (object)persona.telefono ?? DBNull.Value);
+                    cmd.Parameters.AddWithValue("@FechaNacimiento", persona.fecha_nacimiento);
                     cmd.Parameters.Add("@Resultado", SqlDbType.Int).Direction = ParameterDirection.Output;
                     cmd.Parameters.Add("@Mensaje", SqlDbType.VarChar, 500).Direction = ParameterDirection.Output;
 
@@ -157,7 +154,7 @@ namespace CapaDato
             return resultado;
         }
 
-        public bool Editar(CM_Cliente cliente, int idUsuarioSesion, out string Mensaje)
+        public bool Editar(CM_Persona persona, int idUsuarioSesion, out string Mensaje)
         {
             bool resultado = false;
             Mensaje = string.Empty;
@@ -166,15 +163,14 @@ namespace CapaDato
             {
                 using (SqlConnection cn = new SqlConnection(CD_Conexion.cn))
                 {
-                    SqlCommand cmd = new SqlCommand("dbo.sp_editar_cliente", cn);
+                    SqlCommand cmd = new SqlCommand("dbo.sp_editar_persona", cn);
                     cmd.CommandType = CommandType.StoredProcedure;
-                    cmd.Parameters.AddWithValue("@IdCliente", cliente.id_cliente);
-                    cmd.Parameters.AddWithValue("@NombreCompleto", cliente.nombre_completo);
-                    cmd.Parameters.AddWithValue("@CI", cliente.ci);
-                    cmd.Parameters.AddWithValue("@Genero", cliente.genero);
-                    cmd.Parameters.AddWithValue("@Telefono", (object)cliente.telefono ?? DBNull.Value);
-                    cmd.Parameters.AddWithValue("@Email", (object)cliente.email ?? DBNull.Value);
-                    cmd.Parameters.AddWithValue("@FechaNacimiento", cliente.fecha_nacimiento);
+                    cmd.Parameters.AddWithValue("@IdPersona", persona.id_persona);
+                    cmd.Parameters.AddWithValue("@NombreCompleto", persona.nombre_completo);
+                    cmd.Parameters.AddWithValue("@CI", persona.ci);
+                    cmd.Parameters.AddWithValue("@Genero", persona.genero);
+                    cmd.Parameters.AddWithValue("@Telefono", (object)persona.telefono ?? DBNull.Value);
+                    cmd.Parameters.AddWithValue("@FechaNacimiento", persona.fecha_nacimiento);
                     cmd.Parameters.Add("@Resultado", SqlDbType.Int).Direction = ParameterDirection.Output;
                     cmd.Parameters.Add("@Mensaje", SqlDbType.VarChar, 500).Direction = ParameterDirection.Output;
 
@@ -194,7 +190,7 @@ namespace CapaDato
             return resultado;
         }
 
-        public bool CambiarEstado(int idCliente, int idUsuarioSesion, out string Mensaje)
+        public bool CambiarEstado(int idPersona, int idUsuarioSesion, out string Mensaje)
         {
             bool resultado = false;
             Mensaje = string.Empty;
@@ -203,9 +199,9 @@ namespace CapaDato
             {
                 using (SqlConnection cn = new SqlConnection(CD_Conexion.cn))
                 {
-                    SqlCommand cmd = new SqlCommand("dbo.sp_cambiar_estado_cliente", cn);
+                    SqlCommand cmd = new SqlCommand("dbo.sp_cambiar_estado_persona", cn);
                     cmd.CommandType = CommandType.StoredProcedure;
-                    cmd.Parameters.AddWithValue("@IdCliente", idCliente);
+                    cmd.Parameters.AddWithValue("@IdPersona", idPersona);
                     cmd.Parameters.Add("@Resultado", SqlDbType.Int).Direction = ParameterDirection.Output;
                     cmd.Parameters.Add("@Mensaje", SqlDbType.VarChar, 500).Direction = ParameterDirection.Output;
 

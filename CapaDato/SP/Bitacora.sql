@@ -29,10 +29,9 @@ BEGIN
     -- pero jamas se rompe la operacion que la origino.
     IF @IdUsuario IS NULL RETURN;
 
-    INSERT INTO bitacora (accion, fecha, hora, usuario_admin_id_usuario_admin)
+    INSERT INTO bitacora (accion, fecha_hora, usuario_admin_id_usuario_admin)
     VALUES (
         @Accion,
-        CAST(GETDATE() AS DATE),
         GETDATE(),
         @IdUsuario
     );
@@ -50,8 +49,7 @@ BEGIN
     SELECT 
         b.id_bitacora,
         b.accion,
-        b.fecha,
-        b.hora,
+        b.fecha_hora,
         b.usuario_admin_id_usuario_admin,
         u.nombre + ' ' + u.apellido AS nombre_completo,
         u.usuario
@@ -59,9 +57,9 @@ BEGIN
     INNER JOIN [dbo].[usuario_admin] u 
         ON u.id_usuario_admin = b.usuario_admin_id_usuario_admin
     WHERE
-        (@fecha_inicio IS NULL OR b.fecha >= @fecha_inicio)
-        AND (@fecha_fin    IS NULL OR b.fecha <= @fecha_fin)
+        (@fecha_inicio IS NULL OR b.fecha_hora >= @fecha_inicio)
+        AND (@fecha_fin    IS NULL OR b.fecha_hora <  DATEADD(DAY, 1, @fecha_fin))
         AND (@id_usuario   IS NULL OR b.usuario_admin_id_usuario_admin = @id_usuario)
-    ORDER BY b.hora DESC
+    ORDER BY b.fecha_hora DESC
 END
 GO

@@ -124,7 +124,7 @@
     <Compile Include="Controllers\BitacoraController.cs" />
     <Compile Include="Controllers\CajaController.cs" />
     <Compile Include="Controllers\CargoExtraController.cs" />
-    <Compile Include="Controllers\ClienteController.cs" />
+    <Compile Include="Controllers\PersonaController.cs" />
     <Compile Include="Controllers\CreditoController.cs" />
     <Compile Include="Controllers\CuentaSocioController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
@@ -203,7 +203,7 @@
     <Content Include="Views\Login\Login.cshtml" />
     <Content Include="Views\Usuario\Usuario.cshtml" />
     <Content Include="Views\Rol\Rol.cshtml" />
-    <Content Include="Views\Cliente\Cliente.cshtml" />
+    <Content Include="Views\Persona\Persona.cshtml" />
     <Content Include="Views\Aviso\Aviso.cshtml" />
     <Content Include="Views\Lectura\Lectura.cshtml" />
     <Content Include="Views\Caja\Caja.cshtml" />
@@ -222,9 +222,9 @@
     <Content Include="Views\Pago\Pago.cshtml" />
     <Content Include="Views\Credito\Credito.cshtml" />
     <Content Include="Views\Socio\Socio.cshtml" />
-    <Content Include="Views\Cliente\RegistrarCliente.cshtml" />
-    <Content Include="Views\Cliente\EditarCliente.cshtml" />
-    <Content Include="Views\Cliente\EliminarCliente.cshtml" />
+    <Content Include="Views\Persona\RegistrarPersona.cshtml" />
+    <Content Include="Views\Persona\EditarPersona.cshtml" />
+    <Content Include="Views\Persona\EliminarPersona.cshtml" />
     <Content Include="Views\Ruta\Ruta.cshtml" />
     <Content Include="Views\Medidor\Medidor.cshtml" />
     <Content Include="Views\Socio\CrearSocio.cshtml" />
@@ -241,6 +241,7 @@
     <Content Include="Views\Aviso\ImprimirAviso.cshtml" />
     <Content Include="Views\Pago\ImprimirRecibo.cshtml" />
     <Content Include="Views\Caja\Reporte.cshtml" />
+    <Content Include="Views\Reporte\PagosInscripcion.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\SQLServer\" />

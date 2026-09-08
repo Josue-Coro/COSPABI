@@ -21,7 +21,7 @@ namespace CapaPresentacionAdmin.Controllers
         [ValidarPermisos(NombrePermiso = "Gestionar Avisos")]
         public JsonResult ListarPeriodos()
         {
-            List<CM_Periodo> lista = new CN_Lectura().ListarPeriodosAutomaticos();
+            List<CM_Periodo> lista = new CN_Lectura().ListarPeriodos();
             return Json(new { data = lista }, JsonRequestBehavior.AllowGet);
         }
 

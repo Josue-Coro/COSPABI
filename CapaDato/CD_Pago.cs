@@ -138,7 +138,7 @@ namespace CapaDato
                                 nombre_socio   = dr["nombre_socio"].ToString(),
                                 codigo_fijo    = Convert.ToInt32(dr["codigo_fijo"]),
                                 nombre_periodo = dr["nombre_periodo"].ToString(),
-                                email          = dr["email"] == DBNull.Value ? null : dr["email"].ToString(),
+                                correo         = dr["correo"].ToString(),
                                 Detalles       = new List<CM_ReciboPagoDetalle>()
                             };
                             if (dr["pendiente_id_pago"] != DBNull.Value)

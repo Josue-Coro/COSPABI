@@ -65,20 +65,20 @@
                     <p class="font-caption text-caption text-on-surface-variant mb-1 flex items-center gap-1">
                         <svg class="ic w-4 h-4"><use href="#ic-user"></use></svg> Nombre completo
                     </p>
-                    <p class="font-body-md text-label-sm text-on-surface font-medium">@Model.nombre_cliente</p>
+                    <p class="font-body-md text-label-sm text-on-surface font-medium">@Model.nombre_persona</p>
                 </div>
                 <div>
                     <p class="font-caption text-caption text-on-surface-variant mb-1 flex items-center gap-1">
                         <svg class="ic w-4 h-4"><use href="#ic-badge"></use></svg> Cédula de identidad
                     </p>
-                    <p class="font-body-md text-label-sm text-on-surface font-medium">@Model.ci_cliente</p>
+                    <p class="font-body-md text-label-sm text-on-surface font-medium">@Model.ci_persona</p>
                 </div>
                 <div>
                     <p class="font-caption text-caption text-on-surface-variant mb-1 flex items-center gap-1">
                         <svg class="ic w-4 h-4"><use href="#ic-mail"></use></svg> Correo electrónico
                     </p>
-                    <p class="font-body-md text-label-sm @(oVacio(Model.email_cliente) == null ? "text-on-surface-variant italic" : "text-on-surface font-medium")">
-                        @(oVacio(Model.email_cliente) ?? "No registrado")
+                    <p class="font-body-md text-label-sm @(oVacio(Model.correo) == null ? "text-on-surface-variant italic" : "text-on-surface font-medium")">
+                        @(oVacio(Model.correo) ?? "No registrado")
                     </p>
                 </div>
                 <div>
