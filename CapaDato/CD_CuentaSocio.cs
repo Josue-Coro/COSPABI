@@ -247,7 +247,8 @@ namespace CapaDato
                                 total_aviso       = Convert.ToDecimal(dr["total_aviso"]),
                                 deuda_actual      = Convert.ToDecimal(dr["deuda_actual"]),
                                 estado            = dr["estado"].ToString(),
-                                vencido           = Convert.ToInt32(dr["vencido"]) == 1
+                                vencido           = Convert.ToInt32(dr["vencido"]) == 1,
+                                aviso_anterior_pendiente = dr["aviso_anterior_pendiente"] == DBNull.Value ? null : dr["aviso_anterior_pendiente"].ToString()
                             });
                         }
                     }

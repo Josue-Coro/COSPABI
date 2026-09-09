@@ -34,7 +34,8 @@ namespace CapaDato
                             fecha_vencimiento = Convert.ToDateTime(dr["fecha_vencimiento"]),
                             nombre_socio      = dr["nombre_socio"].ToString(),
                             codigo_fijo       = Convert.ToInt32(dr["codigo_fijo"]),
-                            nombre_periodo    = dr["nombre_periodo"].ToString()
+                            nombre_periodo    = dr["nombre_periodo"].ToString(),
+                            aviso_anterior_pendiente = dr["aviso_anterior_pendiente"] == DBNull.Value ? null : dr["aviso_anterior_pendiente"].ToString()
                         });
                     }
                     if (dr.NextResult() && dr.Read())
@@ -73,6 +74,88 @@ namespace CapaDato
                 }
             }
             catch (Exception ex) { ok = false; idPago = 0; Mensaje = ex.Message; }
+            return ok;
+        }
+
+        // Deuda completa de un socio por codigo fijo (null si el codigo no existe)
+        public CM_DeudaSocio ObtenerDeudaSocio(int codigoFijo)
+        {
+            CM_DeudaSocio deuda = null;
+            try
+            {
+                using (SqlConnection cn = new SqlConnection(CD_Conexion.cn))
+                {
+                    SqlCommand cmd = new SqlCommand("dbo.sp_deuda_socio", cn);
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.Parameters.AddWithValue("@codigo_fijo", codigoFijo);
+                    cn.Open();
+                    using (SqlDataReader dr = cmd.ExecuteReader())
+                    {
+                        if (dr.Read())
+                        {
+                            deuda = new CM_DeudaSocio
+                            {
+                                id_socio        = Convert.ToInt32(dr["id_socio"]),
+                                nombre_socio    = dr["nombre_socio"].ToString(),
+                                codigo_fijo     = Convert.ToInt32(dr["codigo_fijo"]),
+                                cantidad_avisos = Convert.ToInt32(dr["cantidad_avisos"]),
+                                total_deuda     = Convert.ToDecimal(dr["total_deuda"]),
+                                Avisos          = new List<CM_DeudaSocioAviso>()
+                            };
+                        }
+                        if (deuda != null && dr.NextResult())
+                        {
+                            while (dr.Read())
+                            {
+                                deuda.Avisos.Add(new CM_DeudaSocioAviso
+                                {
+                                    id_aviso          = Convert.ToInt32(dr["id_aviso"]),
+                                    nombre_periodo    = dr["nombre_periodo"].ToString(),
+                                    fecha_emision     = Convert.ToDateTime(dr["fecha_emision"]),
+                                    fecha_vencimiento = Convert.ToDateTime(dr["fecha_vencimiento"]),
+                                    total_aviso       = Convert.ToDecimal(dr["total_aviso"]),
+                                    vencido           = Convert.ToInt32(dr["vencido"]) == 1
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+            catch { deuda = null; }
+            return deuda;
+        }
+
+        // Cobra todos los avisos pendientes del socio (un pago por aviso, una sola transaccion)
+        public bool RegistrarPagoMultiple(int idSocio, int idCaja, int idMetodoPago, decimal? montoRecibido,
+                                          string cajero, out List<int> idsPago, out string Mensaje)
+        {
+            bool ok = false;
+            idsPago = new List<int>();
+            Mensaje = string.Empty;
+            try
+            {
+                using (SqlConnection cn = new SqlConnection(CD_Conexion.cn))
+                {
+                    SqlCommand cmd = new SqlCommand("dbo.sp_registrar_pago_multiple", cn);
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.Parameters.AddWithValue("@id_socio", idSocio);
+                    cmd.Parameters.AddWithValue("@id_caja", idCaja);
+                    cmd.Parameters.AddWithValue("@id_metodo_pago", idMetodoPago);
+                    cmd.Parameters.AddWithValue("@monto_recibido", (object)montoRecibido ?? DBNull.Value);
+                    cmd.Parameters.AddWithValue("@cajero", cajero ?? "");
+                    cmd.Parameters.Add("@Resultado", SqlDbType.Int).Direction          = ParameterDirection.Output;
+                    cmd.Parameters.Add("@Mensaje",   SqlDbType.NVarChar, 500).Direction = ParameterDirection.Output;
+                    cmd.Parameters.Add("@IdsPago",   SqlDbType.VarChar, -1).Direction   = ParameterDirection.Output;
+                    cn.Open();
+                    cmd.ExecuteNonQuery();
+                    ok      = Convert.ToInt32(cmd.Parameters["@Resultado"].Value) > 0;
+                    Mensaje = cmd.Parameters["@Mensaje"].Value.ToString();
+                    string ids = cmd.Parameters["@IdsPago"].Value == DBNull.Value ? "" : cmd.Parameters["@IdsPago"].Value.ToString();
+                    foreach (var s in ids.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
+                        idsPago.Add(int.Parse(s));
+                }
+            }
+            catch (Exception ex) { ok = false; idsPago = new List<int>(); Mensaje = ex.Message; }
             return ok;
         }
 
@@ -139,6 +222,7 @@ namespace CapaDato
                                 codigo_fijo    = Convert.ToInt32(dr["codigo_fijo"]),
                                 nombre_periodo = dr["nombre_periodo"].ToString(),
                                 correo         = dr["correo"].ToString(),
+                                aviso_anterior_pendiente = dr["aviso_anterior_pendiente"] == DBNull.Value ? null : dr["aviso_anterior_pendiente"].ToString(),
                                 Detalles       = new List<CM_ReciboPagoDetalle>()
                             };
                             if (dr["pendiente_id_pago"] != DBNull.Value)

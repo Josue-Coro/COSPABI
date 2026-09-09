@@ -1,4 +1,4 @@
-using CapaModelo;
+﻿using CapaModelo;
 using CapaNegocio;
 using CapaPresentacionAdmin.Filtros;
 using System;
@@ -73,6 +73,83 @@ namespace CapaPresentacionAdmin.Controllers
             }
         }
 
+        // ---- Facturas cobradas (detalle de cobros, estilo del reporte historico) ----
+
+        [ValidarPermisos(NombrePermiso = "Generar Reporte Caja")]
+        public ActionResult Cobros()
+        {
+            return View();
+        }
+
+        [HttpGet]
+        [ValidarPermisos(NombrePermiso = "Generar Reporte Caja")]
+        public JsonResult DatosCobros(string fechaInicio, string fechaFin, int? idCajero, string origen)
+        {
+            try
+            {
+                if (!DateTime.TryParse(fechaInicio, out DateTime fi) ||
+                    !DateTime.TryParse(fechaFin, out DateTime ff))
+                    return Json(new { exito = false, mensaje = "Debe indicar un rango de fechas valido." }, JsonRequestBehavior.AllowGet);
+
+                var u = (CM_Usuario_Activo)Session["Usuario"];
+                var reporte = cnCaja.ReporteCobros(fi, ff, idCajero, origen, u.id_usuario_admin, out string Mensaje);
+                if (reporte == null)
+                    return Json(new { exito = false, mensaje = Mensaje }, JsonRequestBehavior.AllowGet);
+
+                return Json(new
+                {
+                    exito = true,
+                    cobros = reporte.Cobros,
+                    subtotales = reporte.Subtotales,
+                    cantidadPagos = reporte.CantidadPagos,
+                    totalRecaudado = reporte.TotalRecaudado
+                }, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                return Json(new { exito = false, mensaje = ex.Message }, JsonRequestBehavior.AllowGet);
+            }
+        }
+
+        // ---- Arqueo general (recaudacion por concepto) ----
+
+        [ValidarPermisos(NombrePermiso = "Generar Reporte Caja")]
+        public ActionResult Arqueo()
+        {
+            return View();
+        }
+
+        [HttpGet]
+        [ValidarPermisos(NombrePermiso = "Generar Reporte Caja")]
+        public JsonResult DatosArqueo(string fechaInicio, string fechaFin, int? idCajero, string origen)
+        {
+            try
+            {
+                if (!DateTime.TryParse(fechaInicio, out DateTime fi) ||
+                    !DateTime.TryParse(fechaFin, out DateTime ff))
+                    return Json(new { exito = false, mensaje = "Debe indicar un rango de fechas valido." }, JsonRequestBehavior.AllowGet);
+
+                var u = (CM_Usuario_Activo)Session["Usuario"];
+                var reporte = cnCaja.ArqueoGeneral(fi, ff, idCajero, origen, u.id_usuario_admin, out string Mensaje);
+                if (reporte == null)
+                    return Json(new { exito = false, mensaje = Mensaje }, JsonRequestBehavior.AllowGet);
+
+                return Json(new
+                {
+                    exito = true,
+                    conceptos = reporte.Conceptos,
+                    totalesMetodo = reporte.TotalesMetodo,
+                    cantidadPagos = reporte.CantidadPagos,
+                    cantidadConceptos = reporte.CantidadConceptos,
+                    totalRecaudado = reporte.TotalRecaudado
+                }, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                return Json(new { exito = false, mensaje = ex.Message }, JsonRequestBehavior.AllowGet);
+            }
+        }
+
         // ---- Reporte de pagos del sistema (cobrados por el portal del socio) ----
 
         [ValidarPermisos(NombrePermiso = "Generar Reporte Pagos Sistema")]
@@ -120,9 +197,36 @@ namespace CapaPresentacionAdmin.Controllers
 
         [HttpGet]
         [ValidarPermisos(NombrePermiso = "Reporte de Pagos de Inscripción")]
-        public JsonResult PagosInscripcion(string fechaInicio, string fechaFin)
+        public JsonResult DatosPagosInscripcion(string fechaInicio, string fechaFin)
         {
-            return Json(new { exito = false, mensaje = "Funcionalidad no implementada." }, JsonRequestBehavior.AllowGet);
+            try
+            {
+                if (!DateTime.TryParse(fechaInicio, out DateTime fi) ||
+                    !DateTime.TryParse(fechaFin, out DateTime ff))
+                    return Json(new { exito = false, mensaje = "Debe indicar un rango de fechas valido." }, JsonRequestBehavior.AllowGet);
+
+                var u = (CM_Usuario_Activo)Session["Usuario"];
+                var reporte = cnCaja.ReportePagosInscripcion(fi, ff, u.id_usuario_admin, out string Mensaje);
+                if (reporte == null)
+                    return Json(new { exito = false, mensaje = Mensaje }, JsonRequestBehavior.AllowGet);
+
+                return Json(new
+                {
+                    exito = true,
+                    cuotas = reporte.Cuotas,
+                    pendientes = reporte.Pendientes,
+                    cantidadCuotas = reporte.CantidadCuotas,
+                    montoCobrado = reporte.MontoCobrado,
+                    sociosCobrados = reporte.SociosCobrados,
+                    sociosCancelaronTotal = reporte.SociosCancelaronTotal,
+                    sociosConPendientes = reporte.SociosConPendientes,
+                    saldoTotalPendiente = reporte.SaldoTotalPendiente
+                }, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                return Json(new { exito = false, mensaje = ex.Message }, JsonRequestBehavior.AllowGet);
+            }
         }
 
         // ---- HU22: Reporte de Morosidad ----

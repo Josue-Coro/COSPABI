@@ -16,7 +16,7 @@
 
 <div class="p-6">
     <div class="mb-6 no-print">
-        <h1 class="text-2xl font-bold text-gray-800">Reporte de Pagos del Sistema</h1>
+        <h1 class="text-2xl font-bold text-gray-800">Generar Reporte de pagos del portal</h1>
         <p class="text-sm text-gray-500 mt-1">
             Cobros que el socio pagó por su cuenta desde el portal. No entran en ninguna caja
             ni en el arqueo: este dinero llega directamente por la pasarela.
@@ -96,7 +96,7 @@
     });
 
     function fmt(n) { return (n == null ? 0 : n).toLocaleString('es-BO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
-    function parseNet(v) { if (!v) return null; var m = /\/Date\((\d+)\)\//.exec(v); var d = m ? new Date(parseInt(m[1])) : new Date(v); return isNaN(d) ? null : d; }
+    function parseNet(v) { if (!v) return null; var m = /\/Date\((-?\d+)\)\//.exec(v); var d = m ? new Date(parseInt(m[1])) : new Date(v); return isNaN(d) ? null : d; }
     function fhora(v) { var d = parseNet(v); return d ? d.toLocaleString('es-BO') : '-'; }
 
     // Comprobante: lo que permite rastrear el cobro en la pasarela

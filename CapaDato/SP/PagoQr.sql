@@ -45,6 +45,7 @@ BEGIN
         s.codigo_fijo,
         per.periodo AS nombre_periodo,
         s.correo,
+        dbo.fn_aviso_anterior_pendiente(a.id_aviso) AS aviso_anterior_pendiente,   -- NULL = cobrable
         pqr.id_pago         AS pendiente_id_pago,
         pqr.id_transaccion  AS pendiente_id_transaccion,
         pqr.url_pasarela    AS pendiente_url_pasarela,
@@ -117,6 +118,11 @@ BEGIN
         IF @total IS NULL BEGIN SET @Mensaje = 'Aviso no encontrado.'; RETURN; END
         IF @estado = 'PAGADO'  BEGIN SET @Mensaje = 'El aviso ya esta pagado.'; RETURN; END
         IF @estado = 'ANULADO' BEGIN SET @Mensaje = 'El aviso esta anulado.'; RETURN; END
+
+        -- Orden de cobro: primero el aviso mas antiguo del socio
+        DECLARE @bloqueo VARCHAR(50) = dbo.fn_aviso_anterior_pendiente(@id_aviso);
+        IF @bloqueo IS NOT NULL
+        BEGIN SET @Mensaje = 'El socio tiene el aviso del periodo ' + @bloqueo + ' sin pagar. Los avisos se pagan del mas antiguo al mas reciente: genere primero el QR de ese.'; RETURN; END
 
         IF @id_caja IS NOT NULL
            AND NOT EXISTS (SELECT 1 FROM caja WHERE id_caja = @id_caja AND estado = 1)

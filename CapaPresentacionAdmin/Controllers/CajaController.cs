@@ -127,6 +127,8 @@ namespace CapaPresentacionAdmin.Controllers
 
             ViewBag.Arqueo = arqueo;
             ViewBag.Pagos = pagos;
+            // Propiedad ya validada por ObtenerArqueo: el desglose por concepto es seguro.
+            ViewBag.Conceptos = cnCaja.ArqueoConceptosCaja(idCaja);
 
             return View();
         }

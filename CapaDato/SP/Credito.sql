@@ -259,12 +259,25 @@ BEGIN
         ci.pago_id_pago                                          AS pago_id_pago
     FROM credito_inscripcion ci
     INNER JOIN periodo p ON p.id_periodo = ci.periodo_id_periodo
+    -- Aviso que cobra (o cobrara) la cuota. No basta con emparejar por periodo:
+    -- la cuota inicial se paga en caja SIN aviso y, si el socio ya tiene aviso
+    -- de ese mes, se mostraba como cobrada en el (misma senal que usa
+    -- sp_detalle_aviso para excluirla del detalle).
     OUTER APPLY (
-        SELECT TOP 1 a.id_aviso
-        FROM aviso a
-        WHERE a.socio_id_socio = ci.socio_id_socio
-          AND a.periodo_id_periodo = ci.periodo_id_periodo
-          AND a.estado_id_estado <> (SELECT id_estado FROM estado WHERE estado = 'ANULADO')
+        SELECT TOP 1 x.id_aviso FROM (
+            -- cuota ya cobrada: el aviso es el de su pago (NULL si fue el pago inicial)
+            SELECT pg.aviso_id_aviso AS id_aviso
+            FROM pago pg
+            WHERE pg.id_pago = ci.pago_id_pago AND pg.aviso_id_aviso IS NOT NULL
+            UNION ALL
+            -- cuota pendiente: el aviso vigente de su periodo, si ya se genero
+            SELECT a.id_aviso
+            FROM aviso a
+            WHERE ci.pago_id_pago IS NULL
+              AND a.socio_id_socio     = ci.socio_id_socio
+              AND a.periodo_id_periodo = ci.periodo_id_periodo
+              AND a.estado_id_estado  <> (SELECT id_estado FROM estado WHERE estado = 'ANULADO')
+        ) x
     ) av
     WHERE ci.socio_id_socio = @id_socio
     ORDER BY ci.num_cuota;

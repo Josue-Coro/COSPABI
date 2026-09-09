@@ -27,4 +27,32 @@ namespace CapaPresentacionAdmin
                       "~/Content/site.css"));
         }
     }
+
+    /// <summary>
+    /// Versionado de Content/app.css: se regenera con `npm run build:css` pero la
+    /// URL no cambia, asi que el navegador se queda con la copia vieja y la pagina
+    /// sale a medio maquetar. Colgando la fecha de modificacion como querystring
+    /// cada recompilacion produce una URL nueva. No se cachea el resultado a
+    /// proposito: editar un .css no reinicia el AppDomain.
+    /// </summary>
+    public static class Recursos
+    {
+        public static string Version(string rutaVirtual)
+        {
+            try
+            {
+                string fisica = HttpContext.Current.Server.MapPath(rutaVirtual);
+                return System.IO.File.GetLastWriteTimeUtc(fisica).Ticks.ToString();
+            }
+            catch (System.Exception)
+            {
+                return "0";
+            }
+        }
+
+        public static string AppCss()
+        {
+            return Version("~/Content/app.css");
+        }
+    }
 }

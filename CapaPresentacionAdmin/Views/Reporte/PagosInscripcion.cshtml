@@ -1,8 +1,258 @@
-﻿
-@{
-    ViewBag.Title = "PagosInscripcion";
+﻿@{
+    ViewBag.Title = "Reporte de Pagos de Inscripción";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<h2>PagosInscripcion</h2>
+<style>
+    .rpt-badge { display: inline-block; border: 1px solid #111; padding: 0 5px; font-size: 10px; font-weight: 700; }
+    @@media print {
+        aside, header, #sidebarOverlay, .no-print { display: none !important; }
+        html, body { overflow: visible !important; height: auto !important; background: #fff !important; }
+        body > .flex { display: block !important; height: auto !important; overflow: visible !important; }
+        main { overflow: visible !important; padding: 0 !important; background: #fff !important; }
+        #areaReporte { box-shadow: none !important; border: none !important; border-radius: 0 !important; padding: 0 !important; }
+        @@page { size: portrait; margin: 1.2cm 1.2cm 1.6cm; }
+    }
+</style>
 
+<div class="p-6">
+    <div class="mb-6 no-print">
+        <h1 class="text-2xl font-bold text-gray-800">Reporte de Pagos de Inscripción</h1>
+        <p class="text-sm text-gray-500 mt-1">Cuotas del crédito de inscripción cobradas en el período y socios que aún mantienen cuotas pendientes</p>
+    </div>
+
+    <!-- Filtros -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-6 no-print">
+        <div class="flex flex-wrap items-end gap-3">
+            <div>
+                <label class="block text-xs font-medium text-gray-700 mb-1">Filtrar por</label>
+                <select id="selModo" onchange="onModo()" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                    <option value="mes">Mes</option>
+                    <option value="rango">Rango de fechas</option>
+                </select>
+            </div>
+            <div id="grpMes">
+                <label class="block text-xs font-medium text-gray-700 mb-1">Mes <span class="text-red-500">*</span></label>
+                <input type="month" id="fMes" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+            </div>
+            <div id="grpRango" class="flex gap-3" style="display:none">
+                <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1">Desde <span class="text-red-500">*</span></label>
+                    <input type="date" id="fIni" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1">Hasta <span class="text-red-500">*</span></label>
+                    <input type="date" id="fFin" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+            </div>
+            <button onclick="generar()" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-5 py-2 rounded-xl">Generar</button>
+            <button id="btnImprimir" onclick="window.print()" disabled
+                    class="border border-gray-300 text-gray-600 hover:bg-gray-50 text-sm font-semibold px-5 py-2 rounded-xl disabled:opacity-40">Imprimir / PDF</button>
+        </div>
+        <p id="msgError" class="hidden text-xs text-red-500 mt-2"></p>
+    </div>
+
+    <!-- Resumen en pantalla -->
+    <div id="resumen" class="hidden grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 no-print">
+        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+            <p class="text-xs text-gray-400 uppercase font-semibold">Cuotas cobradas</p>
+            <p class="text-2xl font-bold text-gray-800" id="kCuotas">0</p>
+        </div>
+        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+            <p class="text-xs text-gray-400 uppercase font-semibold">Monto cobrado</p>
+            <p class="text-2xl font-bold text-green-700" id="kMonto">Bs. 0.00</p>
+        </div>
+        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+            <p class="text-xs text-gray-400 uppercase font-semibold">Cancelaron su crédito</p>
+            <p class="text-2xl font-bold text-gray-800" id="kCancelaron">0</p>
+        </div>
+        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+            <p class="text-xs text-gray-400 uppercase font-semibold">Con cuotas pendientes</p>
+            <p class="text-2xl font-bold text-amber-600" id="kPendientes">0</p>
+        </div>
+    </div>
+
+    <!-- Reporte (formato clasico, es lo que se imprime) -->
+    <div id="areaReporte" class="hidden bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+        <div class="rpt">
+            <div class="rpt-head">
+                <div>
+                    <div class="rpt-coop">COSPABI R.L.</div>
+                    <div class="rpt-coop-sub">Cooperativa de Agua Potable</div>
+                    <div class="rpt-coop-sub">Santa Cruz - Bolivia</div>
+                </div>
+                <div>
+                    <div class="rpt-title">Pagos de Inscripción</div>
+                    <div class="rpt-range">Desde : <span id="rDesde"></span> &nbsp; Hasta : <span id="rHasta"></span></div>
+                </div>
+                <div class="rpt-stamp">
+                    Fecha : <span id="rFecha"></span><br>
+                    Hora &nbsp;: <span id="rHora"></span>
+                </div>
+            </div>
+
+            <!-- Seccion 1: cuotas cobradas -->
+            <table>
+                <thead>
+                    <tr>
+                        <th class="num">Código</th>
+                        <th>Nombre</th>
+                        <th class="num">Total crédito</th>
+                        <th class="ctr">Cuota</th>
+                        <th class="num">Monto cuota</th>
+                        <th class="num">Saldo</th>
+                        <th class="ctr">Fecha pago</th>
+                        <th class="num">Boleta</th>
+                        <th class="ctr">Estado</th>
+                    </tr>
+                </thead>
+                <tbody id="tbodyCuotas"></tbody>
+            </table>
+            <div class="rpt-total">
+                <span>Total cobrado :</span>
+                <span id="rCantidad">0</span>
+                <span id="rTotal">0.00</span>
+            </div>
+
+            <!-- Seccion 2: socios con cuotas pendientes -->
+            <table style="margin-top:22px">
+                <thead>
+                    <tr>
+                        <th class="num">Código</th>
+                        <th>Nombre</th>
+                        <th class="num">Total crédito</th>
+                        <th class="num">Pagado</th>
+                        <th class="num">Saldo</th>
+                        <th class="ctr">Cuotas pend.</th>
+                        <th class="ctr">Próx. cuota</th>
+                        <th class="num">Monto</th>
+                    </tr>
+                </thead>
+                <tbody id="tbodyPendientes"></tbody>
+            </table>
+            <div class="rpt-total">
+                <span>Saldo pendiente :</span>
+                <span id="rPendCant">0</span>
+                <span id="rPendTotal">0.00</span>
+            </div>
+
+            <div class="rpt-signs">
+                <div class="rpt-sign">Cajero</div>
+                <div class="rpt-sign">Contabilidad</div>
+                <div class="rpt-sign">Comercial</div>
+            </div>
+
+            <div class="rpt-foot">
+                <span>COSPABI R.L. - Sistema de Gestión</span>
+                <span>Generado por: @(Session["NombreUsuario"] ?? "")</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+<script>
+    $(function () {
+        var h = new Date();
+        $('#fMes').val(h.getFullYear() + '-' + pad(h.getMonth() + 1));
+        $('#fIni').val(iso(new Date(h.getFullYear(), h.getMonth(), 1)));
+        $('#fFin').val(iso(h));
+    });
+
+    function pad(n) { return String(n).padStart(2, '0'); }
+    function iso(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+    function onModo() {
+        var mes = $('#selModo').val() === 'mes';
+        $('#grpMes').toggle(mes);
+        $('#grpRango').toggle(!mes);
+    }
+    function rango() {
+        if ($('#selModo').val() === 'mes') {
+            var m = $('#fMes').val(); if (!m) return null;
+            var p = m.split('-'), a = parseInt(p[0]), mm = parseInt(p[1]);
+            return { fi: iso(new Date(a, mm - 1, 1)), ff: iso(new Date(a, mm, 0)) };
+        }
+        var fi = $('#fIni').val(), ff = $('#fFin').val();
+        return (fi && ff) ? { fi: fi, ff: ff } : null;
+    }
+    function fmt(n) { return (n == null ? 0 : n).toLocaleString('es-BO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+    function parseNet(v) { if (!v) return null; var m = /\/Date\((-?\d+)\)\//.exec(v); var d = m ? new Date(parseInt(m[1])) : new Date(v); return isNaN(d) ? null : d; }
+    function fCorta(d) { return pad(d.getDate()) + '/' + pad(d.getMonth() + 1) + '/' + String(d.getFullYear()).slice(-2); }
+    function fHora(d) { return pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds()); }
+    function isoACorta(s) { var p = s.split('-'); return p[2] + '/' + p[1] + '/' + p[0].slice(-2); }
+    function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
+
+    function generar() {
+        $('#msgError').addClass('hidden');
+        var r = rango();
+        if (!r) { $('#msgError').text('Selecciona el mes o el rango de fechas.').removeClass('hidden'); return; }
+
+        $.get('@Url.Action("DatosPagosInscripcion", "Reporte")', { fechaInicio: r.fi, fechaFin: r.ff }, function (res) {
+            if (!res.exito) { $('#msgError').text(res.mensaje).removeClass('hidden'); return; }
+
+            var ahora = new Date();
+            $('#rDesde').text(isoACorta(r.fi)); $('#rHasta').text(isoACorta(r.ff));
+            $('#rFecha').text(fCorta(ahora)); $('#rHora').text(fHora(ahora));
+
+            $('#kCuotas').text(res.cantidadCuotas);
+            $('#kMonto').text('Bs. ' + fmt(res.montoCobrado));
+            $('#kCancelaron').text(res.sociosCancelaronTotal + ' de ' + res.sociosCobrados);
+            $('#kPendientes').text(res.sociosConPendientes);
+
+            // Seccion 1: cuotas cobradas, separadas por si el socio ya saldo el credito o no
+            var tb = $('#tbodyCuotas'); tb.empty();
+            if (!res.cuotas.length) tb.html('<tr><td colspan="9" class="rpt-empty">Sin cuotas de inscripción cobradas en el período</td></tr>');
+            var grupos = [{ k: 'CANCELADO', t: 'Crédito cancelado en su totalidad' }, { k: 'PENDIENTE', t: 'Crédito con cuotas pendientes' }];
+            $.each(grupos, function (_, g) {
+                var filas = $.grep(res.cuotas, function (c) { return c.estado_credito === g.k; });
+                if (!filas.length) return;
+                var n = 0, t = 0;
+                tb.append('<tr class="rpt-group"><td colspan="9">' + g.t + '</td></tr>');
+                $.each(filas, function (_, c) {
+                    var d = parseNet(c.fecha_pago); n++; t += c.monto_cuota;
+                    tb.append('<tr>' +
+                        '<td class="num">' + c.codigo_fijo + '</td>' +
+                        '<td>' + esc(c.nombre_socio) + '</td>' +
+                        '<td class="num">' + fmt(c.total_credito) + '</td>' +
+                        '<td class="ctr">' + c.num_cuota + ' / ' + c.total_cuotas + '</td>' +
+                        '<td class="num">' + fmt(c.monto_cuota) + '</td>' +
+                        '<td class="num">' + fmt(c.saldo_pendiente) + '</td>' +
+                        '<td class="ctr">' + (d ? fCorta(d) : '') + '</td>' +
+                        '<td class="num">' + c.id_pago + (c.aviso_id_aviso ? ' (Av. ' + c.aviso_id_aviso + ')' : '') + '</td>' +
+                        '<td class="ctr"><span class="rpt-badge">' + (g.k === 'CANCELADO' ? 'CANCELADO' : 'PENDIENTE') + '</span></td>' +
+                        '</tr>');
+                });
+                tb.append('<tr class="rpt-subtotal"><td colspan="3" class="num">Sub Total :</td><td class="ctr">' + n + '</td>' +
+                          '<td class="num">' + fmt(t) + '</td><td colspan="4"></td></tr>');
+            });
+            $('#rCantidad').text(res.cantidadCuotas);
+            $('#rTotal').text(fmt(res.montoCobrado));
+
+            // Seccion 2: socios con saldo pendiente hoy
+            var tp = $('#tbodyPendientes'); tp.empty();
+            tp.append('<tr class="rpt-group"><td colspan="8">Socios con cuotas pendientes</td></tr>');
+            if (!res.pendientes.length) tp.append('<tr><td colspan="8" class="rpt-empty">Ningún socio mantiene cuotas pendientes</td></tr>');
+            $.each(res.pendientes, function (_, p) {
+                tp.append('<tr>' +
+                    '<td class="num">' + p.codigo_fijo + '</td>' +
+                    '<td>' + esc(p.nombre_socio) + '</td>' +
+                    '<td class="num">' + fmt(p.total_credito) + '</td>' +
+                    '<td class="num">' + fmt(p.pagado) + '</td>' +
+                    '<td class="num">' + fmt(p.saldo) + '</td>' +
+                    '<td class="ctr">' + p.cuotas_pendientes + ' de ' + p.total_cuotas + '</td>' +
+                    '<td class="ctr">' + esc(p.proximo_periodo || '') + '</td>' +
+                    '<td class="num">' + fmt(p.proximo_monto) + '</td>' +
+                    '</tr>');
+            });
+            $('#rPendCant').text(res.sociosConPendientes);
+            $('#rPendTotal').text(fmt(res.saldoTotalPendiente));
+
+            $('#resumen').removeClass('hidden');
+            $('#areaReporte').removeClass('hidden');
+            $('#btnImprimir').prop('disabled', false);
+        }).fail(function () {
+            $('#msgError').text('Error de conexión.').removeClass('hidden');
+        });
+    }
+</script>
+}

@@ -54,7 +54,8 @@ BEGIN
         e.estado,
         CASE WHEN e.estado NOT IN ('PAGADO', 'ANULADO')
                   AND a.fecha_vencimiento < CAST(GETDATE() AS DATE)
-             THEN 1 ELSE 0 END AS vencido
+             THEN 1 ELSE 0 END AS vencido,
+        dbo.fn_aviso_anterior_pendiente(a.id_aviso) AS aviso_anterior_pendiente   -- NULL = se puede pagar
     FROM aviso a
     INNER JOIN estado  e   ON e.id_estado    = a.estado_id_estado
     INNER JOIN periodo per ON per.id_periodo = a.periodo_id_periodo

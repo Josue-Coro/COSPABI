@@ -338,7 +338,7 @@
             $('#txtTipoInstalacion').val(s.tipo_instalacion || '');
             $('#txtDimInstalacion').val(s.dim_instalacion || '');
             if (s.fecha_registro) {
-                var m = /\/Date\((\d+)\)\//.exec(s.fecha_registro);
+                var m = /\/Date\((-?\d+)\)\//.exec(s.fecha_registro);
                 $('#txtFechaRegistro').val(m ? new Date(parseInt(m[1])).toISOString().substring(0,10) : s.fecha_registro.substring(0,10));
             }
             $('#hdnPersonaId').val(s.persona_id_persona);
@@ -486,7 +486,7 @@
 
     function parsearFechaNet(val) {
         if (!val) return '-';
-        var m = /\/Date\((\d+)\)\//.exec(val);
+        var m = /\/Date\((-?\d+)\)\//.exec(val);
         if (m) return new Date(parseInt(m[1])).toISOString().substring(0, 10);
         return typeof val === 'string' ? val.substring(0, 10) : '-';
     }

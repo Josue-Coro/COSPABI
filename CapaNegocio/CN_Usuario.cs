@@ -141,5 +141,87 @@ namespace CapaNegocio
 
             return resultado;
         }
+
+        // ================= Mi perfil (usuario de la sesión) =================
+
+        public CM_PerfilAdmin ObtenerPerfil(int idUsuarioSesion)
+        {
+            return cdUsuario.ObtenerPerfil(idUsuarioSesion);
+        }
+
+        public List<CM_Bitacora> ActividadReciente(int idUsuarioSesion, int top = 10)
+        {
+            return cdUsuario.ActividadReciente(idUsuarioSesion, top);
+        }
+
+        public bool EditarPerfil(int idUsuarioSesion, string nombre, string apellido, out string Mensaje)
+        {
+            Mensaje = string.Empty;
+
+            if (string.IsNullOrWhiteSpace(nombre))
+            {
+                Mensaje = "El nombre es obligatorio.";
+                return false;
+            }
+            if (!CN_Recursos.EsNombreValido(nombre))
+            {
+                Mensaje = "El nombre solo puede contener letras y espacios (sin números).";
+                return false;
+            }
+            if (string.IsNullOrWhiteSpace(apellido))
+            {
+                Mensaje = "El apellido es obligatorio.";
+                return false;
+            }
+            if (!CN_Recursos.EsNombreValido(apellido))
+            {
+                Mensaje = "El apellido solo puede contener letras y espacios (sin números).";
+                return false;
+            }
+
+            bool resultado = cdUsuario.EditarPerfil(idUsuarioSesion, nombre.Trim(), apellido.Trim(), out Mensaje);
+
+            if (resultado)
+                cdBitacora.Registrar("Actualización de datos del propio perfil", idUsuarioSesion);
+
+            return resultado;
+        }
+
+        public bool CambiarContrasena(int idUsuarioSesion, string actual, string nueva, string confirmacion, out string Mensaje)
+        {
+            Mensaje = string.Empty;
+
+            if (string.IsNullOrWhiteSpace(actual))
+            {
+                Mensaje = "Debes ingresar tu contraseña actual.";
+                return false;
+            }
+            if (string.IsNullOrWhiteSpace(nueva) || nueva.Length < 6)
+            {
+                Mensaje = "La nueva contraseña debe tener al menos 6 caracteres.";
+                return false;
+            }
+            if (nueva != confirmacion)
+            {
+                Mensaje = "La confirmación no coincide con la nueva contraseña.";
+                return false;
+            }
+            if (nueva == actual)
+            {
+                Mensaje = "La nueva contraseña debe ser distinta a la actual.";
+                return false;
+            }
+
+            bool resultado = cdUsuario.CambiarContrasena(
+                idUsuarioSesion,
+                Recursos.ConvertirSha256(actual),
+                Recursos.ConvertirSha256(nueva),
+                out Mensaje);
+
+            if (resultado)
+                cdBitacora.Registrar("Cambio de contraseña del propio perfil", idUsuarioSesion);
+
+            return resultado;
+        }
     }
 }

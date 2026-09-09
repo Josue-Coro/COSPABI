@@ -1,6 +1,8 @@
+using CapaModelo;
 using CapaNegocio;
 using CapaPresentacionAdmin.Filtros;
 using System;
+using System.Collections.Generic;
 using System.Web.Mvc;
 
 namespace CapaPresentacionAdmin.Controllers
@@ -38,7 +40,7 @@ namespace CapaPresentacionAdmin.Controllers
         {
             var recibo = new CN_Pago().ObtenerReciboInscripcion(idPago);
             if (recibo == null) return RedirectToAction("Credito");
-            return View("~/Views/Pago/ImprimirRecibo.cshtml", recibo);
+            return View("~/Views/Pago/ImprimirRecibo.cshtml", new List<CM_ReciboPago> { recibo });   // la vista recibe una lista (un recibo por pagina)
         }
 
         [HttpGet]

@@ -31,6 +31,30 @@ namespace CapaNegocio
             return ok;
         }
 
+        public CM_DeudaSocio ObtenerDeudaSocio(int codigoFijo)
+        {
+            return codigoFijo > 0 ? cdPago.ObtenerDeudaSocio(codigoFijo) : null;
+        }
+
+        // "Cobrar todo": todos los avisos pendientes del socio en una sola operacion.
+        // El SP genera un pago por aviso (y la vista un recibo por pago); si uno
+        // falla no se cobra ninguno.
+        public bool RegistrarPagoMultiple(int idSocio, int idCaja, int idMetodoPago, decimal? montoRecibido,
+                                          int idUsuario, string cajero, out List<int> idsPago, out string Mensaje)
+        {
+            Mensaje = string.Empty;
+            idsPago = new List<int>();
+
+            if (idSocio <= 0)      { Mensaje = "Debe seleccionar un socio.";           return false; }
+            if (idMetodoPago <= 0) { Mensaje = "Debe seleccionar un método de pago."; return false; }
+
+            bool ok = cdPago.RegistrarPagoMultiple(idSocio, idCaja, idMetodoPago, montoRecibido, cajero, out idsPago, out Mensaje);
+            if (ok)
+                cnBitacora.Registrar("Cobró " + idsPago.Count + " aviso(s) pendiente(s) del socio #" + idSocio +
+                                     " en un solo pago (pagos #" + string.Join(", #", idsPago) + ", caja #" + idCaja + ")", idUsuario);
+            return ok;
+        }
+
         public List<CM_Pago> ListarPagosCaja(int idCaja)
         {
             return cdPago.ListarPagosCaja(idCaja);
@@ -57,6 +81,14 @@ namespace CapaNegocio
             if (datos == null)               { Mensaje = "Aviso no encontrado.";      return false; }
             if (datos.estado == "PAGADO")    { Mensaje = "El aviso ya esta pagado.";  return false; }
             if (datos.estado == "ANULADO")   { Mensaje = "El aviso esta anulado.";    return false; }
+            // Orden de cobro: se corta ANTES de registrar la deuda en Libelula. El SP
+            // sp_registrar_pago_qr_pendiente vuelve a rechazarlo por si acaso.
+            if (!string.IsNullOrEmpty(datos.aviso_anterior_pendiente))
+            {
+                Mensaje = "El socio tiene el aviso del periodo " + datos.aviso_anterior_pendiente +
+                          " sin pagar. Los avisos se pagan del mas antiguo al mas reciente.";
+                return false;
+            }
             if (string.IsNullOrWhiteSpace(datos.correo))
             {
                 Mensaje = "El socio no tiene correo registrado (requerido por la pasarela). " +

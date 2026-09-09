@@ -15,7 +15,7 @@
 
 <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
     <div>
-        <h1 class="text-xl font-semibold text-gray-800">Gestión de Socios</h1>
+        <h1 class="text-xl font-semibold text-gray-800">Gestionar Socio</h1>
         <p class="text-sm text-gray-400 mt-0.5">Administra los socios registrados en la cooperativa</p>
     </div>
     @if (puedeRegistrar)
@@ -345,7 +345,7 @@
 
     function parsearFechaNet(val) {
         if (!val) return '';
-        var m = /\/Date\((\d+)\)\//.exec(val);
+        var m = /\/Date\((-?\d+)\)\//.exec(val);
         if (m) return new Date(parseInt(m[1])).toISOString().substring(0, 10);
         return typeof val === 'string' ? val.substring(0, 10) : '';
     }

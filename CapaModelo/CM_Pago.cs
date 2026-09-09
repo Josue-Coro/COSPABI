@@ -15,6 +15,28 @@ namespace CapaModelo
         public string   nombre_socio      { get; set; }
         public int      codigo_fijo       { get; set; }
         public string   nombre_periodo    { get; set; }
+        public string   aviso_anterior_pendiente { get; set; }   // periodo que bloquea el cobro; null = cobrable
+    }
+
+    // Deuda completa de un socio (tarjeta "Cobrar todo" de la pantalla de Pago)
+    public class CM_DeudaSocio
+    {
+        public int     id_socio        { get; set; }
+        public string  nombre_socio    { get; set; }
+        public int     codigo_fijo     { get; set; }
+        public int     cantidad_avisos { get; set; }
+        public decimal total_deuda     { get; set; }
+        public List<CM_DeudaSocioAviso> Avisos { get; set; }
+    }
+
+    public class CM_DeudaSocioAviso
+    {
+        public int      id_aviso          { get; set; }
+        public string   nombre_periodo    { get; set; }
+        public DateTime fecha_emision     { get; set; }
+        public DateTime fecha_vencimiento { get; set; }
+        public decimal  total_aviso       { get; set; }
+        public bool     vencido           { get; set; }
     }
 
     public class CM_AvisoPorCobrarListado
@@ -56,6 +78,7 @@ namespace CapaModelo
         public int     codigo_fijo    { get; set; }
         public string  nombre_periodo { get; set; }
         public string  correo         { get; set; }
+        public string  aviso_anterior_pendiente { get; set; }   // periodo que bloquea el cobro; null = cobrable
 
         public CM_PagoQrPendiente         Pendiente { get; set; }
         public List<CM_ReciboPagoDetalle> Detalles  { get; set; }

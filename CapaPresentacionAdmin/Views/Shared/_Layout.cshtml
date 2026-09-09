@@ -64,7 +64,7 @@
     <title>@ViewBag.Title - COSPABI R.L.</title>
 
 
-    <link href="~/Content/app.css" rel="stylesheet" />
+    <link href="~/Content/app.css?v=@CapaPresentacionAdmin.Recursos.AppCss()" rel="stylesheet" />
 
     @Styles.Render("~/Content/css")
     @Scripts.Render("~/bundles/modernizr")
@@ -337,7 +337,7 @@
                     }
                     if (TienePermiso("Gestionar Avisos"))
                     {
-                        @Html.ActionLink("Avisos y Cobros", "Aviso", "Aviso",
+                        @Html.ActionLink("Avisos", "Aviso", "Aviso",
                                  new { area = "" },
                                  new { @class = "nav-link" })
                     }
@@ -396,6 +396,15 @@
                     if (TienePermiso("Generar Reporte Caja"))
                     {
                         @Html.ActionLink("Reporte de Caja", "Caja", "Reporte",
+                                 new { area = "" },
+                                 new { @class = "nav-link" })
+                    }
+                    if (TienePermiso("Generar Reporte Caja"))
+                    {
+                        @Html.ActionLink("Facturas Cobradas", "Cobros", "Reporte",
+                                 new { area = "" },
+                                 new { @class = "nav-link" })
+                        @Html.ActionLink("Arqueo General", "Arqueo", "Reporte",
                                  new { area = "" },
                                  new { @class = "nav-link" })
                     }
@@ -496,7 +505,7 @@
                         </button>
 
                         <div class="profile-dropdown" id="profileDropdown" role="menu">
-                            <a href="#" class="dropdown-item">
+                            <a href="@Url.Action("Perfil", "Perfil")" class="dropdown-item">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                           d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -528,6 +537,7 @@
     </div>
 
     @Scripts.Render("~/bundles/jquery")
+    <script src="@Url.Content("~/Scripts/periodo-picker.js")"></script>
 
     <script>
         function toggleSidebar() {

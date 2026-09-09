@@ -101,5 +101,86 @@ namespace CapaNegocio
         {
             return cdCaja.ListarCajerosConCaja(solicitanteEsSuperadmin);
         }
+
+        // ---- Facturas cobradas ----
+        public CM_ReporteCobros ReporteCobros(System.DateTime fechaInicio, System.DateTime fechaFin,
+                                              int? idCajero, string origen, int idUsuario, out string Mensaje)
+        {
+            Mensaje = string.Empty;
+            if (fechaFin < fechaInicio)
+            {
+                Mensaje = "La fecha final no puede ser menor a la inicial.";
+                return null;
+            }
+            origen = NormalizarOrigen(origen);
+
+            var reporte = cdCaja.ReporteCobros(fechaInicio, fechaFin, idCajero, origen);
+            if (reporte == null)
+            {
+                Mensaje = "Error al generar el reporte de facturas cobradas.";
+                return null;
+            }
+            cnBitacora.Registrar("Genero el reporte de facturas cobradas (" +
+                fechaInicio.ToString("dd/MM/yyyy") + " - " + fechaFin.ToString("dd/MM/yyyy") + ")", idUsuario);
+            return reporte;
+        }
+
+        // ---- Arqueo general por rango ----
+        public CM_ArqueoGeneral ArqueoGeneral(System.DateTime fechaInicio, System.DateTime fechaFin,
+                                              int? idCajero, string origen, int idUsuario, out string Mensaje)
+        {
+            Mensaje = string.Empty;
+            if (fechaFin < fechaInicio)
+            {
+                Mensaje = "La fecha final no puede ser menor a la inicial.";
+                return null;
+            }
+            origen = NormalizarOrigen(origen);
+
+            var reporte = cdCaja.ArqueoGeneral(fechaInicio, fechaFin, idCajero, origen, null);
+            if (reporte == null)
+            {
+                Mensaje = "Error al generar el arqueo general.";
+                return null;
+            }
+            cnBitacora.Registrar("Genero el arqueo general (" +
+                fechaInicio.ToString("dd/MM/yyyy") + " - " + fechaFin.ToString("dd/MM/yyyy") + ")", idUsuario);
+            return reporte;
+        }
+
+        // ---- Arqueo por concepto de UNA caja. No escribe bitacora: lo pide el
+        //      impreso del arqueo, que ya la escribe al cerrar. El llamador debe
+        //      haber validado la propiedad de la caja con ObtenerArqueo antes.
+        public CM_ArqueoGeneral ArqueoConceptosCaja(int idCaja)
+        {
+            return cdCaja.ArqueoGeneral(null, null, null, "CAJA", idCaja);
+        }
+
+        private static string NormalizarOrigen(string origen)
+        {
+            origen = (origen ?? "CAJA").Trim().ToUpperInvariant();
+            return (origen == "PORTAL" || origen == "TODOS") ? origen : "CAJA";
+        }
+
+        // ---- HU24: pagos de inscripcion ----
+        public CM_ReporteInscripcion ReportePagosInscripcion(System.DateTime fechaInicio, System.DateTime fechaFin,
+                                                             int idUsuario, out string Mensaje)
+        {
+            Mensaje = string.Empty;
+            if (fechaFin < fechaInicio)
+            {
+                Mensaje = "La fecha final no puede ser menor a la inicial.";
+                return null;
+            }
+            var reporte = cdCaja.ReportePagosInscripcion(fechaInicio, fechaFin);
+            if (reporte == null)
+            {
+                Mensaje = "Error al generar el reporte de pagos de inscripcion.";
+                return null;
+            }
+            cnBitacora.Registrar("Genero el reporte de pagos de inscripcion (" +
+                fechaInicio.ToString("dd/MM/yyyy") + " - " + fechaFin.ToString("dd/MM/yyyy") + ")", idUsuario);
+            return reporte;
+        }
     }
 }

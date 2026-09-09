@@ -325,5 +325,199 @@ namespace CapaDato
             catch { lista = null; }
             return lista;
         }
+
+        // ---- Facturas cobradas ----
+        public CM_ReporteCobros ReporteCobros(DateTime fechaInicio, DateTime fechaFin, int? idCajero, string origen)
+        {
+            CM_ReporteCobros reporte = null;
+            try
+            {
+                using (SqlConnection cn = new SqlConnection(CD_Conexion.cn))
+                {
+                    SqlCommand cmd = new SqlCommand("dbo.sp_reporte_cobros", cn);
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.Parameters.AddWithValue("@FechaInicio", fechaInicio.Date);
+                    cmd.Parameters.AddWithValue("@FechaFin", fechaFin.Date);
+                    cmd.Parameters.AddWithValue("@IdCajero", (object)idCajero ?? DBNull.Value);
+                    cmd.Parameters.AddWithValue("@Origen", origen ?? "CAJA");
+                    cn.Open();
+                    using (SqlDataReader dr = cmd.ExecuteReader())
+                    {
+                        reporte = new CM_ReporteCobros
+                        {
+                            Cobros     = new List<CM_ReporteCobroFila>(),
+                            Subtotales = new List<CM_ReporteCobroSubtotal>()
+                        };
+                        while (dr.Read())
+                        {
+                            reporte.Cobros.Add(new CM_ReporteCobroFila
+                            {
+                                id_pago        = Convert.ToInt32(dr["id_pago"]),
+                                fecha_pago     = Convert.ToDateTime(dr["fecha_pago"]),
+                                aviso_id_aviso = dr["aviso_id_aviso"] == DBNull.Value ? (int?)null : Convert.ToInt32(dr["aviso_id_aviso"]),
+                                tipo_cobro     = dr["tipo_cobro"].ToString(),
+                                codigo_fijo    = dr["codigo_fijo"] == DBNull.Value ? (int?)null : Convert.ToInt32(dr["codigo_fijo"]),
+                                nombre_socio   = dr["nombre_socio"] == DBNull.Value ? null : dr["nombre_socio"].ToString(),
+                                nombre_periodo = dr["nombre_periodo"] == DBNull.Value ? null : dr["nombre_periodo"].ToString(),
+                                nombre_metodo  = dr["nombre_metodo"].ToString(),
+                                cajero         = dr["cajero"].ToString(),
+                                caja_id_caja   = dr["caja_id_caja"] == DBNull.Value ? (int?)null : Convert.ToInt32(dr["caja_id_caja"]),
+                                monto_pagado   = Convert.ToDecimal(dr["monto_pagado"])
+                            });
+                        }
+                        if (dr.NextResult())
+                        {
+                            while (dr.Read())
+                            {
+                                reporte.Subtotales.Add(new CM_ReporteCobroSubtotal
+                                {
+                                    tipo_cobro = dr["tipo_cobro"].ToString(),
+                                    cantidad   = Convert.ToInt32(dr["cantidad"]),
+                                    total      = Convert.ToDecimal(dr["total"])
+                                });
+                            }
+                        }
+                        if (dr.NextResult() && dr.Read())
+                        {
+                            reporte.CantidadPagos  = Convert.ToInt32(dr["cantidad_pagos"]);
+                            reporte.TotalRecaudado = Convert.ToDecimal(dr["total_recaudado"]);
+                        }
+                    }
+                }
+            }
+            catch { reporte = null; }
+            return reporte;
+        }
+
+        // ---- Arqueo general por concepto (rango de fechas o una caja) ----
+        public CM_ArqueoGeneral ArqueoGeneral(DateTime? fechaInicio, DateTime? fechaFin, int? idCajero, string origen, int? idCaja)
+        {
+            CM_ArqueoGeneral reporte = null;
+            try
+            {
+                using (SqlConnection cn = new SqlConnection(CD_Conexion.cn))
+                {
+                    SqlCommand cmd = new SqlCommand("dbo.sp_reporte_arqueo_general", cn);
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.Parameters.AddWithValue("@FechaInicio", fechaInicio.HasValue ? (object)fechaInicio.Value.Date : DBNull.Value);
+                    cmd.Parameters.AddWithValue("@FechaFin", fechaFin.HasValue ? (object)fechaFin.Value.Date : DBNull.Value);
+                    cmd.Parameters.AddWithValue("@IdCajero", (object)idCajero ?? DBNull.Value);
+                    cmd.Parameters.AddWithValue("@Origen", origen ?? "CAJA");
+                    cmd.Parameters.AddWithValue("@IdCaja", (object)idCaja ?? DBNull.Value);
+                    cn.Open();
+                    using (SqlDataReader dr = cmd.ExecuteReader())
+                    {
+                        reporte = new CM_ArqueoGeneral
+                        {
+                            Conceptos     = new List<CM_ArqueoConcepto>(),
+                            TotalesMetodo = new List<CM_ReporteCajaMetodo>()
+                        };
+                        while (dr.Read())
+                        {
+                            reporte.Conceptos.Add(new CM_ArqueoConcepto
+                            {
+                                nro      = Convert.ToInt32(dr["nro"]),
+                                servicio = dr["servicio"].ToString(),
+                                cantidad = Convert.ToInt32(dr["cantidad"]),
+                                cobrado  = Convert.ToDecimal(dr["cobrado"])
+                            });
+                        }
+                        if (dr.NextResult())
+                        {
+                            while (dr.Read())
+                            {
+                                reporte.TotalesMetodo.Add(new CM_ReporteCajaMetodo
+                                {
+                                    nombre_metodo = dr["nombre_metodo"].ToString(),
+                                    cantidad      = Convert.ToInt32(dr["cantidad"]),
+                                    total         = Convert.ToDecimal(dr["total"])
+                                });
+                            }
+                        }
+                        if (dr.NextResult() && dr.Read())
+                        {
+                            reporte.CantidadPagos     = Convert.ToInt32(dr["cantidad_pagos"]);
+                            reporte.TotalRecaudado    = Convert.ToDecimal(dr["total_recaudado"]);
+                            reporte.CantidadConceptos = Convert.ToInt32(dr["cantidad_conceptos"]);
+                        }
+                    }
+                }
+            }
+            catch { reporte = null; }
+            return reporte;
+        }
+
+        // ---- HU24: pagos de inscripcion ----
+        public CM_ReporteInscripcion ReportePagosInscripcion(DateTime fechaInicio, DateTime fechaFin)
+        {
+            CM_ReporteInscripcion reporte = null;
+            try
+            {
+                using (SqlConnection cn = new SqlConnection(CD_Conexion.cn))
+                {
+                    SqlCommand cmd = new SqlCommand("dbo.sp_reporte_pagos_inscripcion", cn);
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.Parameters.AddWithValue("@FechaInicio", fechaInicio.Date);
+                    cmd.Parameters.AddWithValue("@FechaFin", fechaFin.Date);
+                    cn.Open();
+                    using (SqlDataReader dr = cmd.ExecuteReader())
+                    {
+                        reporte = new CM_ReporteInscripcion
+                        {
+                            Cuotas     = new List<CM_ReporteInscripcionCuota>(),
+                            Pendientes = new List<CM_ReporteInscripcionPendiente>()
+                        };
+                        while (dr.Read())
+                        {
+                            reporte.Cuotas.Add(new CM_ReporteInscripcionCuota
+                            {
+                                codigo_fijo     = Convert.ToInt32(dr["codigo_fijo"]),
+                                nombre_socio    = dr["nombre_socio"].ToString(),
+                                total_credito   = Convert.ToDecimal(dr["total_credito"]),
+                                num_cuota       = Convert.ToInt32(dr["num_cuota"]),
+                                total_cuotas    = Convert.ToInt32(dr["total_cuotas"]),
+                                monto_cuota     = Convert.ToDecimal(dr["monto_cuota"]),
+                                saldo_pendiente = Convert.ToDecimal(dr["saldo_pendiente"]),
+                                fecha_pago      = Convert.ToDateTime(dr["fecha_pago"]),
+                                id_pago         = Convert.ToInt32(dr["id_pago"]),
+                                aviso_id_aviso  = dr["aviso_id_aviso"] == DBNull.Value ? (int?)null : Convert.ToInt32(dr["aviso_id_aviso"]),
+                                nombre_periodo  = dr["nombre_periodo"].ToString(),
+                                nombre_metodo   = dr["nombre_metodo"].ToString(),
+                                estado_credito  = dr["estado_credito"].ToString()
+                            });
+                        }
+                        if (dr.NextResult())
+                        {
+                            while (dr.Read())
+                            {
+                                reporte.Pendientes.Add(new CM_ReporteInscripcionPendiente
+                                {
+                                    codigo_fijo       = Convert.ToInt32(dr["codigo_fijo"]),
+                                    nombre_socio      = dr["nombre_socio"].ToString(),
+                                    total_credito     = Convert.ToDecimal(dr["total_credito"]),
+                                    pagado            = Convert.ToDecimal(dr["pagado"]),
+                                    saldo             = Convert.ToDecimal(dr["saldo"]),
+                                    cuotas_pendientes = Convert.ToInt32(dr["cuotas_pendientes"]),
+                                    total_cuotas      = Convert.ToInt32(dr["total_cuotas"]),
+                                    proximo_periodo   = dr["proximo_periodo"] == DBNull.Value ? null : dr["proximo_periodo"].ToString(),
+                                    proximo_monto     = dr["proximo_monto"] == DBNull.Value ? 0 : Convert.ToDecimal(dr["proximo_monto"])
+                                });
+                            }
+                        }
+                        if (dr.NextResult() && dr.Read())
+                        {
+                            reporte.CantidadCuotas        = Convert.ToInt32(dr["cantidad_cuotas"]);
+                            reporte.MontoCobrado          = Convert.ToDecimal(dr["monto_cobrado"]);
+                            reporte.SociosCobrados        = Convert.ToInt32(dr["socios_cobrados"]);
+                            reporte.SociosCancelaronTotal = Convert.ToInt32(dr["socios_cancelaron_total"]);
+                            reporte.SociosConPendientes   = Convert.ToInt32(dr["socios_con_pendientes"]);
+                            reporte.SaldoTotalPendiente   = Convert.ToDecimal(dr["saldo_total_pendiente"]);
+                        }
+                    }
+                }
+            }
+            catch { reporte = null; }
+            return reporte;
+        }
     }
 }

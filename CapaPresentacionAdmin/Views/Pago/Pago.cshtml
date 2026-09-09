@@ -5,7 +5,7 @@
 
 <div class="p-6">
     <div class="mb-6">
-        <h1 class="text-2xl font-bold text-gray-800">Cobros</h1>
+        <h1 class="text-2xl font-bold text-gray-800">Gestionar Pago</h1>
         <p class="text-sm text-gray-500 mt-1">Cobro de avisos en caja</p>
     </div>
 
@@ -16,6 +16,20 @@
             <div class="p-4 border-b border-gray-100">
                 <input type="text" id="txtBuscar" placeholder="Buscar aviso por socio o código..."
                        class="w-full sm:w-80 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+            </div>
+            <!-- Resumen de deuda del socio buscado: total de todos sus periodos + "Cobrar todo" -->
+            <div id="resumenSocio" class="hidden px-4 py-3 border-b border-gray-100 bg-blue-50/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div class="text-sm min-w-0">
+                    <p class="font-semibold text-gray-800 truncate" id="resSocio"></p>
+                    <p class="text-xs text-gray-500 mt-0.5" id="resDetalle"></p>
+                </div>
+                <div class="flex items-center gap-4 shrink-0">
+                    <div class="text-right">
+                        <p class="text-[11px] uppercase tracking-wide text-gray-500">Deuda total</p>
+                        <p class="font-mono font-bold text-lg text-gray-800" id="resTotal"></p>
+                    </div>
+                    <button id="btnCobrarTodo" onclick="abrirCobroTodo()" class="bg-green-600 hover:bg-green-700 text-white text-sm font-semibold px-4 py-2 rounded-xl whitespace-nowrap">Cobrar todo</button>
+                </div>
             </div>
             <div class="overflow-x-auto">
                 <table class="w-full text-sm">
@@ -52,12 +66,13 @@
     <div class="absolute inset-0 bg-black/40" onclick="cerrarCobro()"></div>
     <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
         <div class="px-5 py-3 border-b border-gray-100 flex items-center justify-between">
-            <h3 class="text-base font-bold text-gray-800">Cobrar aviso</h3>
+            <h3 class="text-base font-bold text-gray-800" id="modalCobroTitulo">Cobrar aviso</h3>
             <button onclick="cerrarCobro()" class="p-1 hover:bg-gray-100 rounded-lg text-gray-500">&times;</button>
         </div>
         <div class="px-5 py-4 space-y-3">
             <div class="bg-gray-50 rounded-xl p-3 text-sm">
                 <p class="font-semibold text-gray-800" id="cobroSocio"></p>
+                <div id="cobroDetalle" class="hidden mt-2 space-y-0.5 text-xs text-gray-600 max-h-40 overflow-y-auto border-t border-gray-200 pt-2"></div>
                 <div class="flex justify-between mt-1"><span class="text-gray-500">Total a cobrar</span><span class="font-mono font-bold text-gray-800" id="cobroTotal"></span></div>
             </div>
             <div>
@@ -76,6 +91,7 @@
                 <span class="font-mono font-semibold text-gray-800" id="lblVuelto">Bs. 0.00</span>
             </div>
             <p id="msgCobro" class="hidden text-xs text-red-500"></p>
+            <p id="notaMultiple" class="hidden text-xs text-gray-500">Se registrará un pago y se imprimirá un recibo por cada aviso, del más antiguo al más reciente.</p>
             <button id="btnCobrar" onclick="confirmarCobro()" class="w-full bg-green-600 hover:bg-green-700 text-white text-sm font-semibold py-2.5 rounded-xl">Confirmar cobro</button>
             <button id="btnQr" onclick="generarQr()" class="w-full border border-blue-600 text-blue-600 hover:bg-blue-50 text-sm font-semibold py-2.5 rounded-xl">Cobrar con QR</button>
         </div>
@@ -130,6 +146,7 @@
     var pagina = 1, total = 0, tam = 10, timer;
     var metodos = [];
     var cobroAviso = 0, cobroMonto = 0;
+    var deudaSocio = null, cobroMultiple = false;   // resumen del socio buscado / modo "Cobrar todo"
 
     $(function () {
         cargarMiCaja();
@@ -141,7 +158,7 @@
     });
 
     function fmt(n) { return (n == null ? 0 : n).toLocaleString('es-BO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
-    function parseNet(v) { if (!v) return null; var m = /\/Date\((\d+)\)\//.exec(v); var d = m ? new Date(parseInt(m[1])) : new Date(v); return isNaN(d) ? null : d; }
+    function parseNet(v) { if (!v) return null; var m = /\/Date\((-?\d+)\)\//.exec(v); var d = m ? new Date(parseInt(m[1])) : new Date(v); return isNaN(d) ? null : d; }
     function ffecha(v) { var d = parseNet(v); return d ? d.toLocaleDateString('es-BO') : '-'; }
     function fhora(v)  { var d = parseNet(v); return d ? d.toLocaleString('es-BO')     : '-'; }
 
@@ -177,26 +194,52 @@
             var tb = $('#tbodyAvisos'); tb.empty();
             if (!res.exito || !res.avisos || res.avisos.length === 0) {
                 tb.html('<tr><td colspan="6" class="text-center py-6 text-gray-400">Sin avisos por cobrar</td></tr>');
-                $('#divPag').empty(); $('#lblInfo').text(''); return;
+                $('#divPag').empty(); $('#lblInfo').text(''); ocultarResumenSocio(); return;
             }
             total = res.totalRegistros;
             $.each(res.avisos, function (_, a) {
                 var nom = a.nombre_socio.replace(/'/g, "\\'");
+                // Orden de cobro: si debe un periodo anterior, el boton se deshabilita (el SP tambien lo rechaza)
+                var bloq = a.aviso_anterior_pendiente;
+                var btnCobrar = bloq
+                    ? '<button disabled title="Cobre primero el aviso de ' + bloq + '" class="bg-gray-200 text-gray-400 text-xs font-semibold px-3 py-1.5 rounded-lg cursor-not-allowed">Cobrar</button>'
+                    : '<button onclick="abrirCobro(' + a.id_aviso + ',' + a.total_aviso + ',\'' + nom + ' — ' + a.nombre_periodo + '\')" class="bg-green-600 hover:bg-green-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg">Cobrar</button>';
                 tb.append(
                     '<tr class="hover:bg-gray-50">' +
                     '<td class="px-4 py-3 font-medium text-gray-800">' + a.nombre_socio + '</td>' +
                     '<td class="px-4 py-3 text-gray-500">' + a.codigo_fijo + '</td>' +
-                    '<td class="px-4 py-3 text-gray-600">' + a.nombre_periodo + '</td>' +
+                    '<td class="px-4 py-3 text-gray-600">' + a.nombre_periodo + (bloq ? '<span class="block text-[11px] text-red-500">Debe ' + bloq + '</span>' : '') + '</td>' +
                     '<td class="px-4 py-3 text-gray-600">' + ffecha(a.fecha_vencimiento) + '</td>' +
                     '<td class="px-4 py-3 text-right font-mono font-semibold text-gray-800">Bs. ' + fmt(a.total_aviso) + '</td>' +
                     '<td class="px-4 py-3 text-right"><div class="flex justify-end gap-1"><button onclick="verDetalle(' + a.id_aviso + ')" class="text-xs px-3 py-1.5 rounded-lg border border-blue-200 text-blue-600 hover:bg-blue-50 transition-colors font-medium">Ver</button>' +
-                    '<button onclick="abrirCobro(' + a.id_aviso + ',' + a.total_aviso + ',\'' + nom + ' — ' + a.nombre_periodo + '\')" class="bg-green-600 hover:bg-green-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg">Cobrar</button></div></td>' +
+                    btnCobrar + '</div></td>' +
                     '</tr>'
                 );
             });
             renderPag();
+            actualizarResumenSocio(res.avisos);
         });
     }
+
+    // ---- Deuda total del socio ("Cobrar todo") ----
+    // Se muestra cuando el listado quedo en un solo socio (busqueda por codigo o nombre completo).
+    function actualizarResumenSocio(avisos) {
+        var codigos = {};
+        $.each(avisos, function (_, a) { codigos[a.codigo_fijo] = true; });
+        var lista = Object.keys(codigos);
+        if (lista.length !== 1) { ocultarResumenSocio(); return; }
+        $.get('@Url.Action("DeudaSocio", "Pago")', { codigo: lista[0] }, function (res) {
+            if (!res.exito || !res.deuda || res.deuda.cantidad_avisos === 0) { ocultarResumenSocio(); return; }
+            deudaSocio = res.deuda;
+            var periodos = $.map(deudaSocio.Avisos, function (a) { return a.nombre_periodo; });
+            $('#resSocio').text(deudaSocio.nombre_socio + ' — Código ' + deudaSocio.codigo_fijo);
+            $('#resDetalle').text('Debe ' + deudaSocio.cantidad_avisos + ' aviso' + (deudaSocio.cantidad_avisos === 1 ? '' : 's') + ': ' + periodos.join(', '));
+            $('#resTotal').text('Bs. ' + fmt(deudaSocio.total_deuda));
+            $('#resumenSocio').removeClass('hidden');
+        });
+    }
+
+    function ocultarResumenSocio() { deudaSocio = null; $('#resumenSocio').addClass('hidden'); }
 
     function renderPag() {
         var totalP = Math.ceil(total / tam) || 1;
@@ -210,14 +253,47 @@
     }
 
     // ---- Cobro ----
+    function llenarMetodos() {
+        var sel = $('#selMetodo'); sel.html('<option value="">-- Seleccionar --</option>');
+        $.each(metodos, function (_, m) { sel.append('<option value="' + m.id_metodo_pago + '">' + m.metodo + '</option>'); });
+    }
+
     function abrirCobro(idAviso, totalAviso, etiqueta) {
+        cobroMultiple = false;
         cobroAviso = idAviso; cobroMonto = totalAviso;
+        $('#modalCobroTitulo').text('Cobrar aviso');
         $('#cobroSocio').text(etiqueta);
+        $('#cobroDetalle').addClass('hidden').empty();
+        $('#notaMultiple').addClass('hidden');
+        $('#btnQr').removeClass('hidden');
         $('#cobroTotal').text('Bs. ' + fmt(totalAviso));
         $('#txtRecibido').val(totalAviso);
         $('#msgCobro').addClass('hidden');
-        var sel = $('#selMetodo'); sel.html('<option value="">-- Seleccionar --</option>');
-        $.each(metodos, function (_, m) { sel.append('<option value="' + m.id_metodo_pago + '">' + m.metodo + '</option>'); });
+        llenarMetodos();
+        calcVuelto();
+        $('#modalCobro').removeClass('hidden');
+    }
+
+    // Mismo modal en modo multiple: todos los avisos pendientes del socio buscado.
+    // El QR se oculta porque la pasarela cobra un aviso por deuda.
+    function abrirCobroTodo() {
+        if (!deudaSocio) return;
+        cobroMultiple = true;
+        cobroAviso = 0; cobroMonto = deudaSocio.total_deuda;
+        $('#modalCobroTitulo').text('Cobrar todos los avisos');
+        $('#cobroSocio').text(deudaSocio.nombre_socio + ' — Código ' + deudaSocio.codigo_fijo);
+        var filas = $.map(deudaSocio.Avisos, function (a) {
+            return '<div class="flex justify-between"><span>Período ' + a.nombre_periodo +
+                   (a.vencido ? ' <span class="text-red-500">(vencido)</span>' : '') +
+                   '</span><span class="font-mono">Bs. ' + fmt(a.total_aviso) + '</span></div>';
+        });
+        $('#cobroDetalle').html(filas.join('')).removeClass('hidden');
+        $('#notaMultiple').removeClass('hidden');
+        $('#btnQr').addClass('hidden');
+        $('#cobroTotal').text('Bs. ' + fmt(cobroMonto));
+        $('#txtRecibido').val(cobroMonto);
+        $('#msgCobro').addClass('hidden');
+        llenarMetodos();
         calcVuelto();
         $('#modalCobro').removeClass('hidden');
     }
@@ -235,6 +311,27 @@
         if (rec < cobroMonto) { $('#msgCobro').text('El monto recibido es menor al total.').removeClass('hidden'); return; }
 
         $('#btnCobrar').prop('disabled', true).text('Cobrando...');
+
+        if (cobroMultiple) {
+            // Un pago por aviso en una sola transaccion; la vista de recibo imprime uno por pagina
+            $.post('@Url.Action("RegistrarPagoMultiple", "Pago")',
+                   { idSocio: deudaSocio.id_socio, idMetodoPago: parseInt(met), montoRecibido: String(rec).replace(',', '.') },
+                   function (res) {
+                $('#btnCobrar').prop('disabled', false).text('Confirmar cobro');
+                if (res.exito) {
+                    window.open('@Url.Action("ImprimirRecibo", "Pago")?ids=' + res.idsPago, '_blank');
+                    cerrarCobro();
+                    cargarPorCobrar(); cargarPagos(); cargarMiCaja();
+                } else {
+                    $('#msgCobro').text(res.mensaje || 'No se pudo cobrar.').removeClass('hidden');
+                }
+            }).fail(function () {
+                $('#btnCobrar').prop('disabled', false).text('Confirmar cobro');
+                $('#msgCobro').text('Error de conexión.').removeClass('hidden');
+            });
+            return;
+        }
+
         $.post('@Url.Action("RegistrarPago", "Pago")', { idAviso: cobroAviso, idMetodoPago: parseInt(met), montoRecibido: rec }, function (res) {
             $('#btnCobrar').prop('disabled', false).text('Confirmar cobro');
             if (res.exito) {
@@ -250,7 +347,7 @@
         });
     }
 
-    function cerrarCobro() { $('#modalCobro').addClass('hidden'); }
+    function cerrarCobro() { cobroMultiple = false; $('#modalCobro').addClass('hidden'); }
 
     // ---- Cobro con QR (Libelula) ----
     var qrIdPago = 0, qrTimer = null;

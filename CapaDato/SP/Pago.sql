@@ -8,6 +8,33 @@ GO
 -- cuotas de credito->CANCELADO.
 -- =============================================================================
 
+-- 0. Aviso anterior sin pagar del mismo socio -------------------------------
+--    Regla de cobro: los avisos se cobran del mas antiguo al mas reciente. No se
+--    puede cobrar (ni generar QR de) un aviso mientras el socio tenga otro de un
+--    periodo anterior sin pagar. Devuelve el periodo (MM/yyyy) mas antiguo que
+--    bloquea, o NULL si el aviso se puede cobrar. La usan los SPs de cobro (que
+--    rechazan) y los listados (para deshabilitar el boton antes de intentarlo).
+CREATE OR ALTER FUNCTION dbo.fn_aviso_anterior_pendiente (@id_aviso INT)
+RETURNS VARCHAR(50)
+AS
+BEGIN
+    DECLARE @periodo VARCHAR(50);
+    SELECT TOP 1 @periodo = pa.periodo
+    FROM aviso a
+    INNER JOIN periodo p  ON p.id_periodo      = a.periodo_id_periodo
+    INNER JOIN aviso   an ON an.socio_id_socio = a.socio_id_socio AND an.id_aviso <> a.id_aviso
+    INNER JOIN periodo pa ON pa.id_periodo     = an.periodo_id_periodo
+    INNER JOIN estado  e  ON e.id_estado       = an.estado_id_estado
+    WHERE a.id_aviso = @id_aviso
+      AND e.estado NOT IN ('PAGADO', 'ANULADO')
+      -- MM/yyyy -> yyyyMM para comparar periodos
+      AND CAST(RIGHT(pa.periodo, 4) + LEFT(pa.periodo, 2) AS INT)
+        < CAST(RIGHT(p.periodo, 4)  + LEFT(p.periodo, 2)  AS INT)
+    ORDER BY CAST(RIGHT(pa.periodo, 4) + LEFT(pa.periodo, 2) AS INT);
+    RETURN @periodo;
+END
+GO
+
 -- 1. Avisos por cobrar (no PAGADO ni ANULADO) --------------------------------
 CREATE OR ALTER PROCEDURE dbo.sp_listar_avisos_por_cobrar
     @Busqueda     NVARCHAR(255) = '',
@@ -27,7 +54,8 @@ BEGIN
         a.fecha_vencimiento,
         s.nombre_socio,
         s.codigo_fijo,
-        p.periodo AS nombre_periodo
+        p.periodo AS nombre_periodo,
+        dbo.fn_aviso_anterior_pendiente(a.id_aviso) AS aviso_anterior_pendiente   -- NULL = cobrable
     FROM aviso a
     INNER JOIN socio   s ON s.id_socio   = a.socio_id_socio
     INNER JOIN periodo p ON p.id_periodo = a.periodo_id_periodo
@@ -47,6 +75,40 @@ BEGIN
       AND (@Busqueda = ''
            OR s.nombre_socio LIKE '%' + @Busqueda + '%'
            OR CAST(s.codigo_fijo AS NVARCHAR) LIKE '%' + @Busqueda + '%');
+END
+GO
+
+-- 1b. Deuda total de un socio (tarjeta "Cobrar todo" de la pantalla de Pago) --
+--     Result set 1: socio + cuantos avisos debe y cuanto suman.
+--     Result set 2: esos avisos del mas antiguo al mas reciente (orden de cobro).
+CREATE OR ALTER PROCEDURE dbo.sp_deuda_socio
+    @codigo_fijo INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT s.id_socio, s.nombre_socio, s.codigo_fijo,
+           COUNT(a.id_aviso)             AS cantidad_avisos,
+           ISNULL(SUM(a.total_aviso), 0) AS total_deuda
+    FROM socio s
+    LEFT JOIN aviso  a ON a.socio_id_socio = s.id_socio
+                      AND a.estado_id_estado NOT IN (SELECT id_estado FROM estado WHERE estado IN ('PAGADO', 'ANULADO'))
+    WHERE s.codigo_fijo = @codigo_fijo
+    GROUP BY s.id_socio, s.nombre_socio, s.codigo_fijo;
+
+    SELECT a.id_aviso,
+           p.periodo AS nombre_periodo,
+           a.fecha_emision,
+           a.fecha_vencimiento,
+           a.total_aviso,
+           CASE WHEN a.fecha_vencimiento < CAST(GETDATE() AS DATE) THEN 1 ELSE 0 END AS vencido
+    FROM aviso a
+    INNER JOIN socio   s ON s.id_socio   = a.socio_id_socio
+    INNER JOIN periodo p ON p.id_periodo = a.periodo_id_periodo
+    INNER JOIN estado  e ON e.id_estado  = a.estado_id_estado
+    WHERE s.codigo_fijo = @codigo_fijo
+      AND e.estado NOT IN ('PAGADO', 'ANULADO')
+    ORDER BY CAST(RIGHT(p.periodo, 4) + LEFT(p.periodo, 2) AS INT);   -- MM/yyyy -> yyyyMM
 END
 GO
 
@@ -80,6 +142,11 @@ BEGIN
         IF @total IS NULL BEGIN SET @Mensaje = 'Aviso no encontrado.'; RETURN; END
         IF @estado = 'PAGADO'  BEGIN SET @Mensaje = 'El aviso ya esta pagado.'; RETURN; END
         IF @estado = 'ANULADO' BEGIN SET @Mensaje = 'El aviso esta anulado.'; RETURN; END
+
+        -- Orden de cobro: primero el aviso mas antiguo del socio
+        DECLARE @bloqueo VARCHAR(50) = dbo.fn_aviso_anterior_pendiente(@id_aviso);
+        IF @bloqueo IS NOT NULL
+        BEGIN SET @Mensaje = 'El socio tiene el aviso del periodo ' + @bloqueo + ' sin pagar. Los avisos se cobran del mas antiguo al mas reciente: cobre primero ese.'; RETURN; END
 
         -- Guarda de coherencia del desglose.
         -- total_aviso es una foto tomada al generar el aviso. El cierre de ciclo de
@@ -176,6 +243,101 @@ BEGIN
         IF @@TRANCOUNT > 0 ROLLBACK;
         SET @Resultado = 0;
         SET @Mensaje   = ERROR_MESSAGE();
+    END CATCH
+END
+GO
+
+-- 2b. Cobrar TODOS los avisos pendientes de un socio en un solo click ---------
+--     Un pago (y por tanto un recibo) POR AVISO, igual que el cobro individual,
+--     del mas antiguo al mas reciente, dentro de UNA transaccion: o se cobran
+--     todos o ninguno. Reutiliza sp_registrar_pago_aviso, asi que aplica las
+--     mismas reglas (caja abierta, desglose, orden de cobro, cierre de cargos y
+--     cuotas, notificacion al socio). El vuelto se registra en el ultimo pago.
+--     @IdsPago devuelve los ids generados separados por coma, para los recibos.
+--     No llamarlo dentro de una transaccion externa: ante un fallo hace ROLLBACK
+--     completo (el ROLLBACK de un SP anidado deshace toda la transaccion).
+CREATE OR ALTER PROCEDURE dbo.sp_registrar_pago_multiple
+    @id_socio       INT,
+    @id_caja        INT,
+    @id_metodo_pago INT,
+    @monto_recibido DECIMAL(30,2) = NULL,   -- efectivo entregado por el total. NULL = exacto
+    @cajero         VARCHAR(150),
+    @Resultado      INT           OUTPUT,   -- cantidad de avisos cobrados (>0) | 0 error
+    @Mensaje        NVARCHAR(500) OUTPUT,
+    @IdsPago        VARCHAR(MAX)  OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET @Resultado = 0;
+    SET @Mensaje   = '';
+    SET @IdsPago   = '';
+
+    DECLARE @pend TABLE (orden INT IDENTITY(1,1) PRIMARY KEY, id_aviso INT, total DECIMAL(30,2));
+    INSERT INTO @pend (id_aviso, total)
+    SELECT a.id_aviso, a.total_aviso
+    FROM aviso a
+    INNER JOIN periodo p ON p.id_periodo = a.periodo_id_periodo
+    INNER JOIN estado  e ON e.id_estado  = a.estado_id_estado
+    WHERE a.socio_id_socio = @id_socio
+      AND e.estado NOT IN ('PAGADO', 'ANULADO')
+    ORDER BY CAST(RIGHT(p.periodo, 4) + LEFT(p.periodo, 2) AS INT);
+
+    DECLARE @n     INT           = (SELECT COUNT(*) FROM @pend);
+    DECLARE @total DECIMAL(30,2) = (SELECT ISNULL(SUM(total), 0) FROM @pend);
+
+    IF @n = 0
+    BEGIN SET @Mensaje = 'El socio no tiene avisos pendientes de pago.'; RETURN; END
+
+    IF NOT EXISTS (SELECT 1 FROM caja WHERE id_caja = @id_caja AND estado = 1)
+    BEGIN SET @Mensaje = 'No hay una caja abierta valida. Abra su caja primero.'; RETURN; END
+
+    DECLARE @recibido DECIMAL(30,2) = ISNULL(@monto_recibido, @total);
+    IF @recibido < @total
+    BEGIN
+        SET @Mensaje = 'El monto recibido (Bs. ' + CONVERT(VARCHAR, @recibido) + ') es menor al total de la deuda (Bs. ' + CONVERT(VARCHAR, @total) + ').';
+        RETURN;
+    END
+    DECLARE @vuelto DECIMAL(30,2) = @recibido - @total;
+
+    DECLARE @i INT = 1, @id_aviso INT, @t DECIMAL(30,2), @rec DECIMAL(30,2), @id_pago INT, @msg NVARCHAR(500);
+    BEGIN TRY
+        BEGIN TRAN;
+        WHILE @i <= @n
+        BEGIN
+            SELECT @id_aviso = id_aviso, @t = total FROM @pend WHERE orden = @i;
+            -- el vuelto va en el ultimo recibo; los anteriores se registran exactos
+            SET @rec = CASE WHEN @i = @n THEN @t + @vuelto ELSE NULL END;
+            SET @id_pago = 0;
+
+            EXEC dbo.sp_registrar_pago_aviso @id_aviso, @id_caja, @id_metodo_pago, @rec, @cajero,
+                                             @id_pago OUTPUT, @msg OUTPUT;
+
+            IF ISNULL(@id_pago, 0) <= 0
+            BEGIN
+                -- Los pagos anteriores del lote se deshacen: o todos o ninguno
+                IF @@TRANCOUNT > 0 ROLLBACK;
+                SET @IdsPago = '';
+                SET @Mensaje = 'No se cobro ningun aviso. Aviso #' + CAST(@id_aviso AS VARCHAR) + ': ' + ISNULL(@msg, '');
+                RETURN;
+            END
+
+            SET @IdsPago = @IdsPago + CASE WHEN @IdsPago = '' THEN '' ELSE ',' END + CAST(@id_pago AS VARCHAR);
+            SET @i = @i + 1;
+        END
+        COMMIT;
+
+        SET @Resultado = @n;
+        SET @Mensaje   = CAST(@n AS VARCHAR) + ' aviso(s) cobrado(s) por Bs. ' + CONVERT(VARCHAR, @total)
+                       + '. Vuelto: Bs. ' + CONVERT(VARCHAR, @vuelto);
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0 ROLLBACK;
+        SET @Resultado = 0;
+        SET @IdsPago   = '';
+        -- 266 = el SP anidado ya hizo su propio ROLLBACK (excepcion dentro de
+        -- sp_registrar_pago_aviso); el motivo real viene en su @Mensaje.
+        SET @Mensaje   = 'No se cobro ningun aviso. Aviso #' + CAST(ISNULL(@id_aviso, 0) AS VARCHAR) + ': '
+                       + CASE WHEN ERROR_NUMBER() = 266 AND ISNULL(@msg, '') <> '' THEN @msg ELSE ERROR_MESSAGE() END;
     END CATCH
 END
 GO

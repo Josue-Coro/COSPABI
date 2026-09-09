@@ -142,6 +142,7 @@
     <Compile Include="Controllers\TarifaController.cs" />
     <Compile Include="Controllers\TipoCargoController.cs" />
     <Compile Include="Controllers\UsuarioController.cs" />
+    <Compile Include="Controllers\PerfilController.cs" />
     <Compile Include="Filtros\ValidarPermisosAttribute.cs" />
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
@@ -178,6 +179,7 @@
     <None Include="Scripts\jquery-3.7.0.intellisense.js" />
     <Content Include="Scripts\jquery-3.7.0.js" />
     <Content Include="Scripts\jquery-3.7.0.min.js" />
+    <Content Include="Scripts\periodo-picker.js" />
     <Content Include="Scripts\jquery-3.7.0.slim.js" />
     <Content Include="Scripts\jquery-3.7.0.slim.min.js" />
     <None Include="Scripts\jquery.validate-vsdoc.js" />
@@ -202,6 +204,7 @@
     <Content Include="Views\Home\Index.cshtml" />
     <Content Include="Views\Login\Login.cshtml" />
     <Content Include="Views\Usuario\Usuario.cshtml" />
+    <Content Include="Views\Perfil\Perfil.cshtml" />
     <Content Include="Views\Rol\Rol.cshtml" />
     <Content Include="Views\Persona\Persona.cshtml" />
     <Content Include="Views\Aviso\Aviso.cshtml" />
@@ -232,6 +235,8 @@
     <Content Include="Views\Socio\EliminarSocio.cshtml" />
     <Content Include="Views\Tarifa\EditarTarifa.cshtml" />
     <Content Include="Views\Reporte\Caja.cshtml" />
+    <Content Include="Views\Reporte\Cobros.cshtml" />
+    <Content Include="Views\Reporte\Arqueo.cshtml" />
     <Content Include="Views\Reporte\Morosidad.cshtml" />
     <Content Include="Views\Reporte\PagosSistema.cshtml" />
     <Content Include="Views\MetodoPago\MetodoPago.cshtml" />

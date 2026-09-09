@@ -1,0 +1,197 @@
+@{
+    ViewBag.Title = "Arqueo General";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    @@media print {
+        aside, header, #sidebarOverlay, .no-print { display: none !important; }
+        html, body { overflow: visible !important; height: auto !important; background: #fff !important; }
+        body > .flex { display: block !important; height: auto !important; overflow: visible !important; }
+        main { overflow: visible !important; padding: 0 !important; background: #fff !important; }
+        #areaReporte { box-shadow: none !important; border: none !important; border-radius: 0 !important; padding: 0 !important; }
+        @@page { size: portrait; margin: 1.2cm 1.2cm 1.6cm; }
+    }
+</style>
+
+<div class="p-6">
+    <div class="mb-6 no-print">
+        <h1 class="text-2xl font-bold text-gray-800">Arqueo General</h1>
+        <p class="text-sm text-gray-500 mt-1">Recaudación por servicio (consumo, cargos, inscripción). Con la fecha de hoy es el arqueo diario.</p>
+    </div>
+
+    <!-- Filtros -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-6 no-print">
+        <div class="flex flex-wrap items-end gap-3">
+            <div>
+                <label class="block text-xs font-medium text-gray-700 mb-1">Desde <span class="text-red-500">*</span></label>
+                <input type="date" id="fIni" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-700 mb-1">Hasta <span class="text-red-500">*</span></label>
+                <input type="date" id="fFin" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-700 mb-1">Origen</label>
+                <select id="selOrigen" onchange="onOrigen()" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                    <option value="CAJA">Cajas (ventanilla)</option>
+                    <option value="PORTAL">Portal del socio</option>
+                    <option value="TODOS">Todos</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-700 mb-1">Cajero</label>
+                <select id="selCajero" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" style="min-width:180px">
+                    <option value="">Todos</option>
+                </select>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="atajo('hoy')" class="border border-gray-300 text-gray-600 hover:bg-gray-50 text-xs font-semibold px-3 py-2 rounded-xl">Hoy</button>
+                <button onclick="atajo('semana')" class="border border-gray-300 text-gray-600 hover:bg-gray-50 text-xs font-semibold px-3 py-2 rounded-xl">Esta semana</button>
+                <button onclick="atajo('mes')" class="border border-gray-300 text-gray-600 hover:bg-gray-50 text-xs font-semibold px-3 py-2 rounded-xl">Este mes</button>
+            </div>
+            <button onclick="generar()" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-5 py-2 rounded-xl">Generar</button>
+            <button id="btnImprimir" onclick="window.print()" disabled
+                    class="border border-gray-300 text-gray-600 hover:bg-gray-50 text-sm font-semibold px-5 py-2 rounded-xl disabled:opacity-40">Imprimir / PDF</button>
+        </div>
+        <p id="msgError" class="hidden text-xs text-red-500 mt-2"></p>
+    </div>
+
+    <!-- Reporte (formato clasico, es lo que se imprime) -->
+    <div id="areaReporte" class="hidden bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+        <div class="rpt">
+            <div class="rpt-head">
+                <div>
+                    <div class="rpt-coop">COSPABI R.L.</div>
+                    <div class="rpt-coop-sub">Cooperativa de Agua Potable</div>
+                    <div class="rpt-coop-sub">Santa Cruz - Bolivia</div>
+                </div>
+                <div>
+                    <div class="rpt-title">Arqueo General</div>
+                    <div class="rpt-range">Desde : <span id="rDesde"></span> &nbsp; Hasta : <span id="rHasta"></span></div>
+                    <div class="rpt-range" id="rFiltro"></div>
+                </div>
+                <div class="rpt-stamp">
+                    Fecha : <span id="rFecha"></span><br>
+                    Hora &nbsp;: <span id="rHora"></span>
+                </div>
+            </div>
+
+            <table class="rpt-boxed" style="margin-top:6px">
+                <thead>
+                    <tr>
+                        <th class="num" style="width:50px">N°</th>
+                        <th>Servicio</th>
+                        <th class="num" style="width:90px">Cant.</th>
+                        <th class="num" style="width:140px">Cobrado</th>
+                    </tr>
+                </thead>
+                <tbody id="tbodyConceptos">
+                    <tr class="rpt-group"><td colspan="4">Centro de Cobranza :</td></tr>
+                </tbody>
+            </table>
+
+            <div class="rpt-total">
+                <span>Total :</span>
+                <span id="rCantidad">0</span>
+                <span id="rTotal">0.00</span>
+            </div>
+
+            <div style="margin-top:18px">
+                <table style="width:auto;min-width:320px">
+                    <thead>
+                        <tr><th>Método de pago</th><th class="num">Cant.</th><th class="num">Cobrado</th></tr>
+                    </thead>
+                    <tbody id="tbodyMetodos"></tbody>
+                </table>
+            </div>
+
+            <div class="rpt-signs">
+                <div class="rpt-sign">Contabilidad</div>
+                <div class="rpt-sign">Tesorero</div>
+                <div class="rpt-sign">Comercial</div>
+            </div>
+
+            <div class="rpt-foot">
+                <span>COSPABI R.L. - Sistema de Gestión</span>
+                <span>Generado por: @(Session["NombreUsuario"] ?? "")</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+<script>
+    $(function () {
+        atajo('hoy');
+        $.get('@Url.Action("Cajeros", "Reporte")', function (res) {
+            if (res.exito) $.each(res.cajeros, function (_, c) {
+                $('#selCajero').append('<option value="' + c.id_usuario_admin + '">' + c.nombre_completo + '</option>');
+            });
+        });
+    });
+
+    function pad(n) { return String(n).padStart(2, '0'); }
+    function iso(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+    function atajo(t) {
+        var h = new Date(), ini = new Date(h);
+        if (t === 'semana') { var dia = (h.getDay() + 6) % 7; ini.setDate(h.getDate() - dia); }
+        if (t === 'mes') ini = new Date(h.getFullYear(), h.getMonth(), 1);
+        $('#fIni').val(iso(ini)); $('#fFin').val(iso(h));
+    }
+    function onOrigen() {
+        var portal = $('#selOrigen').val() === 'PORTAL';
+        $('#selCajero').prop('disabled', portal);
+        if (portal) $('#selCajero').val('');
+    }
+    function fmt(n) { return (n == null ? 0 : n).toLocaleString('es-BO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+    function fCorta(d) { return pad(d.getDate()) + '/' + pad(d.getMonth() + 1) + '/' + String(d.getFullYear()).slice(-2); }
+    function fHora(d) { return pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds()); }
+    function isoACorta(s) { var p = s.split('-'); return p[2] + '/' + p[1] + '/' + p[0].slice(-2); }
+    function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
+
+    function generar() {
+        var fi = $('#fIni').val(), ff = $('#fFin').val();
+        $('#msgError').addClass('hidden');
+        if (!fi || !ff) { $('#msgError').text('Selecciona el rango de fechas.').removeClass('hidden'); return; }
+
+        $.get('@Url.Action("DatosArqueo", "Reporte")',
+              { fechaInicio: fi, fechaFin: ff, idCajero: $('#selCajero').val() || null, origen: $('#selOrigen').val() },
+              function (res) {
+            if (!res.exito) { $('#msgError').text(res.mensaje).removeClass('hidden'); return; }
+
+            var ahora = new Date();
+            $('#rDesde').text(isoACorta(fi)); $('#rHasta').text(isoACorta(ff));
+            $('#rFecha').text(fCorta(ahora)); $('#rHora').text(fHora(ahora));
+            var filtro = $('#selOrigen option:selected').text();
+            if ($('#selCajero').val()) filtro += ' - Cajero: ' + $('#selCajero option:selected').text();
+            $('#rFiltro').text(filtro);
+
+            var tb = $('#tbodyConceptos');
+            tb.html('<tr class="rpt-group"><td colspan="4">Centro de Cobranza :</td></tr>');
+            $.each(res.conceptos, function (_, c) {
+                tb.append('<tr>' +
+                    '<td class="num">' + c.nro + '</td>' +
+                    '<td>' + esc(c.servicio) + '</td>' +
+                    '<td class="num">' + c.cantidad + '</td>' +
+                    '<td class="num">' + fmt(c.cobrado) + '</td>' +
+                    '</tr>');
+            });
+
+            var tm = $('#tbodyMetodos'); tm.empty();
+            if (!res.totalesMetodo.length) tm.html('<tr><td colspan="3" class="rpt-empty">Sin cobros en el periodo</td></tr>');
+            $.each(res.totalesMetodo, function (_, m) {
+                tm.append('<tr><td>' + esc(m.nombre_metodo) + '</td><td class="num">' + m.cantidad + '</td><td class="num">' + fmt(m.total) + '</td></tr>');
+            });
+
+            $('#rCantidad').text(res.cantidadConceptos);
+            $('#rTotal').text(fmt(res.totalRecaudado));
+
+            $('#areaReporte').removeClass('hidden');
+            $('#btnImprimir').prop('disabled', false);
+        }).fail(function () {
+            $('#msgError').text('Error de conexión.').removeClass('hidden');
+        });
+    }
+</script>
+}

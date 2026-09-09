@@ -48,6 +48,7 @@ namespace CapaModelo
         public decimal  deuda_actual      { get; set; }
         public string   estado            { get; set; }
         public bool     vencido           { get; set; }
+        public string   aviso_anterior_pendiente { get; set; }   // periodo que debe pagarse antes; null = pagable
     }
 
     public class CM_PortalPago

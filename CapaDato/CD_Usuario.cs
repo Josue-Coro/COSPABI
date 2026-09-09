@@ -155,5 +155,150 @@ namespace CapaDato
             }
             return resultado;
         }
+
+        // ================= Mi perfil (usuario de la sesión) =================
+
+        public CM_PerfilAdmin ObtenerPerfil(int idUsuarioAdmin)
+        {
+            CM_PerfilAdmin perfil = null;
+            try
+            {
+                using (SqlConnection conexion = new SqlConnection(CD_Conexion.cn))
+                {
+                    SqlCommand cmd = new SqlCommand("sp_obtener_perfil_admin", conexion);
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.Parameters.AddWithValue("@id_usuario_admin", idUsuarioAdmin);
+                    conexion.Open();
+                    using (SqlDataReader dr = cmd.ExecuteReader())
+                    {
+                        if (dr.Read())
+                        {
+                            perfil = new CM_PerfilAdmin()
+                            {
+                                id_usuario_admin = Convert.ToInt32(dr["id_usuario_admin"]),
+                                nombre = dr["nombre"].ToString(),
+                                apellido = dr["apellido"].ToString(),
+                                usuario = dr["usuario"].ToString(),
+                                estado = Convert.ToBoolean(dr["estado"]),
+                                fecha_creacion = Convert.ToDateTime(dr["fecha_creacion"]),
+                                nombre_rol = dr["nombre_rol"].ToString(),
+                                descripcion_rol = dr["descripcion_rol"] == DBNull.Value ? string.Empty : dr["descripcion_rol"].ToString(),
+                                cantidad_permisos = Convert.ToInt32(dr["cantidad_permisos"]),
+                                acciones_bitacora = Convert.ToInt32(dr["acciones_bitacora"]),
+                                ultimo_acceso = dr["ultimo_acceso"] == DBNull.Value ? (DateTime?)null : Convert.ToDateTime(dr["ultimo_acceso"]),
+                                cajas_abiertas_total = Convert.ToInt32(dr["cajas_abiertas_total"])
+                            };
+                        }
+                    }
+                }
+            }
+            catch
+            {
+                perfil = null;
+            }
+            return perfil;
+        }
+
+        public List<CM_Bitacora> ActividadReciente(int idUsuarioAdmin, int top)
+        {
+            List<CM_Bitacora> lista = new List<CM_Bitacora>();
+            try
+            {
+                using (SqlConnection conexion = new SqlConnection(CD_Conexion.cn))
+                {
+                    SqlCommand cmd = new SqlCommand("sp_actividad_reciente_admin", conexion);
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.Parameters.AddWithValue("@id_usuario_admin", idUsuarioAdmin);
+                    cmd.Parameters.AddWithValue("@top", top);
+                    conexion.Open();
+                    using (SqlDataReader dr = cmd.ExecuteReader())
+                    {
+                        while (dr.Read())
+                        {
+                            lista.Add(new CM_Bitacora()
+                            {
+                                id_bitacora = Convert.ToInt32(dr["id_bitacora"]),
+                                accion = dr["accion"].ToString(),
+                                fecha_hora = Convert.ToDateTime(dr["fecha_hora"]),
+                                id_usuario = Convert.ToInt32(dr["usuario_admin_id_usuario_admin"]),
+                                nombre_completo = dr["nombre_completo"].ToString(),
+                                usuario = dr["usuario"].ToString()
+                            });
+                        }
+                    }
+                }
+            }
+            catch
+            {
+                lista = new List<CM_Bitacora>();
+            }
+            return lista;
+        }
+
+        public bool EditarPerfil(int idUsuarioAdmin, string nombre, string apellido, out string Mensaje)
+        {
+            bool resultado = false;
+            Mensaje = string.Empty;
+            try
+            {
+                using (SqlConnection conexion = new SqlConnection(CD_Conexion.cn))
+                {
+                    using (SqlCommand cmd = new SqlCommand("sp_editar_perfil_admin", conexion))
+                    {
+                        cmd.CommandType = CommandType.StoredProcedure;
+                        cmd.Parameters.AddWithValue("@id_usuario_admin", idUsuarioAdmin);
+                        cmd.Parameters.AddWithValue("@nombre", nombre);
+                        cmd.Parameters.AddWithValue("@apellido", apellido);
+                        cmd.Parameters.Add("@Resultado", SqlDbType.Int).Direction = ParameterDirection.Output;
+                        cmd.Parameters.Add("@Mensaje", SqlDbType.VarChar, 500).Direction = ParameterDirection.Output;
+
+                        conexion.Open();
+                        cmd.ExecuteNonQuery();
+
+                        resultado = Convert.ToInt32(cmd.Parameters["@Resultado"].Value) == 1;
+                        Mensaje = cmd.Parameters["@Mensaje"].Value.ToString();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                resultado = false;
+                Mensaje = ex.Message;
+            }
+            return resultado;
+        }
+
+        public bool CambiarContrasena(int idUsuarioAdmin, string hashActual, string hashNuevo, out string Mensaje)
+        {
+            bool resultado = false;
+            Mensaje = string.Empty;
+            try
+            {
+                using (SqlConnection conexion = new SqlConnection(CD_Conexion.cn))
+                {
+                    using (SqlCommand cmd = new SqlCommand("sp_cambiar_contrasena_admin", conexion))
+                    {
+                        cmd.CommandType = CommandType.StoredProcedure;
+                        cmd.Parameters.AddWithValue("@id_usuario_admin", idUsuarioAdmin);
+                        cmd.Parameters.AddWithValue("@contrasena_actual", hashActual);
+                        cmd.Parameters.AddWithValue("@contrasena_nueva", hashNuevo);
+                        cmd.Parameters.Add("@Resultado", SqlDbType.Int).Direction = ParameterDirection.Output;
+                        cmd.Parameters.Add("@Mensaje", SqlDbType.VarChar, 500).Direction = ParameterDirection.Output;
+
+                        conexion.Open();
+                        cmd.ExecuteNonQuery();
+
+                        resultado = Convert.ToInt32(cmd.Parameters["@Resultado"].Value) == 1;
+                        Mensaje = cmd.Parameters["@Mensaje"].Value.ToString();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                resultado = false;
+                Mensaje = ex.Message;
+            }
+            return resultado;
+        }
     }
 }

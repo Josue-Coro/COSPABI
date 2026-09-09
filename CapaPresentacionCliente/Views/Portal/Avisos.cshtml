@@ -259,7 +259,11 @@
                     subtitulo = 'Vence el ' + Portal.ffecha(a.fecha_vencimiento);
                 }
 
-                var accion = esPagable(a)
+                // Orden de pago: primero el aviso mas antiguo (el servidor tambien lo exige)
+                var accion = esPagable(a) && a.aviso_anterior_pendiente
+                    ? '<button type="button" disabled title="Paga primero el aviso de ' + Portal.esc(a.aviso_anterior_pendiente) + '" class="px-4 py-2 rounded-xl border border-outline-variant text-on-surface-variant/60 font-label-sm text-label-sm font-semibold cursor-not-allowed whitespace-nowrap inline-flex items-center gap-1.5">' +
+                          '<svg class="ic w-4 h-4"><use href="#ic-qr"></use></svg>Pagar</button>'
+                    : esPagable(a)
                     ? '<button type="button" class="btn-pagar px-4 py-2 rounded-xl border border-primary-container text-primary-700 font-label-sm text-label-sm font-semibold hover:bg-primary-50 transition-colors whitespace-nowrap inline-flex items-center gap-1.5" ' +
                           'data-aviso="' + a.id_aviso + '" ' +
                           'data-periodo="' + Portal.esc(a.nombre_periodo) + '" ' +

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace CapaModelo
@@ -109,5 +109,97 @@ namespace CapaModelo
     {
         public int    id_usuario_admin { get; set; }
         public string nombre_completo  { get; set; }
+    }
+
+    // ---- Reporte "Facturas cobradas" (sp_reporte_cobros) ----
+    public class CM_ReporteCobroFila
+    {
+        public int      id_pago        { get; set; }
+        public DateTime fecha_pago     { get; set; }
+        public int?     aviso_id_aviso { get; set; }
+        public string   tipo_cobro     { get; set; }
+        public int?     codigo_fijo    { get; set; }
+        public string   nombre_socio   { get; set; }
+        public string   nombre_periodo { get; set; }
+        public string   nombre_metodo  { get; set; }
+        public string   cajero         { get; set; }
+        public int?     caja_id_caja   { get; set; }
+        public decimal  monto_pagado   { get; set; }
+    }
+
+    public class CM_ReporteCobroSubtotal
+    {
+        public string  tipo_cobro { get; set; }
+        public int     cantidad   { get; set; }
+        public decimal total      { get; set; }
+    }
+
+    public class CM_ReporteCobros
+    {
+        public List<CM_ReporteCobroFila>     Cobros         { get; set; }
+        public List<CM_ReporteCobroSubtotal> Subtotales     { get; set; }
+        public int                           CantidadPagos  { get; set; }
+        public decimal                       TotalRecaudado { get; set; }
+    }
+
+    // ---- "Arqueo general" por concepto (sp_reporte_arqueo_general) ----
+    public class CM_ArqueoConcepto
+    {
+        public int     nro      { get; set; }
+        public string  servicio { get; set; }
+        public int     cantidad { get; set; }
+        public decimal cobrado  { get; set; }
+    }
+
+    public class CM_ArqueoGeneral
+    {
+        public List<CM_ArqueoConcepto>    Conceptos          { get; set; }
+        public List<CM_ReporteCajaMetodo> TotalesMetodo      { get; set; }
+        public int                        CantidadPagos      { get; set; }
+        public int                        CantidadConceptos  { get; set; }
+        public decimal                    TotalRecaudado     { get; set; }
+    }
+
+    // ---- HU24: Reporte de pagos de inscripcion (sp_reporte_pagos_inscripcion) ----
+    public class CM_ReporteInscripcionCuota
+    {
+        public int      codigo_fijo     { get; set; }
+        public string   nombre_socio    { get; set; }
+        public decimal  total_credito   { get; set; }
+        public int      num_cuota       { get; set; }
+        public int      total_cuotas    { get; set; }
+        public decimal  monto_cuota     { get; set; }
+        public decimal  saldo_pendiente { get; set; }
+        public DateTime fecha_pago      { get; set; }
+        public int      id_pago         { get; set; }
+        public int?     aviso_id_aviso  { get; set; }
+        public string   nombre_periodo  { get; set; }
+        public string   nombre_metodo   { get; set; }
+        public string   estado_credito  { get; set; }   // CANCELADO = credito saldado | PENDIENTE
+    }
+
+    public class CM_ReporteInscripcionPendiente
+    {
+        public int     codigo_fijo       { get; set; }
+        public string  nombre_socio      { get; set; }
+        public decimal total_credito     { get; set; }
+        public decimal pagado            { get; set; }
+        public decimal saldo             { get; set; }
+        public int     cuotas_pendientes { get; set; }
+        public int     total_cuotas      { get; set; }
+        public string  proximo_periodo   { get; set; }
+        public decimal proximo_monto     { get; set; }
+    }
+
+    public class CM_ReporteInscripcion
+    {
+        public List<CM_ReporteInscripcionCuota>     Cuotas                { get; set; }
+        public List<CM_ReporteInscripcionPendiente> Pendientes            { get; set; }
+        public int                                  CantidadCuotas        { get; set; }
+        public decimal                              MontoCobrado          { get; set; }
+        public int                                  SociosCobrados        { get; set; }
+        public int                                  SociosCancelaronTotal { get; set; }
+        public int                                  SociosConPendientes   { get; set; }
+        public decimal                              SaldoTotalPendiente   { get; set; }
     }
 }

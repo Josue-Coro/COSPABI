@@ -94,7 +94,9 @@ BEGIN
         )
         SELECT
             CAST(GETDATE() AS DATE),
-            CAST(DATEADD(DAY, 30, GETDATE()) AS DATE),
+            -- Vencimiento: dos meses despues de la emision (el aviso del periodo
+            -- 08/2026 vence en 10/2026). Regla de la cooperativa, antes eran 30 dias.
+            CAST(DATEADD(MONTH, 2, GETDATE()) AS DATE),
             calc.total_consumo,
             calc.total_consumo + calc.sum_cargos + calc.cuota_credito,   -- total_aviso
             @id_estado_gen,

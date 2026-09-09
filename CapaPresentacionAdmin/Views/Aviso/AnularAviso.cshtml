@@ -1,4 +1,4 @@
-@{
+﻿@{
     ViewBag.Title = "Anular Aviso";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
@@ -30,7 +30,7 @@
     <!-- Filtros -->
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-5">
         <div class="flex flex-wrap gap-3 items-center">
-            <select id="selPeriodoFiltro" onchange="resetYCargar()"
+            <select id="selPeriodoFiltro" data-periodo-picker onchange="resetYCargar()"
                     class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none min-w-[140px]">
                 <option value="">Todos los períodos</option>
             </select>

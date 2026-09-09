@@ -2,7 +2,10 @@ using CapaModelo;
 using CapaNegocio;
 using CapaPresentacionAdmin.Filtros;
 using System;
+using System.Collections.Generic;
 using System.Configuration;
+using System.Globalization;
+using System.Linq;
 using System.Web.Mvc;
 
 namespace CapaPresentacionAdmin.Controllers
@@ -19,12 +22,25 @@ namespace CapaPresentacionAdmin.Controllers
         {
             return View();
         }
+        // Un recibo (?idPago=N) o varios de un mismo cobro (?ids=1,2,3): la vista
+        // imprime un recibo por pagina, asi "Cobrar todo" entrega un recibo por periodo.
         [ValidarPermisos(NombrePermiso = "Gestionar Pago")]
-        public ActionResult ImprimirRecibo(int idPago)
+        public ActionResult ImprimirRecibo(int? idPago, string ids = null)
         {
-            var recibo = cnPago.ObtenerReciboPago(idPago);
-            if (recibo == null) return RedirectToAction("Pago");
-            return View(recibo);
+            var idsPago = new List<int>();
+            if (idPago.HasValue) idsPago.Add(idPago.Value);
+            if (!string.IsNullOrWhiteSpace(ids))
+                foreach (var s in ids.Split(','))
+                    if (int.TryParse(s.Trim(), out int id)) idsPago.Add(id);
+
+            var recibos = new List<CM_ReciboPago>();
+            foreach (var id in idsPago.Distinct())
+            {
+                var recibo = cnPago.ObtenerReciboPago(id);
+                if (recibo != null) recibos.Add(recibo);
+            }
+            if (recibos.Count == 0) return RedirectToAction("Pago");
+            return View(recibos);
         }
 
         // Caja abierta del cajero + metodos de pago
@@ -77,6 +93,56 @@ namespace CapaPresentacionAdmin.Controllers
                 bool ok = cnPago.RegistrarPago(idAviso, caja.id_caja, idMetodoPago, montoRecibido,
                                                u.id_usuario_admin, cajero, out int idPago, out string Mensaje);
                 return Json(new { exito = ok, mensaje = Mensaje, idPago = idPago });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { exito = false, mensaje = ex.Message });
+            }
+        }
+
+        // Deuda completa de un socio (tarjeta "Cobrar todo")
+        [HttpGet]
+        [ValidarPermisos(NombrePermiso = "Gestionar Pago")]
+        public JsonResult DeudaSocio(int codigo)
+        {
+            try
+            {
+                var deuda = cnPago.ObtenerDeudaSocio(codigo);
+                if (deuda == null)
+                    return Json(new { exito = false, mensaje = "Socio no encontrado." }, JsonRequestBehavior.AllowGet);
+                return Json(new { exito = true, deuda }, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                return Json(new { exito = false, mensaje = ex.Message }, JsonRequestBehavior.AllowGet);
+            }
+        }
+
+        // "Cobrar todo": un pago por aviso pendiente del socio, en una sola transaccion.
+        // montoRecibido viaja como string y se parsea con InvariantCulture (es-BO usa coma).
+        [HttpPost]
+        [ValidarPermisos(NombrePermiso = "Gestionar Pago")]
+        public JsonResult RegistrarPagoMultiple(int idSocio, int idMetodoPago, string montoRecibido)
+        {
+            try
+            {
+                var u = (CM_Usuario_Activo)Session["Usuario"];
+                var caja = cnCaja.ObtenerCajaAbierta(u.id_usuario_admin);
+                if (caja == null)
+                    return Json(new { exito = false, mensaje = "Debe abrir su caja antes de cobrar." });
+
+                decimal? recibido = null;
+                if (!string.IsNullOrWhiteSpace(montoRecibido))
+                {
+                    if (!decimal.TryParse(montoRecibido.Replace(',', '.'), NumberStyles.Any, CultureInfo.InvariantCulture, out decimal rec))
+                        return Json(new { exito = false, mensaje = "El monto recibido no es válido." });
+                    recibido = rec;
+                }
+
+                string cajero = (u.nombre + " " + u.apellido).Trim();
+                bool ok = cnPago.RegistrarPagoMultiple(idSocio, caja.id_caja, idMetodoPago, recibido,
+                                                       u.id_usuario_admin, cajero, out List<int> idsPago, out string Mensaje);
+                return Json(new { exito = ok, mensaje = Mensaje, idsPago = string.Join(",", idsPago), cantidad = idsPago.Count });
             }
             catch (Exception ex)
             {
