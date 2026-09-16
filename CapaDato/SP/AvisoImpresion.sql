@@ -199,3 +199,162 @@ BEGIN
     END CATCH
 END
 GO
+
+-- =============================================================================
+-- IMPRESION EN LOTE (pestaña "Imprimir Avisos")
+-- -----------------------------------------------------------------------------
+-- Imprime de una vez todos los avisos de un periodo y, opcionalmente, de una
+-- ruta. Tres SPs:
+--   sp_resumen_avisos_impresion    -> cuantos hay y en que estado (vista previa)
+--   sp_imprimir_avisos_lote        -> mismos 3 result sets que sp_imprimir_aviso
+--                                     pero para todo el lote (cada fila trae su
+--                                     id_aviso para armar el modelo en C#)
+--   sp_marcar_avisos_impresos_lote -> avanza GENERADO/LECTURADO -> IMPRESO en
+--                                     una sola transaccion
+-- Nunca entran PAGADO ni ANULADO: un aviso pagado antes de imprimirse (QR del
+-- portal) no se entrega. Con @incluir_impresos = 0 (default) solo salen los
+-- que aun no se imprimieron, para que reimprimir una ruta no duplique hojas.
+-- Orden: ruta, codigo_fijo (el recorrido del lecturador).
+-- =============================================================================
+CREATE OR ALTER PROCEDURE dbo.sp_resumen_avisos_impresion
+    @id_periodo INT,
+    @id_ruta    INT = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SELECT
+        ISNULL(SUM(CASE WHEN e.estado IN ('GENERADO', 'LECTURADO') THEN 1 ELSE 0 END), 0) AS por_imprimir,
+        ISNULL(SUM(CASE WHEN e.estado = 'IMPRESO' THEN 1 ELSE 0 END), 0)                  AS impresos,
+        ISNULL(SUM(CASE WHEN e.estado = 'PAGADO'  THEN 1 ELSE 0 END), 0)                  AS pagados,
+        ISNULL(SUM(CASE WHEN e.estado = 'ANULADO' THEN 1 ELSE 0 END), 0)                  AS anulados
+    FROM aviso a
+    INNER JOIN socio  s ON s.id_socio  = a.socio_id_socio
+    INNER JOIN estado e ON e.id_estado = a.estado_id_estado
+    WHERE a.periodo_id_periodo = @id_periodo
+      AND (@id_ruta IS NULL OR s.ruta_id_ruta = @id_ruta);
+END
+GO
+
+CREATE OR ALTER PROCEDURE dbo.sp_imprimir_avisos_lote
+    @id_periodo       INT,
+    @id_ruta          INT = NULL,
+    @incluir_impresos BIT = 0
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @lote TABLE (id_aviso INT PRIMARY KEY, id_socio INT, id_periodo INT, orden INT);
+    INSERT INTO @lote (id_aviso, id_socio, id_periodo, orden)
+    SELECT a.id_aviso, a.socio_id_socio, a.periodo_id_periodo,
+           ROW_NUMBER() OVER (ORDER BY r.ruta, s.codigo_fijo, a.id_aviso)
+    FROM aviso a
+    INNER JOIN socio  s ON s.id_socio  = a.socio_id_socio
+    INNER JOIN ruta   r ON r.id_ruta   = s.ruta_id_ruta
+    INNER JOIN estado e ON e.id_estado = a.estado_id_estado
+    WHERE a.periodo_id_periodo = @id_periodo
+      AND (@id_ruta IS NULL OR s.ruta_id_ruta = @id_ruta)
+      AND (e.estado IN ('GENERADO', 'LECTURADO')
+           OR (@incluir_impresos = 1 AND e.estado = 'IMPRESO'));
+
+    -- 1) CABECERAS (mismas columnas que sp_imprimir_aviso) -------------------
+    SELECT
+        a.id_aviso, a.fecha_emision, a.fecha_vencimiento, a.total_consumo, a.total_aviso,
+        CASE WHEN e.estado IN ('PAGADO', 'ANULADO') THEN 0 ELSE a.total_aviso END AS deuda_actual,
+        e.estado AS estado, e.estado AS nombre_estado,
+        s.id_socio, s.codigo_fijo, s.nombre_socio, s.ubicacion, s.num_casa, s.categoria, s.actividad,
+        r.ruta AS nombre_ruta, p.periodo AS nombre_periodo,
+        m.serie AS serie_medidor, l.lectura_anterior, l.lectura_actual, l.consumo_m3, l.dias_lectura,
+        l.fecha_lectura AS fecha_lectura_actual,
+        DATEADD(DAY, -l.dias_lectura, l.fecha_lectura) AS fecha_lectura_anterior,
+        rs.rol_socio AS nombre_rol, t.monto_minimo, t.consumo_minimo_m3, t.precio_m3,
+        ISNULL((SELECT SUM(ce.monto) FROM cargo_extra ce
+                WHERE ce.socio_id_socio = a.socio_id_socio
+                  AND ce.periodo_id_periodo = a.periodo_id_periodo
+                  AND ce.estado <> 'ANULADO'), 0) AS total_cargos,
+        ci.monto_pago AS monto_credito
+    FROM @lote x
+    INNER JOIN aviso     a  ON a.id_aviso               = x.id_aviso
+    INNER JOIN socio     s  ON s.id_socio               = a.socio_id_socio
+    INNER JOIN ruta      r  ON r.id_ruta                = s.ruta_id_ruta
+    INNER JOIN periodo   p  ON p.id_periodo             = a.periodo_id_periodo
+    INNER JOIN estado    e  ON e.id_estado              = a.estado_id_estado
+    INNER JOIN lectura   l  ON l.id_lectura             = a.lectura_id_lectura
+    INNER JOIN medidor   m  ON m.id_medidor             = l.medidor_id_medidor
+    INNER JOIN rol_socio rs ON rs.id_rol_socio          = s.rol_socio_id_rol_socio
+    INNER JOIN tarifa    t  ON t.rol_socio_id_rol_socio = s.rol_socio_id_rol_socio
+    LEFT  JOIN credito_inscripcion ci
+        ON ci.socio_id_socio = a.socio_id_socio
+       AND ci.periodo_id_periodo = a.periodo_id_periodo
+       AND NOT EXISTS (SELECT 1 FROM pago pg
+                       WHERE pg.id_pago = ci.pago_id_pago AND pg.aviso_id_aviso IS NULL)
+    ORDER BY x.orden;
+
+    -- 2) CARGOS EXTRA de todo el lote ----------------------------------------
+    SELECT x.id_aviso, ce.id_cargo_extra, ce.monto, ce.descripcion, tc.nombre AS nombre_tipo_cargo
+    FROM @lote x
+    INNER JOIN cargo_extra ce ON ce.socio_id_socio = x.id_socio AND ce.periodo_id_periodo = x.id_periodo
+    INNER JOIN tipo_cargo  tc ON tc.id_tipo = ce.tipo_cargo_id_tipo
+    WHERE ce.estado <> 'ANULADO'
+    ORDER BY x.orden, ce.id_cargo_extra;
+
+    -- 3) HISTORICO: ultimos 12 avisos de cada socio del lote -----------------
+    SELECT id_aviso_lote, id_aviso, nombre_periodo, consumo_m3, total_aviso,
+           fecha_pago, estado_pago_label, estado
+    FROM (
+        SELECT x.id_aviso AS id_aviso_lote, av.id_aviso, p2.periodo AS nombre_periodo,
+               l2.consumo_m3, av.total_aviso, pg.fecha_pago,
+               CASE WHEN pg.id_pago IS NOT NULL THEN 'Pag.' ELSE 'Imp.' END AS estado_pago_label,
+               e2.estado, x.orden,
+               ROW_NUMBER() OVER (PARTITION BY x.id_aviso ORDER BY av.fecha_emision DESC, av.id_aviso DESC) AS rn
+        FROM @lote x
+        INNER JOIN aviso   av ON av.socio_id_socio = x.id_socio
+        INNER JOIN periodo p2 ON p2.id_periodo = av.periodo_id_periodo
+        INNER JOIN lectura l2 ON l2.id_lectura = av.lectura_id_lectura
+        INNER JOIN estado  e2 ON e2.id_estado  = av.estado_id_estado
+        OUTER APPLY (
+            SELECT TOP (1) pa.id_pago, pa.fecha_pago
+            FROM pago pa
+            WHERE pa.aviso_id_aviso = av.id_aviso AND pa.estado_pago = 'APROBADO'
+            ORDER BY pa.id_pago DESC
+        ) pg
+        WHERE e2.estado <> 'ANULADO'
+    ) h
+    WHERE rn <= 12
+    ORDER BY orden, rn;
+END
+GO
+
+CREATE OR ALTER PROCEDURE dbo.sp_marcar_avisos_impresos_lote
+    @id_periodo INT,
+    @id_ruta    INT = NULL,
+    @Resultado  INT          OUTPUT,   -- cantidad de avisos que pasaron a IMPRESO
+    @Mensaje    VARCHAR(500) OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET @Resultado = 0;
+    SET @Mensaje   = '';
+    BEGIN TRY
+        DECLARE @id_impreso INT = (SELECT id_estado FROM estado WHERE estado = 'IMPRESO');
+        IF @id_impreso IS NULL
+        BEGIN SET @Mensaje = 'Tabla estado no inicializada (falta IMPRESO).'; RETURN; END
+
+        BEGIN TRAN;
+        UPDATE a SET estado_id_estado = @id_impreso
+        FROM aviso a
+        INNER JOIN socio  s ON s.id_socio  = a.socio_id_socio
+        INNER JOIN estado e ON e.id_estado = a.estado_id_estado
+        WHERE a.periodo_id_periodo = @id_periodo
+          AND (@id_ruta IS NULL OR s.ruta_id_ruta = @id_ruta)
+          AND e.estado IN ('GENERADO', 'LECTURADO');
+        SET @Resultado = @@ROWCOUNT;
+        COMMIT;
+        SET @Mensaje = CAST(@Resultado AS VARCHAR) + ' aviso(s) marcado(s) como IMPRESO.';
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0 ROLLBACK;
+        SET @Resultado = 0;
+        SET @Mensaje   = ERROR_MESSAGE();
+    END CATCH
+END
+GO

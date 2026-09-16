@@ -1,6 +1,13 @@
-@model CapaModelo.CM_AvisoImpresion
+﻿@model List<CapaModelo.CM_AvisoImpresion>
 @{
+    // Una hoja por aviso. La impresion individual manda una lista de 1; la
+    // impresion en lote (periodo + ruta) manda todas las del lote con salto de
+    // pagina entre hojas, en un solo dialogo de impresion.
     Layout = null;
+    bool esLote = ViewBag.EsLote != null && (bool)ViewBag.EsLote;
+    string titulo = Model.Count == 1 && !esLote
+        ? "Aviso de Cobranza #" + Model[0].id_aviso
+        : "Avisos de Cobranza (" + Model.Count + ")";
 }
 @functions {
     // Formato invariante: punto decimal, sin depender de la cultura del servidor.
@@ -13,13 +20,14 @@
 <html lang="es">
 <head>
     <meta charset="utf-8" />
-    <title>Aviso de Cobranza #@Model.id_aviso</title>
+    <title>@titulo</title>
     <style>
         @@page { size: 8.5in 5.5in; margin: 0.25in; }
 
         * { box-sizing: border-box; }
         body { font-family: 'Segoe UI', Arial, sans-serif; color: #0a5c2a; margin: 0; background: #e5e7eb; }
         .hoja {
+            page-break-after: always; break-after: page;
             width: 8in; min-height: 5in; margin: 12px auto; background: #fff;
             border: 1.5px solid #0a5c2a; padding: 8px 12px; font-size: 10px; line-height: 1.25;
         }
@@ -63,20 +71,35 @@
         .barra button { background: #0a5c2a; color: #fff; border: none; padding: 8px 18px; border-radius: 8px;
                         font-size: 13px; font-weight: 600; cursor: pointer; margin: 0 4px; }
         .barra .sec { background: #6b7280; }
+        .barra .info { font-size: 12px; color: #374151; margin-right: 10px; }
+        .vacio { max-width: 8in; margin: 40px auto; text-align: center; color: #374151; font-size: 14px; }
 
         @@media print {
             body { background: #fff; }
             .hoja { margin: 0; border: 1.5px solid #0a5c2a; width: 100%; }
+            .hoja:last-child { page-break-after: auto; break-after: auto; }
+            .vacio { display: none; }
             .barra { display: none !important; }
         }
     </style>
 </head>
 <body>
     <div class="barra">
+        @if (Model.Count != 1 || esLote)
+        {
+            <span class="info">@Model.Count aviso(s) — una hoja por aviso</span>
+        }
         <button onclick="window.print()">🖨 Imprimir</button>
         <button class="sec" onclick="window.close()">Cerrar</button>
     </div>
 
+    @if (Model.Count == 0)
+    {
+        <div class="vacio">No hay avisos pendientes de impresión con los filtros elegidos.</div>
+    }
+
+    @foreach (var av in Model)
+    {
     <div class="hoja">
 
         <!-- Encabezado -->
@@ -93,15 +116,15 @@
         <!-- Datos del socio -->
         <table class="kv">
             <tr>
-                <td class="k">Cód. Fijo</td>      <td class="v">@Model.codigo_fijo</td>
-                <td class="k">Cód. UB</td>        <td class="v">@(Model.ubicacion?.ToString() ?? "-")</td>
-                <td class="k">Categoría</td>      <td class="v">@Model.categoria</td>
-                <td class="k">Fecha Emisión</td>  <td class="v">@F(Model.fecha_emision)</td>
+                <td class="k">Cód. Fijo</td>      <td class="v">@av.codigo_fijo</td>
+                <td class="k">Cód. UB</td>        <td class="v">@(av.ubicacion?.ToString() ?? "-")</td>
+                <td class="k">Categoría</td>      <td class="v">@av.categoria</td>
+                <td class="k">Fecha Emisión</td>  <td class="v">@F(av.fecha_emision)</td>
             </tr>
             <tr>
-                <td class="k">Nombre</td>     <td class="v" colspan="3">@Model.nombre_socio</td>
-                <td class="k">Actividad</td>  <td class="v">@Model.actividad</td>
-                <td class="k">N° Casa</td>    <td class="v">@(Model.num_casa?.ToString() ?? "-")</td>
+                <td class="k">Nombre</td>     <td class="v" colspan="3">@av.nombre_socio</td>
+                <td class="k">Actividad</td>  <td class="v">@av.actividad</td>
+                <td class="k">N° Casa</td>    <td class="v">@(av.num_casa?.ToString() ?? "-")</td>
             </tr>
         </table>
 
@@ -115,12 +138,12 @@
                     <th>Consumo m³</th><th>Días Facturados</th>
                 </tr>
                 <tr>
-                    <td>@F(Model.fecha_lectura_actual)</td>
-                    <td>@FL(Model.fecha_lectura_anterior)</td>
-                    <td>@Num(Model.lectura_actual)</td>
-                    <td>@Num(Model.lectura_anterior)</td>
-                    <td>@Num(Model.consumo_m3)</td>
-                    <td>@Model.dias_lectura</td>
+                    <td>@F(av.fecha_lectura_actual)</td>
+                    <td>@FL(av.fecha_lectura_anterior)</td>
+                    <td>@Num(av.lectura_actual)</td>
+                    <td>@Num(av.lectura_anterior)</td>
+                    <td>@Num(av.consumo_m3)</td>
+                    <td>@av.dias_lectura</td>
                 </tr>
             </table>
         </div>
@@ -134,7 +157,7 @@
                         <th>Mes</th><th>Factura</th><th class="right">Cons.</th>
                         <th class="right">Monto</th><th>Fecha Pago</th><th class="center">Est.</th>
                     </tr>
-                    @foreach (var h in Model.historico)
+                    @foreach (var h in av.historico)
                     {
                         <tr>
                             <td>@h.nombre_periodo</td>
@@ -154,20 +177,20 @@
                     <tr><th>Concepto</th><th class="right">Importe</th></tr>
                     <tr>
                         <td>Consumo Agua</td>
-                        <td class="right">@Money(Model.total_consumo)</td>
+                        <td class="right">@Money(av.total_consumo)</td>
                     </tr>
-                    @foreach (var c in Model.cargos)
+                    @foreach (var c in av.cargos)
                     {
                         <tr>
                             <td>@(string.IsNullOrWhiteSpace(c.nombre_tipo_cargo) ? c.descripcion : c.nombre_tipo_cargo)</td>
                             <td class="right">@Money(c.monto)</td>
                         </tr>
                     }
-                    @if (Model.monto_credito.HasValue)
+                    @if (av.monto_credito.HasValue)
                     {
                         <tr>
                             <td>Cuota Inscripción</td>
-                            <td class="right">@Money(Model.monto_credito.Value)</td>
+                            <td class="right">@Money(av.monto_credito.Value)</td>
                         </tr>
                     }
                 </table>
@@ -178,19 +201,28 @@
         <table class="totales" style="margin-top:4px;">
             <tr>
                 <td class="k">Deuda</td>
-                <td class="bold">Bs. @Money(Model.deuda_actual)</td>
+                <td class="bold">Bs. @Money(av.deuda_actual)</td>
                 <td class="k">Fecha de Corte</td>
-                <td class="bold">@F(Model.fecha_vencimiento)</td>
+                <td class="bold">@F(av.fecha_vencimiento)</td>
                 <td class="k right">Total Factura</td>
-                <td class="big right">Bs. @Money(Model.total_aviso)</td>
+                <td class="big right">Bs. @Money(av.total_aviso)</td>
             </tr>
         </table>
 
         <div class="pie">SR. SOCIO EVITE EL CORTE CANCELANDO SU FACTURA PUNTUALMENTE</div>
     </div>
+    }
 
     <script>
-        window.onload = function () { window.print(); };
+        // Avisa a la pestaña que abrio este documento (Aviso.cshtml) que ya esta
+        // listo, para que quite la pantalla "Generando impresion".
+        window.onload = function () {
+            try {
+                if (window.opener && !window.opener.closed)
+                    window.opener.postMessage({ tipo: 'lote-avisos-listo', cantidad: @Model.Count }, window.location.origin);
+            } catch (e) { }
+            if (@(Model.Count > 0 ? "true" : "false")) window.print();
+        };
     </script>
 </body>
 </html>

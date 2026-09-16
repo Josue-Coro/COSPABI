@@ -1,4 +1,4 @@
-using CapaDato;
+﻿using CapaDato;
 using CapaModelo;
 using System.Collections.Generic;
 using static CapaModelo.CM_Aviso;
@@ -76,6 +76,30 @@ namespace CapaNegocio
         public CM_AvisoImpresion ObtenerParaImpresion(int idAviso)
         {
             return cdAviso.ObtenerParaImpresion(idAviso);
+        }
+
+        // ---- Impresion en lote (periodo + ruta) ----
+
+        public CM_ResumenImpresionLote ResumenImpresionLote(int idPeriodo, int? idRuta)
+        {
+            return cdAviso.ResumenImpresionLote(idPeriodo, idRuta);
+        }
+
+        public List<CM_AvisoImpresion> ObtenerLoteParaImpresion(int idPeriodo, int? idRuta, bool incluirImpresos)
+        {
+            if (idPeriodo <= 0) return new List<CM_AvisoImpresion>();
+            return cdAviso.ObtenerLoteParaImpresion(idPeriodo, idRuta, incluirImpresos) ?? new List<CM_AvisoImpresion>();
+        }
+
+        // Una sola linea de bitacora por lote (no una por aviso).
+        public int MarcarImpresosLote(int idPeriodo, int? idRuta, string etiquetaLote, int idUsuario, out string Mensaje)
+        {
+            Mensaje = string.Empty;
+            if (idPeriodo <= 0) { Mensaje = "Periodo no valido."; return 0; }
+            int n = cdAviso.MarcarImpresosLote(idPeriodo, idRuta, out Mensaje);
+            if (n > 0)
+                cnBitacora.Registrar("Imprimió en lote " + n + " aviso(s) " + etiquetaLote + " (estado -> IMPRESO)", idUsuario);
+            return n;
         }
 
         public CM_Aviso ObtenerUltimoAviso(int idSocio)

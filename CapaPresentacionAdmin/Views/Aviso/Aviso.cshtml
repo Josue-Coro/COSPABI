@@ -40,6 +40,11 @@
                     class="tab-btn px-5 py-3 text-sm font-medium border-b-2 transition-colors">
                 Historial
             </button>
+            <button id="tabImprimir"
+                    onclick="cambiarTab('imprimir')"
+                    class="tab-btn px-5 py-3 text-sm font-medium border-b-2 transition-colors">
+                Imprimir Avisos
+            </button>
         </nav>
     </div>
 
@@ -72,6 +77,64 @@
         </div>
 
         <div id="resultadoGen" class="mt-4 max-w-2xl hidden"></div>
+    </div>
+
+    <!-- ======== Panel: Imprimir en lote ======== -->
+    <div id="panelImprimir" class="hidden">
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 max-w-2xl">
+            <h2 class="text-base font-semibold text-gray-800 mb-1">Imprimir avisos por período y ruta</h2>
+            <p class="text-sm text-gray-500 mb-5">Genera un solo documento con una hoja por aviso, en el orden de recorrido de la ruta.</p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                        Período <span class="text-red-500">*</span>
+                    </label>
+                    <select id="selPeriodoImp" data-periodo-picker onchange="cargarResumenImpresion()"
+                            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                        <option value="">Seleccionar...</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Ruta</label>
+                    <select id="selRutaImp" onchange="cargarResumenImpresion()"
+                            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                        <option value="">Todas las rutas</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Vista previa del lote -->
+            <div id="resumenImp" class="hidden mb-4">
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div class="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                        <p class="text-[11px] uppercase tracking-wide text-slate-500">Por imprimir</p>
+                        <p class="text-2xl font-bold text-slate-800" id="impPorImprimir">0</p>
+                    </div>
+                    <div class="rounded-xl border border-amber-200 bg-amber-50 p-3">
+                        <p class="text-[11px] uppercase tracking-wide text-amber-600">Ya impresos</p>
+                        <p class="text-2xl font-bold text-amber-700" id="impImpresos">0</p>
+                    </div>
+                    <div class="rounded-xl border border-green-200 bg-green-50 p-3">
+                        <p class="text-[11px] uppercase tracking-wide text-green-600">Pagados</p>
+                        <p class="text-2xl font-bold text-green-700" id="impPagados">0</p>
+                    </div>
+                    <div class="rounded-xl border border-red-200 bg-red-50 p-3">
+                        <p class="text-[11px] uppercase tracking-wide text-red-500">Anulados</p>
+                        <p class="text-2xl font-bold text-red-600" id="impAnulados">0</p>
+                    </div>
+                </div>
+                <label class="flex items-center gap-2 mt-4 text-sm text-gray-700 cursor-pointer select-none">
+                    <input type="checkbox" id="chkIncluirImpresos" class="w-4 h-4 accent-green-600" onchange="actualizarBotonImpresion()">
+                    Incluir los ya impresos (reimpresión)
+                </label>
+                <p class="text-xs text-gray-500 mt-1">Los avisos pagados y anulados nunca se imprimen.</p>
+            </div>
+
+            <button id="btnImprimirLote" onclick="imprimirLote()" disabled
+                    class="btn-primary px-6 py-2.5 rounded-xl text-sm font-semibold transition-colors">
+                Imprimir avisos
+            </button>
+        </div>
     </div>
 
     <!-- ======== Panel: Historial ======== -->
@@ -149,6 +212,18 @@
     </div>
 </div>
 
+<!-- Pantalla bloqueante mientras se arma el documento del lote -->
+<div id="overlayImpresion" class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-gray-900/70 backdrop-blur-sm">
+    <div class="bg-white rounded-2xl shadow-2xl px-10 py-8 flex flex-col items-center gap-4 w-full max-w-sm mx-4 text-center">
+        <div class="w-14 h-14 rounded-full border-4 border-green-100 border-t-green-600 animate-spin"></div>
+        <div>
+            <p class="text-base font-bold text-gray-800">Generando impresión</p>
+            <p class="text-sm text-gray-500 mt-1" id="overlayImpresionTexto">Armando las hojas de los avisos, por favor espere...</p>
+        </div>
+        <p class="text-xs text-gray-400">No cierre esta pestaña. El documento se abrirá en una pestaña nueva.</p>
+    </div>
+</div>
+
 <!-- Toast -->
 <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
@@ -172,18 +247,16 @@ $(document).ready(function () {
 
 // ---- Tabs ----
 function cambiarTab(tab) {
-    var esGenerar = (tab === 'generar');
-    $('#panelGenerar').toggleClass('hidden', !esGenerar);
-    $('#panelHistorial').toggleClass('hidden', esGenerar);
-
-    $('#tabGenerar')
-        .toggleClass('border-blue-600 text-blue-600 font-semibold', esGenerar)
-        .toggleClass('border-transparent text-gray-500 hover:text-gray-700', !esGenerar);
-    $('#tabHistorial')
-        .toggleClass('border-blue-600 text-blue-600 font-semibold', !esGenerar)
-        .toggleClass('border-transparent text-gray-500 hover:text-gray-700', esGenerar);
-
-    if (!esGenerar) cargarAvisos();
+    var paneles = { generar: '#panelGenerar', historial: '#panelHistorial', imprimir: '#panelImprimir' };
+    var tabs    = { generar: '#tabGenerar',   historial: '#tabHistorial',   imprimir: '#tabImprimir' };
+    Object.keys(paneles).forEach(function (k) {
+        var activo = (k === tab);
+        $(paneles[k]).toggleClass('hidden', !activo);
+        $(tabs[k])
+            .toggleClass('border-blue-600 text-blue-600 font-semibold', activo)
+            .toggleClass('border-transparent text-gray-500 hover:text-gray-700', !activo);
+    });
+    if (tab === 'historial') cargarAvisos();
 }
 
 // ---- Carga inicial ----
@@ -210,7 +283,7 @@ function cargarPeriodos() {
             if (!res || !res.data) { console.warn('[Aviso] ListarPeriodos: sin datos'); return; }
             res.data.forEach(function (p) {
                 var opt = '<option value="' + p.id_periodo + '">' + p.periodo + '</option>';
-                $('#selPeriodoGen, #selPeriodoFiltro').append(opt);
+                $('#selPeriodoGen, #selPeriodoFiltro, #selPeriodoImp').append(opt);
             });
         })
         .fail(function (xhr) {
@@ -225,7 +298,7 @@ function cargarRutas() {
             if (!res || !res.data) { console.warn('[Aviso] ListarRutas: sin datos'); return; }
             res.data.forEach(function (r) {
                 var opt = '<option value="' + r.id_ruta + '">Ruta ' + r.ruta + '</option>';
-                $('#selRutaGen, #selRutaFiltro').append(opt);
+                $('#selRutaGen, #selRutaFiltro, #selRutaImp').append(opt);
             });
         })
         .fail(function (xhr) {
@@ -555,6 +628,85 @@ function verDetalle(idAviso) {
 function cerrarModalDetalle() {
     $('#modalDetalle').addClass('hidden');
 }
+
+// ---- Imprimir en lote (periodo + ruta) ----
+var resumenImp = null;
+
+function cargarResumenImpresion() {
+    var idPeriodo = $('#selPeriodoImp').val();
+    resumenImp = null;
+    if (!idPeriodo) { $('#resumenImp').addClass('hidden'); actualizarBotonImpresion(); return; }
+    $.get('@Url.Action("ResumenImpresionLote", "Aviso")', { idPeriodo: idPeriodo, idRuta: $('#selRutaImp').val() || null })
+        .done(function (res) {
+            if (!res.exito) { mostrarToast(res.mensaje || 'No se pudo consultar.', 'error'); return; }
+            resumenImp = res.resumen;
+            $('#impPorImprimir').text(resumenImp.por_imprimir);
+            $('#impImpresos').text(resumenImp.impresos);
+            $('#impPagados').text(resumenImp.pagados);
+            $('#impAnulados').text(resumenImp.anulados);
+            $('#resumenImp').removeClass('hidden');
+            actualizarBotonImpresion();
+        })
+        .fail(function () { mostrarToast('Error de conexión.', 'error'); });
+}
+
+function cantidadAImprimir() {
+    if (!resumenImp) return 0;
+    return resumenImp.por_imprimir + ($('#chkIncluirImpresos').is(':checked') ? resumenImp.impresos : 0);
+}
+
+function actualizarBotonImpresion() {
+    var n = cantidadAImprimir();
+    $('#btnImprimirLote').prop('disabled', n === 0)
+        .text(n === 0 ? 'Imprimir avisos' : 'Imprimir ' + n + ' aviso' + (n === 1 ? '' : 's'));
+}
+
+// La pestaña nueva avisa por postMessage cuando termino de armarse; ahi se
+// quita la pantalla bloqueante. Un tope de tiempo cubre el caso en que el
+// mensaje nunca llegue (pestaña cerrada antes de cargar, bloqueador, etc.).
+var overlayTimer = null;
+
+function imprimirLote() {
+    var n = cantidadAImprimir();
+    if (n === 0) return;
+    var url = '@Url.Action("ImprimirAvisosLote", "Aviso")' +
+              '?idPeriodo=' + $('#selPeriodoImp').val() +
+              '&idRuta=' + ($('#selRutaImp').val() || '') +
+              '&incluirImpresos=' + ($('#chkIncluirImpresos').is(':checked') ? 'true' : 'false');
+
+    $('#overlayImpresionTexto').text('Armando ' + n + ' hoja' + (n === 1 ? '' : 's') + ', por favor espere...');
+    $('#overlayImpresion').removeClass('hidden');
+    $('#btnImprimirLote').prop('disabled', true);
+
+    var w = window.open(url, '_blank');
+    if (!w) {
+        ocultarOverlayImpresion();
+        mostrarToast('El navegador bloqueó la pestaña de impresión. Permite las ventanas emergentes.', 'error');
+        return;
+    }
+    clearTimeout(overlayTimer);
+    overlayTimer = setTimeout(function () {
+        ocultarOverlayImpresion();
+        mostrarToast('La impresión sigue armándose en la otra pestaña.', 'error');
+    }, 120000);
+}
+
+function ocultarOverlayImpresion() {
+    clearTimeout(overlayTimer);
+    $('#overlayImpresion').addClass('hidden');
+    // El lote ya quedo IMPRESO: refrescar la vista previa (y el historial si esta abierto)
+    cargarResumenImpresion();
+    if (!$('#panelHistorial').hasClass('hidden')) cargarAvisos();
+}
+
+window.addEventListener('message', function (ev) {
+    if (ev.origin !== window.location.origin) return;
+    if (ev.data && ev.data.tipo === 'lote-avisos-listo') {
+        ocultarOverlayImpresion();
+        if (ev.data.cantidad > 0)
+            mostrarToast('Documento listo: ' + ev.data.cantidad + ' aviso(s).', 'success');
+    }
+});
 
 // ---- Imprimir aviso (abre el recibo en otra pestaña y auto-imprime) ----
 function imprimirAviso(idAviso) {

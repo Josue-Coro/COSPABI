@@ -1,4 +1,4 @@
-using CapaModelo;
+﻿using CapaModelo;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -273,6 +273,46 @@ namespace CapaDato
             return detalle;
         }
 
+        // Mapea la fila de cabecera de sp_imprimir_aviso / sp_imprimir_avisos_lote
+        private static CM_AvisoImpresion MapCabecera(SqlDataReader dr)
+        {
+            return new CM_AvisoImpresion
+            {
+                id_aviso               = Convert.ToInt32(dr["id_aviso"]),
+                fecha_emision          = Convert.ToDateTime(dr["fecha_emision"]),
+                fecha_vencimiento      = Convert.ToDateTime(dr["fecha_vencimiento"]),
+                total_consumo          = Convert.ToDecimal(dr["total_consumo"]),
+                total_aviso            = Convert.ToDecimal(dr["total_aviso"]),
+                deuda_actual           = Convert.ToDecimal(dr["deuda_actual"]),
+                estado                 = dr["estado"].ToString(),
+                nombre_estado          = dr["nombre_estado"].ToString(),
+                id_socio               = Convert.ToInt32(dr["id_socio"]),
+                codigo_fijo            = Convert.ToInt32(dr["codigo_fijo"]),
+                nombre_socio           = dr["nombre_socio"].ToString(),
+                ubicacion              = dr["ubicacion"] is DBNull ? (int?)null : Convert.ToInt32(dr["ubicacion"]),
+                num_casa               = dr["num_casa"] is DBNull ? (int?)null : Convert.ToInt32(dr["num_casa"]),
+                categoria              = dr["categoria"].ToString(),
+                actividad              = dr["actividad"].ToString(),
+                nombre_ruta            = dr["nombre_ruta"].ToString(),
+                nombre_periodo         = dr["nombre_periodo"].ToString(),
+                serie_medidor          = dr["serie_medidor"].ToString(),
+                lectura_anterior       = Convert.ToDecimal(dr["lectura_anterior"]),
+                lectura_actual         = Convert.ToDecimal(dr["lectura_actual"]),
+                consumo_m3             = Convert.ToDecimal(dr["consumo_m3"]),
+                dias_lectura           = Convert.ToInt32(dr["dias_lectura"]),
+                fecha_lectura_actual   = Convert.ToDateTime(dr["fecha_lectura_actual"]),
+                fecha_lectura_anterior = dr["fecha_lectura_anterior"] is DBNull ? (DateTime?)null : Convert.ToDateTime(dr["fecha_lectura_anterior"]),
+                nombre_rol             = dr["nombre_rol"].ToString(),
+                monto_minimo           = Convert.ToDecimal(dr["monto_minimo"]),
+                consumo_minimo_m3      = Convert.ToDecimal(dr["consumo_minimo_m3"]),
+                precio_m3              = Convert.ToDecimal(dr["precio_m3"]),
+                total_cargos           = Convert.ToDecimal(dr["total_cargos"]),
+                monto_credito          = dr["monto_credito"] is DBNull ? (decimal?)null : Convert.ToDecimal(dr["monto_credito"]),
+                cargos                 = new List<CM_CargoExtra>(),
+                historico              = new List<CM_AvisoHistorico>()
+                        };
+        }
+
         public CM_AvisoImpresion ObtenerParaImpresion(int idAviso)
         {
             CM_AvisoImpresion imp = null;
@@ -289,41 +329,7 @@ namespace CapaDato
                     // 1) Cabecera
                     if (dr.Read())
                     {
-                        imp = new CM_AvisoImpresion
-                        {
-                            id_aviso               = Convert.ToInt32(dr["id_aviso"]),
-                            fecha_emision          = Convert.ToDateTime(dr["fecha_emision"]),
-                            fecha_vencimiento      = Convert.ToDateTime(dr["fecha_vencimiento"]),
-                            total_consumo          = Convert.ToDecimal(dr["total_consumo"]),
-                            total_aviso            = Convert.ToDecimal(dr["total_aviso"]),
-                            deuda_actual           = Convert.ToDecimal(dr["deuda_actual"]),
-                            estado                 = dr["estado"].ToString(),
-                            nombre_estado          = dr["nombre_estado"].ToString(),
-                            id_socio               = Convert.ToInt32(dr["id_socio"]),
-                            codigo_fijo            = Convert.ToInt32(dr["codigo_fijo"]),
-                            nombre_socio           = dr["nombre_socio"].ToString(),
-                            ubicacion              = dr["ubicacion"] is DBNull ? (int?)null : Convert.ToInt32(dr["ubicacion"]),
-                            num_casa               = dr["num_casa"] is DBNull ? (int?)null : Convert.ToInt32(dr["num_casa"]),
-                            categoria              = dr["categoria"].ToString(),
-                            actividad              = dr["actividad"].ToString(),
-                            nombre_ruta            = dr["nombre_ruta"].ToString(),
-                            nombre_periodo         = dr["nombre_periodo"].ToString(),
-                            serie_medidor          = dr["serie_medidor"].ToString(),
-                            lectura_anterior       = Convert.ToDecimal(dr["lectura_anterior"]),
-                            lectura_actual         = Convert.ToDecimal(dr["lectura_actual"]),
-                            consumo_m3             = Convert.ToDecimal(dr["consumo_m3"]),
-                            dias_lectura           = Convert.ToInt32(dr["dias_lectura"]),
-                            fecha_lectura_actual   = Convert.ToDateTime(dr["fecha_lectura_actual"]),
-                            fecha_lectura_anterior = dr["fecha_lectura_anterior"] is DBNull ? (DateTime?)null : Convert.ToDateTime(dr["fecha_lectura_anterior"]),
-                            nombre_rol             = dr["nombre_rol"].ToString(),
-                            monto_minimo           = Convert.ToDecimal(dr["monto_minimo"]),
-                            consumo_minimo_m3      = Convert.ToDecimal(dr["consumo_minimo_m3"]),
-                            precio_m3              = Convert.ToDecimal(dr["precio_m3"]),
-                            total_cargos           = Convert.ToDecimal(dr["total_cargos"]),
-                            monto_credito          = dr["monto_credito"] is DBNull ? (decimal?)null : Convert.ToDecimal(dr["monto_credito"]),
-                            cargos                 = new List<CM_CargoExtra>(),
-                            historico              = new List<CM_AvisoHistorico>()
-                        };
+                        imp = MapCabecera(dr);
                     }
 
                     // 2) Cargos extra (Datos Facturados)
@@ -364,6 +370,122 @@ namespace CapaDato
             }
             catch { imp = null; }
             return imp;
+        }
+
+        // ---- Impresion en lote (periodo + ruta) ----
+
+        public CM_ResumenImpresionLote ResumenImpresionLote(int idPeriodo, int? idRuta)
+        {
+            CM_ResumenImpresionLote r = null;
+            try
+            {
+                using (SqlConnection cn = new SqlConnection(CD_Conexion.cn))
+                {
+                    SqlCommand cmd = new SqlCommand("dbo.sp_resumen_avisos_impresion", cn);
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.Parameters.AddWithValue("@id_periodo", idPeriodo);
+                    cmd.Parameters.AddWithValue("@id_ruta", (object)idRuta ?? DBNull.Value);
+                    cn.Open();
+                    SqlDataReader dr = cmd.ExecuteReader();
+                    if (dr.Read())
+                        r = new CM_ResumenImpresionLote
+                        {
+                            por_imprimir = Convert.ToInt32(dr["por_imprimir"]),
+                            impresos     = Convert.ToInt32(dr["impresos"]),
+                            pagados      = Convert.ToInt32(dr["pagados"]),
+                            anulados     = Convert.ToInt32(dr["anulados"])
+                        };
+                    dr.Close();
+                }
+            }
+            catch { r = null; }
+            return r;
+        }
+
+        // Todos los avisos del lote con sus cargos e historico, en un solo viaje
+        // (3 result sets; cargos e historico vienen con el id_aviso del lote).
+        public List<CM_AvisoImpresion> ObtenerLoteParaImpresion(int idPeriodo, int? idRuta, bool incluirImpresos)
+        {
+            var lista = new List<CM_AvisoImpresion>();
+            var porId = new Dictionary<int, CM_AvisoImpresion>();
+            try
+            {
+                using (SqlConnection cn = new SqlConnection(CD_Conexion.cn))
+                {
+                    SqlCommand cmd = new SqlCommand("dbo.sp_imprimir_avisos_lote", cn);
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.CommandTimeout = 120;
+                    cmd.Parameters.AddWithValue("@id_periodo", idPeriodo);
+                    cmd.Parameters.AddWithValue("@id_ruta", (object)idRuta ?? DBNull.Value);
+                    cmd.Parameters.AddWithValue("@incluir_impresos", incluirImpresos);
+                    cn.Open();
+                    SqlDataReader dr = cmd.ExecuteReader();
+
+                    while (dr.Read())
+                    {
+                        var imp = MapCabecera(dr);
+                        lista.Add(imp);
+                        porId[imp.id_aviso] = imp;
+                    }
+
+                    if (dr.NextResult())
+                        while (dr.Read())
+                        {
+                            if (!porId.TryGetValue(Convert.ToInt32(dr["id_aviso"]), out var imp)) continue;
+                            imp.cargos.Add(new CM_CargoExtra
+                            {
+                                id_cargo_extra    = Convert.ToInt32(dr["id_cargo_extra"]),
+                                monto             = Convert.ToDecimal(dr["monto"]),
+                                descripcion       = dr["descripcion"].ToString(),
+                                nombre_tipo_cargo = dr["nombre_tipo_cargo"].ToString()
+                            });
+                        }
+
+                    if (dr.NextResult())
+                        while (dr.Read())
+                        {
+                            if (!porId.TryGetValue(Convert.ToInt32(dr["id_aviso_lote"]), out var imp)) continue;
+                            imp.historico.Add(new CM_AvisoHistorico
+                            {
+                                id_aviso          = Convert.ToInt32(dr["id_aviso"]),
+                                nombre_periodo    = dr["nombre_periodo"].ToString(),
+                                consumo_m3        = Convert.ToDecimal(dr["consumo_m3"]),
+                                total_aviso       = Convert.ToDecimal(dr["total_aviso"]),
+                                fecha_pago        = dr["fecha_pago"] is DBNull ? (DateTime?)null : Convert.ToDateTime(dr["fecha_pago"]),
+                                estado_pago_label = dr["estado_pago_label"].ToString(),
+                                estado            = dr["estado"].ToString()
+                            });
+                        }
+                    dr.Close();
+                }
+            }
+            catch { lista = null; }
+            return lista;
+        }
+
+        // Avanza a IMPRESO todos los GENERADO/LECTURADO del lote. Devuelve cuantos cambiaron.
+        public int MarcarImpresosLote(int idPeriodo, int? idRuta, out string Mensaje)
+        {
+            int n = 0;
+            Mensaje = string.Empty;
+            try
+            {
+                using (SqlConnection cn = new SqlConnection(CD_Conexion.cn))
+                {
+                    SqlCommand cmd = new SqlCommand("dbo.sp_marcar_avisos_impresos_lote", cn);
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.Parameters.AddWithValue("@id_periodo", idPeriodo);
+                    cmd.Parameters.AddWithValue("@id_ruta", (object)idRuta ?? DBNull.Value);
+                    cmd.Parameters.Add("@Resultado", SqlDbType.Int).Direction          = ParameterDirection.Output;
+                    cmd.Parameters.Add("@Mensaje",   SqlDbType.VarChar, 500).Direction = ParameterDirection.Output;
+                    cn.Open();
+                    cmd.ExecuteNonQuery();
+                    n       = Convert.ToInt32(cmd.Parameters["@Resultado"].Value);
+                    Mensaje = cmd.Parameters["@Mensaje"].Value.ToString();
+                }
+            }
+            catch (Exception ex) { n = 0; Mensaje = ex.Message; }
+            return n;
         }
 
         public List<CM_Estado> ListarEstados()

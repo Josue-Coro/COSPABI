@@ -1,4 +1,4 @@
-using CapaDato;
+﻿using CapaDato;
 using CapaModelo;
 using System;
 using System.Collections.Generic;
@@ -39,7 +39,7 @@ namespace CapaNegocio
         // "Cobrar todo": todos los avisos pendientes del socio en una sola operacion.
         // El SP genera un pago por aviso (y la vista un recibo por pago); si uno
         // falla no se cobra ninguno.
-        public bool RegistrarPagoMultiple(int idSocio, int idCaja, int idMetodoPago, decimal? montoRecibido,
+        public bool RegistrarPagoMultiple(int idSocio, int idCaja, int idMetodoPago, decimal? montoRecibido, int? cantidad,
                                           int idUsuario, string cajero, out List<int> idsPago, out string Mensaje)
         {
             Mensaje = string.Empty;
@@ -47,8 +47,9 @@ namespace CapaNegocio
 
             if (idSocio <= 0)      { Mensaje = "Debe seleccionar un socio.";           return false; }
             if (idMetodoPago <= 0) { Mensaje = "Debe seleccionar un método de pago."; return false; }
+            if (cantidad.HasValue && cantidad.Value < 1) { Mensaje = "Debe cobrar al menos un aviso."; return false; }
 
-            bool ok = cdPago.RegistrarPagoMultiple(idSocio, idCaja, idMetodoPago, montoRecibido, cajero, out idsPago, out Mensaje);
+            bool ok = cdPago.RegistrarPagoMultiple(idSocio, idCaja, idMetodoPago, montoRecibido, cantidad, cajero, out idsPago, out Mensaje);
             if (ok)
                 cnBitacora.Registrar("Cobró " + idsPago.Count + " aviso(s) pendiente(s) del socio #" + idSocio +
                                      " en un solo pago (pagos #" + string.Join(", #", idsPago) + ", caja #" + idCaja + ")", idUsuario);

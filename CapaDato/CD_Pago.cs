@@ -1,4 +1,4 @@
-using CapaModelo;
+﻿using CapaModelo;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -126,7 +126,7 @@ namespace CapaDato
         }
 
         // Cobra todos los avisos pendientes del socio (un pago por aviso, una sola transaccion)
-        public bool RegistrarPagoMultiple(int idSocio, int idCaja, int idMetodoPago, decimal? montoRecibido,
+        public bool RegistrarPagoMultiple(int idSocio, int idCaja, int idMetodoPago, decimal? montoRecibido, int? cantidad,
                                           string cajero, out List<int> idsPago, out string Mensaje)
         {
             bool ok = false;
@@ -143,6 +143,7 @@ namespace CapaDato
                     cmd.Parameters.AddWithValue("@id_metodo_pago", idMetodoPago);
                     cmd.Parameters.AddWithValue("@monto_recibido", (object)montoRecibido ?? DBNull.Value);
                     cmd.Parameters.AddWithValue("@cajero", cajero ?? "");
+                    cmd.Parameters.AddWithValue("@cantidad", (object)cantidad ?? DBNull.Value);
                     cmd.Parameters.Add("@Resultado", SqlDbType.Int).Direction          = ParameterDirection.Output;
                     cmd.Parameters.Add("@Mensaje",   SqlDbType.NVarChar, 500).Direction = ParameterDirection.Output;
                     cmd.Parameters.Add("@IdsPago",   SqlDbType.VarChar, -1).Direction   = ParameterDirection.Output;

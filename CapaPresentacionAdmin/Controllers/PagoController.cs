@@ -1,4 +1,4 @@
-using CapaModelo;
+﻿using CapaModelo;
 using CapaNegocio;
 using CapaPresentacionAdmin.Filtros;
 using System;
@@ -122,7 +122,7 @@ namespace CapaPresentacionAdmin.Controllers
         // montoRecibido viaja como string y se parsea con InvariantCulture (es-BO usa coma).
         [HttpPost]
         [ValidarPermisos(NombrePermiso = "Gestionar Pago")]
-        public JsonResult RegistrarPagoMultiple(int idSocio, int idMetodoPago, string montoRecibido)
+        public JsonResult RegistrarPagoMultiple(int idSocio, int idMetodoPago, string montoRecibido, int? cantidad = null)
         {
             try
             {
@@ -140,7 +140,7 @@ namespace CapaPresentacionAdmin.Controllers
                 }
 
                 string cajero = (u.nombre + " " + u.apellido).Trim();
-                bool ok = cnPago.RegistrarPagoMultiple(idSocio, caja.id_caja, idMetodoPago, recibido,
+                bool ok = cnPago.RegistrarPagoMultiple(idSocio, caja.id_caja, idMetodoPago, recibido, cantidad,
                                                        u.id_usuario_admin, cajero, out List<int> idsPago, out string Mensaje);
                 return Json(new { exito = ok, mensaje = Mensaje, idsPago = string.Join(",", idsPago), cantidad = idsPago.Count });
             }

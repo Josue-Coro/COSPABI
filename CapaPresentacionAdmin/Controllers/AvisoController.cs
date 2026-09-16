@@ -104,7 +104,40 @@ namespace CapaPresentacionAdmin.Controllers
             var datos = cnAviso.ObtenerParaImpresion(idAviso);
             if (datos == null)
                 return HttpNotFound("Aviso no encontrado.");
-            return View(datos);
+            // La vista pinta una hoja por aviso (la usa tambien el lote).
+            return View(new List<CM_AvisoImpresion> { datos });
+        }
+
+        // ---- Impresion en lote: todos los avisos de un periodo (y ruta) ----
+
+        // Vista previa: cuantos avisos hay y en que estado, antes de imprimir.
+        [HttpGet]
+        [ValidarPermisos(NombrePermiso = "Gestionar Avisos")]
+        public JsonResult ResumenImpresionLote(int idPeriodo, int? idRuta)
+        {
+            var resumen = cnAviso.ResumenImpresionLote(idPeriodo, idRuta);
+            if (resumen == null)
+                return Json(new { exito = false, mensaje = "No se pudo consultar el periodo." }, JsonRequestBehavior.AllowGet);
+            return Json(new { exito = true, resumen }, JsonRequestBehavior.AllowGet);
+        }
+
+        // Documento con una hoja por aviso (salto de pagina entre hojas). Marca el
+        // lote como IMPRESO, igual que la impresion individual.
+        // incluirImpresos = true reimprime tambien los que ya salieron.
+        [ValidarPermisos(NombrePermiso = "Gestionar Avisos")]
+        public ActionResult ImprimirAvisosLote(int idPeriodo, int? idRuta, bool incluirImpresos = false)
+        {
+            var oUsuario = (CM_Usuario_Activo)Session["Usuario"];
+            string etiqueta = "del periodo #" + idPeriodo + (idRuta.HasValue ? ", ruta #" + idRuta.Value : ", todas las rutas");
+
+            // Leer primero: si el lote se marcara antes con incluirImpresos = false,
+            // los recien marcados ya no saldrian en la consulta.
+            var lote = cnAviso.ObtenerLoteParaImpresion(idPeriodo, idRuta, incluirImpresos);
+            if (lote.Count > 0)
+                cnAviso.MarcarImpresosLote(idPeriodo, idRuta, etiqueta, oUsuario.id_usuario_admin, out string _);
+
+            ViewBag.EsLote = true;
+            return View("ImprimirAviso", lote);
         }
         [ValidarPermisos(NombrePermiso = "Anular Avisos")]
         public ActionResult AnularAviso()

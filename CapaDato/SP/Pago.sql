@@ -1,4 +1,4 @@
-USE [COSPABIRL1]
+﻿USE [COSPABIRL1]
 GO
 
 -- =============================================================================
@@ -264,7 +264,8 @@ CREATE OR ALTER PROCEDURE dbo.sp_registrar_pago_multiple
     @cajero         VARCHAR(150),
     @Resultado      INT           OUTPUT,   -- cantidad de avisos cobrados (>0) | 0 error
     @Mensaje        NVARCHAR(500) OUTPUT,
-    @IdsPago        VARCHAR(MAX)  OUTPUT
+    @IdsPago        VARCHAR(MAX)  OUTPUT,
+    @cantidad       INT           = NULL    -- cuantos avisos cobrar, del mas antiguo en adelante. NULL = todos
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -282,11 +283,21 @@ BEGIN
       AND e.estado NOT IN ('PAGADO', 'ANULADO')
     ORDER BY CAST(RIGHT(p.periodo, 4) + LEFT(p.periodo, 2) AS INT);
 
+    IF (SELECT COUNT(*) FROM @pend) = 0
+    BEGIN SET @Mensaje = 'El socio no tiene avisos pendientes de pago.'; RETURN; END
+
+    -- Cobro parcial: solo los @cantidad mas antiguos. Como el orden de cobro es
+    -- obligatorio (fn_aviso_anterior_pendiente), la unica seleccion valida es un
+    -- prefijo de la lista; por eso se recibe una cantidad y no ids sueltos.
+    IF @cantidad IS NOT NULL
+    BEGIN
+        IF @cantidad < 1
+        BEGIN SET @Mensaje = 'Debe cobrar al menos un aviso.'; RETURN; END
+        DELETE FROM @pend WHERE orden > @cantidad;
+    END
+
     DECLARE @n     INT           = (SELECT COUNT(*) FROM @pend);
     DECLARE @total DECIMAL(30,2) = (SELECT ISNULL(SUM(total), 0) FROM @pend);
-
-    IF @n = 0
-    BEGIN SET @Mensaje = 'El socio no tiene avisos pendientes de pago.'; RETURN; END
 
     IF NOT EXISTS (SELECT 1 FROM caja WHERE id_caja = @id_caja AND estado = 1)
     BEGIN SET @Mensaje = 'No hay una caja abierta valida. Abra su caja primero.'; RETURN; END

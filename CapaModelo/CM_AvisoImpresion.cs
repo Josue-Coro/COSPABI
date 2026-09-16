@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace CapaModelo
@@ -52,6 +52,15 @@ namespace CapaModelo
         // Detalle (Datos Facturados) e Histórico
         public List<CM_CargoExtra>    cargos    { get; set; } = new List<CM_CargoExtra>();
         public List<CM_AvisoHistorico> historico { get; set; } = new List<CM_AvisoHistorico>();
+    }
+
+    // Vista previa de la impresion en lote (sp_resumen_avisos_impresion).
+    public class CM_ResumenImpresionLote
+    {
+        public int por_imprimir { get; set; }
+        public int impresos     { get; set; }
+        public int pagados      { get; set; }
+        public int anulados     { get; set; }
     }
 
     // Una fila del histórico de avisos del socio (para el recibo).
